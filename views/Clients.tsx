@@ -31,17 +31,18 @@ import {
   TrendingUp,
   Target,
   Clock,
-  Edit
+  Edit,
+  Zap,
+  CheckCircle
 } from 'lucide-react';
 
 const Clients: React.FC<{ state: AppState, setState: any }> = ({ state, setState }) => {
   const navigate = useNavigate();
   const [showAdd, setShowAdd] = useState(false);
-  const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
-  const [newClient, setNewClient] = useState<Partial<Client>>({ 
-    name: '', email: '', phone: '', countryCode: '+1', company: '', country: '', 
-    notes: '', socialMedia: {} 
+  const [newClient, setNewClient] = useState<Partial<Client>>({
+    name: '', email: '', phone: '', countryCode: '+1', company: '', country: '',
+    notes: '', socialMedia: {}
   });
   const [search, setSearch] = useState('');
   const [filters, setFilters] = useState({
@@ -49,7 +50,7 @@ const Clients: React.FC<{ state: AppState, setState: any }> = ({ state, setState
     highRevenue: false,
     active: false
   });
-  const [errors, setErrors] = useState<{[key: string]: string}>({});
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [selectedClients, setSelectedClients] = useState<Set<string>>(new Set());
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
@@ -58,152 +59,161 @@ const Clients: React.FC<{ state: AppState, setState: any }> = ({ state, setState
   const [statusDropdown, setStatusDropdown] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('overview');
   const [bulkActionDropdown, setBulkActionDropdown] = useState(false);
-  
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState<{ id: string; name: string } | null>(null);
+
+  React.useEffect(() => {
+    if (toast) {
+      const timer = setTimeout(() => setToast(null), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [toast]);
+
   // All country phone codes (A–Z)
-const countryCodes = [
-  { code: '+93', country: 'Afghanistan' },
-  { code: '+355', country: 'Albania' },
-  { code: '+213', country: 'Algeria' },
-  { code: '+376', country: 'Andorra' },
-  { code: '+244', country: 'Angola' },
-  { code: '+54', country: 'Argentina' },
-  { code: '+374', country: 'Armenia' },
-  { code: '+61', country: 'Australia' },
-  { code: '+43', country: 'Austria' },
-  { code: '+994', country: 'Azerbaijan' },
+  const countryCodes = [
+    { code: '+93', country: 'Afghanistan' },
+    { code: '+355', country: 'Albania' },
+    { code: '+213', country: 'Algeria' },
+    { code: '+376', country: 'Andorra' },
+    { code: '+244', country: 'Angola' },
+    { code: '+54', country: 'Argentina' },
+    { code: '+374', country: 'Armenia' },
+    { code: '+61', country: 'Australia' },
+    { code: '+43', country: 'Austria' },
+    { code: '+994', country: 'Azerbaijan' },
 
-  { code: '+973', country: 'Bahrain' },
-  { code: '+880', country: 'Bangladesh' },
-  { code: '+375', country: 'Belarus' },
-  { code: '+32', country: 'Belgium' },
-  { code: '+501', country: 'Belize' },
-  { code: '+229', country: 'Benin' },
-  { code: '+975', country: 'Bhutan' },
-  { code: '+591', country: 'Bolivia' },
-  { code: '+387', country: 'Bosnia and Herzegovina' },
-  { code: '+267', country: 'Botswana' },
-  { code: '+55', country: 'Brazil' },
-  { code: '+359', country: 'Bulgaria' },
+    { code: '+973', country: 'Bahrain' },
+    { code: '+880', country: 'Bangladesh' },
+    { code: '+375', country: 'Belarus' },
+    { code: '+32', country: 'Belgium' },
+    { code: '+501', country: 'Belize' },
+    { code: '+229', country: 'Benin' },
+    { code: '+975', country: 'Bhutan' },
+    { code: '+591', country: 'Bolivia' },
+    { code: '+387', country: 'Bosnia and Herzegovina' },
+    { code: '+267', country: 'Botswana' },
+    { code: '+55', country: 'Brazil' },
+    { code: '+359', country: 'Bulgaria' },
 
-  { code: '+855', country: 'Cambodia' },
-  { code: '+237', country: 'Cameroon' },
-  { code: '+1', country: 'Canada' },
-  { code: '+238', country: 'Cape Verde' },
-  { code: '+56', country: 'Chile' },
-  { code: '+86', country: 'China' },
-  { code: '+57', country: 'Colombia' },
-  { code: '+269', country: 'Comoros' },
-  { code: '+506', country: 'Costa Rica' },
-  { code: '+385', country: 'Croatia' },
-  { code: '+53', country: 'Cuba' },
-  { code: '+357', country: 'Cyprus' },
-  { code: '+420', country: 'Czech Republic' },
+    { code: '+855', country: 'Cambodia' },
+    { code: '+237', country: 'Cameroon' },
+    { code: '+1', country: 'Canada' },
+    { code: '+238', country: 'Cape Verde' },
+    { code: '+56', country: 'Chile' },
+    { code: '+86', country: 'China' },
+    { code: '+57', country: 'Colombia' },
+    { code: '+269', country: 'Comoros' },
+    { code: '+506', country: 'Costa Rica' },
+    { code: '+385', country: 'Croatia' },
+    { code: '+53', country: 'Cuba' },
+    { code: '+357', country: 'Cyprus' },
+    { code: '+420', country: 'Czech Republic' },
 
-  { code: '+45', country: 'Denmark' },
-  { code: '+253', country: 'Djibouti' },
-  { code: '+1', country: 'Dominican Republic' },
+    { code: '+45', country: 'Denmark' },
+    { code: '+253', country: 'Djibouti' },
+    { code: '+1', country: 'Dominican Republic' },
 
-  { code: '+593', country: 'Ecuador' },
-  { code: '+20', country: 'Egypt' },
-  { code: '+503', country: 'El Salvador' },
-  { code: '+291', country: 'Eritrea' },
-  { code: '+372', country: 'Estonia' },
-  { code: '+251', country: 'Ethiopia' },
+    { code: '+593', country: 'Ecuador' },
+    { code: '+20', country: 'Egypt' },
+    { code: '+503', country: 'El Salvador' },
+    { code: '+291', country: 'Eritrea' },
+    { code: '+372', country: 'Estonia' },
+    { code: '+251', country: 'Ethiopia' },
 
-  { code: '+358', country: 'Finland' },
-  { code: '+33', country: 'France' },
+    { code: '+358', country: 'Finland' },
+    { code: '+33', country: 'France' },
 
-  { code: '+995', country: 'Georgia' },
-  { code: '+49', country: 'Germany' },
-  { code: '+233', country: 'Ghana' },
-  { code: '+30', country: 'Greece' },
-  { code: '+502', country: 'Guatemala' },
+    { code: '+995', country: 'Georgia' },
+    { code: '+49', country: 'Germany' },
+    { code: '+233', country: 'Ghana' },
+    { code: '+30', country: 'Greece' },
+    { code: '+502', country: 'Guatemala' },
 
-  { code: '+852', country: 'Hong Kong' },
-  { code: '+36', country: 'Hungary' },
+    { code: '+852', country: 'Hong Kong' },
+    { code: '+36', country: 'Hungary' },
 
-  { code: '+91', country: 'India' },
-  { code: '+62', country: 'Indonesia' },
-  { code: '+98', country: 'Iran' },
-  { code: '+964', country: 'Iraq' },
-  { code: '+353', country: 'Ireland' },
-  { code: '+972', country: 'Israel' },
-  { code: '+39', country: 'Italy' },
+    { code: '+91', country: 'India' },
+    { code: '+62', country: 'Indonesia' },
+    { code: '+98', country: 'Iran' },
+    { code: '+964', country: 'Iraq' },
+    { code: '+353', country: 'Ireland' },
+    { code: '+972', country: 'Israel' },
+    { code: '+39', country: 'Italy' },
 
-  { code: '+81', country: 'Japan' },
-  { code: '+962', country: 'Jordan' },
+    { code: '+81', country: 'Japan' },
+    { code: '+962', country: 'Jordan' },
 
-  { code: '+7', country: 'Kazakhstan' },
-  { code: '+254', country: 'Kenya' },
-  { code: '+965', country: 'Kuwait' },
-  { code: '+996', country: 'Kyrgyzstan' },
+    { code: '+7', country: 'Kazakhstan' },
+    { code: '+254', country: 'Kenya' },
+    { code: '+965', country: 'Kuwait' },
+    { code: '+996', country: 'Kyrgyzstan' },
 
-  { code: '+856', country: 'Laos' },
-  { code: '+371', country: 'Latvia' },
-  { code: '+961', country: 'Lebanon' },
-  { code: '+218', country: 'Libya' },
-  { code: '+423', country: 'Liechtenstein' },
-  { code: '+370', country: 'Lithuania' },
-  { code: '+352', country: 'Luxembourg' },
+    { code: '+856', country: 'Laos' },
+    { code: '+371', country: 'Latvia' },
+    { code: '+961', country: 'Lebanon' },
+    { code: '+218', country: 'Libya' },
+    { code: '+423', country: 'Liechtenstein' },
+    { code: '+370', country: 'Lithuania' },
+    { code: '+352', country: 'Luxembourg' },
 
-  { code: '+853', country: 'Macau' },
-  { code: '+60', country: 'Malaysia' },
-  { code: '+960', country: 'Maldives' },
-  { code: '+52', country: 'Mexico' },
-  { code: '+373', country: 'Moldova' },
-  { code: '+976', country: 'Mongolia' },
-  { code: '+212', country: 'Morocco' },
+    { code: '+853', country: 'Macau' },
+    { code: '+60', country: 'Malaysia' },
+    { code: '+960', country: 'Maldives' },
+    { code: '+52', country: 'Mexico' },
+    { code: '+373', country: 'Moldova' },
+    { code: '+976', country: 'Mongolia' },
+    { code: '+212', country: 'Morocco' },
 
-  { code: '+95', country: 'Myanmar' },
+    { code: '+95', country: 'Myanmar' },
 
-  { code: '+977', country: 'Nepal' },
-  { code: '+31', country: 'Netherlands' },
-  { code: '+64', country: 'New Zealand' },
-  { code: '+234', country: 'Nigeria' },
-  { code: '+47', country: 'Norway' },
+    { code: '+977', country: 'Nepal' },
+    { code: '+31', country: 'Netherlands' },
+    { code: '+64', country: 'New Zealand' },
+    { code: '+234', country: 'Nigeria' },
+    { code: '+47', country: 'Norway' },
 
-  { code: '+968', country: 'Oman' },
+    { code: '+968', country: 'Oman' },
 
-  { code: '+92', country: 'Pakistan' },
-  { code: '+507', country: 'Panama' },
-  { code: '+51', country: 'Peru' },
-  { code: '+63', country: 'Philippines' },
-  { code: '+48', country: 'Poland' },
-  { code: '+351', country: 'Portugal' },
+    { code: '+92', country: 'Pakistan' },
+    { code: '+507', country: 'Panama' },
+    { code: '+51', country: 'Peru' },
+    { code: '+63', country: 'Philippines' },
+    { code: '+48', country: 'Poland' },
+    { code: '+351', country: 'Portugal' },
 
-  { code: '+974', country: 'Qatar' },
+    { code: '+974', country: 'Qatar' },
 
-  { code: '+40', country: 'Romania' },
-  { code: '+7', country: 'Russia' },
+    { code: '+40', country: 'Romania' },
+    { code: '+7', country: 'Russia' },
 
-  { code: '+966', country: 'Saudi Arabia' },
-  { code: '+221', country: 'Senegal' },
-  { code: '+65', country: 'Singapore' },
-  { code: '+421', country: 'Slovakia' },
-  { code: '+386', country: 'Slovenia' },
-  { code: '+27', country: 'South Africa' },
-  { code: '+82', country: 'South Korea' },
-  { code: '+34', country: 'Spain' },
-  { code: '+94', country: 'Sri Lanka' },
-  { code: '+46', country: 'Sweden' },
-  { code: '+41', country: 'Switzerland' },
-  { code: '+971', country: 'United Arab Emirates' },
-  { code: '+44', country: 'United Kingdom' },
-  { code: '+1', country: 'United States' },
-  { code: '+598', country: 'Uruguay' },
-  { code: '+998', country: 'Uzbekistan' },
+    { code: '+966', country: 'Saudi Arabia' },
+    { code: '+221', country: 'Senegal' },
+    { code: '+65', country: 'Singapore' },
+    { code: '+421', country: 'Slovakia' },
+    { code: '+386', country: 'Slovenia' },
+    { code: '+27', country: 'South Africa' },
+    { code: '+82', country: 'South Korea' },
+    { code: '+34', country: 'Spain' },
+    { code: '+94', country: 'Sri Lanka' },
+    { code: '+46', country: 'Sweden' },
+    { code: '+41', country: 'Switzerland' },
+    { code: '+971', country: 'United Arab Emirates' },
+    { code: '+44', country: 'United Kingdom' },
+    { code: '+1', country: 'United States' },
+    { code: '+598', country: 'Uruguay' },
+    { code: '+998', country: 'Uzbekistan' },
 
-];
- 
+  ];
+
 
   // Countries list (A-Z)
   const countries = [
-    'Afghanistan', 'Albania', 'Algeria', 'Argentina', 'Australia', 'Austria', 'Bangladesh', 'Belgium', 
-    'Brazil', 'Canada', 'Chile', 'China', 'Colombia', 'Czech Republic', 'Denmark', 'Egypt', 
-    'Finland', 'France', 'Germany', 'Greece', 'Hungary', 'India', 'Indonesia', 'Ireland', 
-    'Israel', 'Italy', 'Japan', 'Kenya', 'Malaysia', 'Mexico', 'Netherlands', 'New Zealand', 
-    'Nigeria', 'Norway', 'Pakistan', 'Philippines', 'Poland', 'Portugal', 'Russia', 
-    'Saudi Arabia', 'Singapore', 'South Africa', 'South Korea', 'Spain', 'Sweden', 'Switzerland', 
+    'Afghanistan', 'Albania', 'Algeria', 'Argentina', 'Australia', 'Austria', 'Bangladesh', 'Belgium',
+    'Brazil', 'Canada', 'Chile', 'China', 'Colombia', 'Czech Republic', 'Denmark', 'Egypt',
+    'Finland', 'France', 'Germany', 'Greece', 'Hungary', 'India', 'Indonesia', 'Ireland',
+    'Israel', 'Italy', 'Japan', 'Kenya', 'Malaysia', 'Mexico', 'Netherlands', 'New Zealand',
+    'Nigeria', 'Norway', 'Pakistan', 'Philippines', 'Poland', 'Portugal', 'Russia',
+    'Saudi Arabia', 'Singapore', 'South Africa', 'South Korea', 'Spain', 'Sweden', 'Switzerland',
     'Thailand', 'Turkey', 'UAE', 'UK', 'USA', 'Vietnam'
   ].sort();
 
@@ -238,17 +248,17 @@ const countryCodes = [
   const getClientStats = useCallback((clientId: string) => {
     const clientProjects = state.projects.filter(p => p.clientId === clientId);
     const clientDocs = state.salesDocuments.filter(d => d.clientId === clientId);
-    
+
     const activeProjects = clientProjects.filter(p => p.status === 'active');
     const totalProjects = clientProjects.length;
-    
+
     const paidInvoices = clientDocs.filter(d => d.type === 'INVOICE' && d.status === 'paid');
     const pendingInvoices = clientDocs.filter(d => d.type === 'INVOICE' && (d.status === 'sent' || d.status === 'overdue'));
     const overdueInvoices = clientDocs.filter(d => d.type === 'INVOICE' && d.status === 'overdue');
-    
+
     const totalRevenue = paidInvoices.reduce((sum, d) => sum + d.total, 0);
     const pendingAmount = pendingInvoices.reduce((sum, d) => sum + d.total, 0);
-    
+
     return {
       activeProjects: activeProjects.length,
       totalProjects,
@@ -260,8 +270,8 @@ const countryCodes = [
   }, [state.projects, state.salesDocuments]);
 
   const filteredClients = useMemo(() => {
-    let clients = state.clients.filter(c => 
-      c.name.toLowerCase().includes(search.toLowerCase()) || 
+    let clients = state.clients.filter(c =>
+      c.name.toLowerCase().includes(search.toLowerCase()) ||
       c.company.toLowerCase().includes(search.toLowerCase())
     );
 
@@ -338,10 +348,10 @@ const countryCodes = [
     monthlyRevenue: state.salesDocuments.filter(d => d.type === 'INVOICE' && d.status === 'paid').reduce((sum, d) => sum + d.total, 0)
   }), [state]);
 
-  const validateClient = (client: Partial<Client>): {[key: string]: string} => {
-    const errors: {[key: string]: string} = {};
+  const validateClient = (client: Partial<Client>): { [key: string]: string } => {
+    const errors: { [key: string]: string } = {};
     if (!client.name?.trim()) errors.name = 'Name is required';
-    if (!client.email?.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(client.email)) errors.email = 'Valid email is required';
+    if (client.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(client.email)) errors.email = 'Valid email is required';
     return errors;
   };
 
@@ -351,29 +361,39 @@ const countryCodes = [
       setErrors(validationErrors);
       return;
     }
-    const client: Client = { 
-      ...newClient as Client, 
-      id: generateId(), 
+    const client: Client = {
+      ...newClient as Client,
+      id: generateId(),
       createdAt: new Date().toISOString()
     };
     setState((prev: AppState) => ({ ...prev, clients: [...prev.clients, client] }));
-    setNewClient({ 
-      name: '', email: '', phone: '', countryCode: '+1', company: '', country: '', 
-      notes: '', socialMedia: {} 
+    setNewClient({
+      name: '', email: '', phone: '', countryCode: '+1', company: '', country: '',
+      notes: '', socialMedia: {}
     });
     setShowAdd(false);
+    setToast({ message: 'Client added successfully', type: 'success' });
   };
 
   const handleDelete = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (confirm('Delete client and all associated records?')) {
-      setState((prev: AppState) => ({
-        ...prev,
-        clients: prev.clients.filter(c => c.id !== id),
-        projects: prev.projects.filter(p => p.clientId !== id),
-        salesDocuments: prev.salesDocuments.filter(d => d.clientId !== id)
-      }));
+    const clientToDelete = state.clients.find(c => c.id === id);
+    if (clientToDelete) {
+      setShowDeleteConfirm({ id, name: clientToDelete.name });
     }
+  };
+
+  const confirmDelete = () => {
+    if (!showDeleteConfirm) return;
+    const { id } = showDeleteConfirm;
+    setState((prev: AppState) => ({
+      ...prev,
+      clients: prev.clients.filter(c => c.id !== id),
+      projects: prev.projects.filter(p => p.clientId !== id),
+      salesDocuments: prev.salesDocuments.filter(d => d.clientId !== id)
+    }));
+    setShowDeleteConfirm(null);
+    setToast({ message: 'Client and associated records deleted', type: 'success' });
   };
 
   const handleEditClient = (client: Client) => {
@@ -403,17 +423,18 @@ const countryCodes = [
       clients: prev.clients.map(c => c.id === editingClient.id ? { ...c, ...newClient } : c)
     }));
     setEditingClient(null);
-    setNewClient({ 
-      name: '', email: '', phone: '', countryCode: '+1', company: '', country: '', 
-      notes: '', socialMedia: {} 
+    setNewClient({
+      name: '', email: '', phone: '', countryCode: '+1', company: '', country: '',
+      notes: '', socialMedia: {}
     });
+    setToast({ message: 'Client details updated', type: 'success' });
   };
 
   // Bulk actions
   const handleBulkStatusChange = (newStatus: string) => {
     setState((prev: AppState) => ({
       ...prev,
-      clients: prev.clients.map(c => 
+      clients: prev.clients.map(c =>
         selectedClients.has(c.id) ? { ...c, status: newStatus } : c
       )
     }));
@@ -423,6 +444,7 @@ const countryCodes = [
 
   const handleBulkDelete = () => {
     if (selectedClients.size === 0) return;
+    // For bulk delete, we can also use a custom confirm or keep simple for now
     if (confirm(`Delete ${selectedClients.size} selected clients and all their associated records?`)) {
       setState((prev: AppState) => ({
         ...prev,
@@ -431,6 +453,7 @@ const countryCodes = [
         salesDocuments: prev.salesDocuments.filter(d => !selectedClients.has(d.clientId))
       }));
       setSelectedClients(new Set());
+      setToast({ message: `${selectedClients.size} clients deleted successfully`, type: 'success' });
     }
     setBulkActionDropdown(false);
   };
@@ -438,15 +461,14 @@ const countryCodes = [
   return (
     <div className="h-screen overflow-hidden" style={{ backgroundColor: '#F8FAFC' }}>
       <div className="w-full mx-auto px-6 h-full flex flex-col" style={{ maxWidth: '1600px' }}>
-        
+
         <div className="flex justify-between items-center py-6 mb-2" style={{ height: '25px' }}>
           <div className="flex items-center gap-4">
             {/* <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg">
               <Users size={24} className="text-white" />
             </div> */}
             <div>
-              <h1 className="text-2xl font-bold text-slate-900">Client Management</h1>
-              {/* <p className="text-slate-600">Premium client relationship dashboard</p> */}
+              <h1 className="text-2xl font-black text-slate-900 tracking-tight">Client Management</h1>
             </div>
           </div>
 
@@ -498,7 +520,7 @@ const countryCodes = [
           </div>
         </div>
 
-        
+
 
         <div className="flex-1 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col" style={{ height: 'calc(100vh - 40px)' }}>
           {/* Sticky Bulk Action Bar */}
@@ -531,7 +553,7 @@ const countryCodes = [
                   {bulkActionDropdown && (
                     <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden animate-in fade-in zoom-in-95 duration-100 origin-top-right z-50">
                       <div className="p-1.5 bg-slate-50/50">
-                        <div className="px-3 py-2 text-xs font-bold text-slate-400 uppercase tracking-widest">
+                        <div className="px-3 py-2 text-xs font-bold text-slate-400 uppercase  ">
                           Change Status
                         </div>
                         {statusOptions.map(option => (
@@ -575,42 +597,41 @@ const countryCodes = [
             </div>
           </div>
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 mb-6" style={{ height: '70px' }}>
-          <div className="flex items-center justify-between h-full">
-            <div className="flex-1 relative">
-              <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" aria-hidden="true"><Search size={20} /></div>
-              <input
-                type="text"
-                placeholder="Search clients..."
-                aria-label="Search clients"
-                className="w-full pl-12 pr-4 py-3 text-sm bg-white border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20 shadow-sm"
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-              />
-            </div>
-            <div className="flex items-center gap-3 ml-6">
-              {[
-                { k: 'pendingInvoices', l: 'Pending', i: Clock, c: 'amber', label: 'Filter by pending invoices' },
-                { k: 'active', l: 'Active', i: Target, c: 'green', label: 'Filter by active projects' },
-                { k: 'highRevenue', l: 'High Revenue', i: TrendingUp, c: 'blue', label: 'Filter by high revenue' }
-              ].map(f => (
-                <button
-                  key={f.k}
-                  onClick={() => setFilters(prev => ({...prev, [f.k]: !prev[f.k]}))}
-                  aria-pressed={filters[f.k as keyof typeof filters]}
-                  aria-label={f.label}
-                  className={`px-4 py-2 rounded-lg font-bold text-sm transition-all duration-200 ${
-                    filters[f.k as keyof typeof filters] ? `bg-${f.c}-500 text-white shadow-lg` : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                  }`}
-                >
-                  <div className="flex items-center gap-2">
-                    <f.i size={16} />
-                    <span>{filters[f.k as keyof typeof filters] ? `✓ ${f.l}` : f.l}</span>
-                  </div>
-                </button>
-              ))}
+            <div className="flex items-center justify-between h-full">
+              <div className="flex-1 relative">
+                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" aria-hidden="true"><Search size={20} /></div>
+                <input
+                  type="text"
+                  placeholder="Search clients..."
+                  aria-label="Search clients"
+                  className="w-full pl-12 pr-4 py-3 text-sm bg-white border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20 shadow-sm"
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                />
+              </div>
+              <div className="flex items-center gap-3 ml-6">
+                {[
+                  { k: 'pendingInvoices', l: 'Pending', i: Clock, c: 'amber', label: 'Filter by pending invoices' },
+                  { k: 'active', l: 'Active', i: Target, c: 'green', label: 'Filter by active projects' },
+                  { k: 'highRevenue', l: 'High Revenue', i: TrendingUp, c: 'blue', label: 'Filter by high revenue' }
+                ].map(f => (
+                  <button
+                    key={f.k}
+                    onClick={() => setFilters(prev => ({ ...prev, [f.k]: !prev[f.k] }))}
+                    aria-pressed={filters[f.k as keyof typeof filters]}
+                    aria-label={f.label}
+                    className={`px-4 py-2 rounded-lg font-bold text-sm transition-all duration-200 ${filters[f.k as keyof typeof filters] ? `bg-${f.c}-500 text-white shadow-lg` : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                      }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <f.i size={16} />
+                      <span>{filters[f.k as keyof typeof filters] ? `✓ ${f.l}` : f.l}</span>
+                    </div>
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
-        </div>
 
           <div className="overflow-x-auto flex-1" style={{ maxHeight: 'calc(100vh - 420px)', minHeight: '200px' }}>
             {filteredClients.length === 0 ? (
@@ -642,21 +663,21 @@ const countryCodes = [
                 <thead className="bg-slate-50 sticky top-0 z-20">
                   <tr>
                     <th className="px-5 py-4 text-left w-12">
-                      <input 
-                        type="checkbox" 
-                        checked={paginatedClients.length > 0 && paginatedClients.every(c => selectedClients.has(c.id))} 
+                      <input
+                        type="checkbox"
+                        checked={paginatedClients.length > 0 && paginatedClients.every(c => selectedClients.has(c.id))}
                         onChange={(e) => handleSelectAll(e.target.checked)}
                         aria-label="Select all clients on this page"
-                        className="w-4 h-4 rounded border-slate-300" 
+                        className="w-4 h-4 rounded border-slate-300"
                       />
                     </th>
-                      <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">Client</th>
-                      <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">Contact</th>
-                      <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">Phone</th>
-                      <th className="px-4 py-3 text-right text-xs font-bold text-slate-600 uppercase tracking-wider">Total Billed</th>
-                      <th className="px-4 py-3 text-right text-xs font-bold text-slate-600 uppercase tracking-wider">Outstanding</th>
-                      <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">Status</th>
-                      <th className="px-4 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-wider w-28">Actions</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">Client</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">Contact</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">Phone</th>
+                    <th className="px-4 py-3 text-right text-xs font-bold text-slate-600 uppercase tracking-wider">Total Billed</th>
+                    <th className="px-4 py-3 text-right text-xs font-bold text-slate-600 uppercase tracking-wider">Outstanding</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">Status</th>
+                    <th className="px-4 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-wider w-28">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -664,22 +685,22 @@ const countryCodes = [
                     const stats = getClientStats(client.id);
                     const statusInfo = getStatusColor(client.status || 'new');
                     const isDropdownOpen = statusDropdown === client.id;
-                    
+
                     return (
                       <tr
                         key={client.id}
                         className="hover:bg-slate-50/50 transition-all duration-200 cursor-pointer group"
                         style={{ height: '56px' }}
-                        onClick={() => setSelectedClientId(client.id)}
+                        onClick={() => navigate(`/clients/${client.id}`)}
                       >
                         <td className="px-4 py-2">
-                          <input 
-                            type="checkbox" 
-                            checked={selectedClients.has(client.id)} 
-                            onChange={(e) => handleSelectClient(client.id, e.target.checked)} 
+                          <input
+                            type="checkbox"
+                            checked={selectedClients.has(client.id)}
+                            onChange={(e) => handleSelectClient(client.id, e.target.checked)}
                             onClick={(e) => e.stopPropagation()}
                             aria-label={`Select ${client.name}`}
-                            className="w-4 h-4 rounded border-slate-300 cursor-pointer" 
+                            className="w-4 h-4 rounded border-slate-300 cursor-pointer"
                           />
                         </td>
                         <td className="px-4 py-2">
@@ -716,7 +737,7 @@ const countryCodes = [
                               {client.status || 'New'}
                               <ChevronDown size={10} strokeWidth={3} aria-hidden="true" />
                             </button>
-                            
+
                             {isDropdownOpen && (
                               <div
                                 className="absolute left-0 mt-2 w-48 bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden animate-in fade-in zoom-in-95 duration-100 origin-top-left"
@@ -763,7 +784,7 @@ const countryCodes = [
                           <div className="flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                             <button
                               className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
-                              onClick={(e) => { e.stopPropagation(); setSelectedClientId(client.id); }}
+                              onClick={(e) => { e.stopPropagation(); navigate(`/clients/${client.id}`); }}
                               aria-label={`View details for ${client.name}`}
                             >
                               <Eye size={16} />
@@ -795,23 +816,23 @@ const countryCodes = [
 
         <div className="bg-white border-t border-slate-200 px-6 py-4 sticky bottom-0 z-20 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]" style={{ height: '64px' }}>
           <div className="flex justify-between items-center h-full">
-            <div className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+            <div className="text-xs font-bold text-slate-400 uppercase  ">
               Showing {filteredClients.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0}–{Math.min(currentPage * itemsPerPage, filteredClients.length)} of {filteredClients.length}
             </div>
             <div className="flex items-center gap-2">
-              <button 
-                onClick={() => setCurrentPage(Math.max(1, currentPage - 1))} 
+              <button
+                onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                 disabled={currentPage === 1}
                 aria-label="Previous page"
                 className="p-2 rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-30 transition-colors"
               >
                 <ChevronLeft size={16} aria-hidden="true" />
               </button>
-              <span className="text-xs font-bold text-slate-400 uppercase tracking-widest px-2">
+              <span className="text-xs font-bold text-slate-400 uppercase   px-2">
                 {currentPage} / {totalPages || 1}
               </span>
-              <button 
-                onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))} 
+              <button
+                onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
                 disabled={currentPage === totalPages || totalPages === 0}
                 aria-label="Next page"
                 className="p-2 rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-30 transition-colors"
@@ -823,15 +844,7 @@ const countryCodes = [
         </div>
       </div>
 
-      {/* Client Detail Slide-in Panel */}
-      {selectedClientId && (
-        <ClientDetail 
-          state={state} 
-          setState={setState} 
-          clientId={selectedClientId} 
-          onClose={() => setSelectedClientId(null)} 
-        />
-      )}
+
 
       {/* Edit Client Modal */}
       {editingClient && (
@@ -843,73 +856,62 @@ const countryCodes = [
                 <X size={20} className="text-slate-500" />
               </button>
             </div>
-            
+
             <div className="p-6 space-y-4">
               <div>
                 <label className="block text-sm font-bold text-slate-700 mb-1">Name *</label>
                 <input
                   type="text"
                   value={newClient.name}
-                  onChange={e => setNewClient({...newClient, name: e.target.value})}
+                  onChange={e => setNewClient({ ...newClient, name: e.target.value })}
                   className={`w-full px-4 py-3 border rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20 ${errors.name ? 'border-red-300' : 'border-slate-300'}`}
                   placeholder="Enter client name"
                 />
                 {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
               </div>
-              
+
               <div>
-                <label className="block text-sm font-bold text-slate-700 mb-1">Email *</label>
+                <label className="block text-sm font-bold text-slate-700 mb-1">Email</label>
                 <input
                   type="email"
                   value={newClient.email}
-                  onChange={e => setNewClient({...newClient, email: e.target.value})}
+                  onChange={e => setNewClient({ ...newClient, email: e.target.value })}
                   className={`w-full px-4 py-3 border rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20 ${errors.email ? 'border-red-300' : 'border-slate-300'}`}
                   placeholder="Enter email address"
                 />
                 {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
               </div>
-              
+
               <div className="grid grid-cols-3 gap-3">
-                <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-1">Country Code</label>
-                  <select
-                    value={newClient.countryCode}
-                    onChange={e => setNewClient({...newClient, countryCode: e.target.value})}
-                    className="w-full px-4 py-3 border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20"
-                  >
-                    {countryCodes.map(cc => (
-                      <option key={cc.code} value={cc.code}>{cc.code}</option>
-                    ))}
-                  </select>
-                </div>
+
                 <div className="col-span-2">
                   <label className="block text-sm font-bold text-slate-700 mb-1">Phone</label>
                   <input
                     type="tel"
                     value={newClient.phone}
-                    onChange={e => setNewClient({...newClient, phone: e.target.value})}
+                    onChange={e => setNewClient({ ...newClient, phone: e.target.value })}
                     className="w-full px-4 py-3 border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20"
                     placeholder="Phone number"
                   />
                 </div>
               </div>
-              
+
               <div>
                 <label className="block text-sm font-bold text-slate-700 mb-1">Company</label>
                 <input
                   type="text"
                   value={newClient.company}
-                  onChange={e => setNewClient({...newClient, company: e.target.value})}
+                  onChange={e => setNewClient({ ...newClient, company: e.target.value })}
                   className="w-full px-4 py-3 border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20"
                   placeholder="Company name"
                 />
               </div>
-              
+
               <div>
                 <label className="block text-sm font-bold text-slate-700 mb-1">Country</label>
                 <select
                   value={newClient.country}
-                  onChange={e => setNewClient({...newClient, country: e.target.value})}
+                  onChange={e => setNewClient({ ...newClient, country: e.target.value })}
                   className="w-full px-4 py-3 border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20"
                 >
                   <option value="">Select country</option>
@@ -918,19 +920,19 @@ const countryCodes = [
                   ))}
                 </select>
               </div>
-              
+
               <div>
                 <label className="block text-sm font-bold text-slate-700 mb-1">Notes</label>
                 <textarea
                   value={newClient.notes}
-                  onChange={e => setNewClient({...newClient, notes: e.target.value})}
+                  onChange={e => setNewClient({ ...newClient, notes: e.target.value })}
                   className="w-full px-4 py-3 border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20"
                   rows={3}
                   placeholder="Add notes about this client"
                 />
               </div>
             </div>
-            
+
             <div className="p-6 border-t border-slate-200 flex justify-end gap-3">
               <button
                 onClick={() => setEditingClient(null)}
@@ -959,73 +961,62 @@ const countryCodes = [
                 <X size={20} className="text-slate-500" />
               </button>
             </div>
-            
+
             <div className="p-6 space-y-4">
               <div>
                 <label className="block text-sm font-bold text-slate-700 mb-1">Name *</label>
                 <input
                   type="text"
                   value={newClient.name}
-                  onChange={e => setNewClient({...newClient, name: e.target.value})}
+                  onChange={e => setNewClient({ ...newClient, name: e.target.value })}
                   className={`w-full px-4 py-3 border rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20 ${errors.name ? 'border-red-300' : 'border-slate-300'}`}
                   placeholder="Enter client name"
                 />
                 {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
               </div>
-              
+
               <div>
-                <label className="block text-sm font-bold text-slate-700 mb-1">Email *</label>
+                <label className="block text-sm font-bold text-slate-700 mb-1">Email</label>
                 <input
                   type="email"
                   value={newClient.email}
-                  onChange={e => setNewClient({...newClient, email: e.target.value})}
+                  onChange={e => setNewClient({ ...newClient, email: e.target.value })}
                   className={`w-full px-4 py-3 border rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20 ${errors.email ? 'border-red-300' : 'border-slate-300'}`}
                   placeholder="Enter email address"
                 />
                 {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
               </div>
-              
+
               <div className="grid grid-cols-3 gap-3">
-                <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-1">Country Code</label>
-                  <select
-                    value={newClient.countryCode}
-                    onChange={e => setNewClient({...newClient, countryCode: e.target.value})}
-                    className="w-full px-4 py-3 border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20"
-                  >
-                    {countryCodes.map(cc => (
-                      <option key={cc.code} value={cc.code}>{cc.code}</option>
-                    ))}
-                  </select>
-                </div>
+
                 <div className="col-span-2">
                   <label className="block text-sm font-bold text-slate-700 mb-1">Phone</label>
                   <input
                     type="tel"
                     value={newClient.phone}
-                    onChange={e => setNewClient({...newClient, phone: e.target.value})}
+                    onChange={e => setNewClient({ ...newClient, phone: e.target.value })}
                     className="w-full px-4 py-3 border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20"
                     placeholder="Phone number"
                   />
                 </div>
               </div>
-              
+
               <div>
                 <label className="block text-sm font-bold text-slate-700 mb-1">Company</label>
                 <input
                   type="text"
                   value={newClient.company}
-                  onChange={e => setNewClient({...newClient, company: e.target.value})}
+                  onChange={e => setNewClient({ ...newClient, company: e.target.value })}
                   className="w-full px-4 py-3 border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20"
                   placeholder="Company name"
                 />
               </div>
-              
+
               <div>
                 <label className="block text-sm font-bold text-slate-700 mb-1">Country</label>
                 <select
                   value={newClient.country}
-                  onChange={e => setNewClient({...newClient, country: e.target.value})}
+                  onChange={e => setNewClient({ ...newClient, country: e.target.value })}
                   className="w-full px-4 py-3 border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20"
                 >
                   <option value="">Select country</option>
@@ -1034,19 +1025,19 @@ const countryCodes = [
                   ))}
                 </select>
               </div>
-              
+
               <div>
                 <label className="block text-sm font-bold text-slate-700 mb-1">Notes</label>
                 <textarea
                   value={newClient.notes}
-                  onChange={e => setNewClient({...newClient, notes: e.target.value})}
+                  onChange={e => setNewClient({ ...newClient, notes: e.target.value })}
                   className="w-full px-4 py-3 border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20"
                   rows={3}
                   placeholder="Add notes about this client"
                 />
               </div>
             </div>
-            
+
             <div className="p-6 border-t border-slate-200 flex justify-end gap-3">
               <button
                 onClick={() => setShowAdd(false)}
@@ -1061,6 +1052,54 @@ const countryCodes = [
                 Add Client
               </button>
             </div>
+          </div>
+        </div>
+      )}
+      {/* Custom Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center z-[200] p-4 animate-in fade-in duration-300">
+          <div className="bg-white rounded-[40px] w-full max-w-md p-10 shadow-2xl animate-in zoom-in-95 duration-300 text-center">
+            <div className="w-20 h-20 rounded-3xl bg-rose-50 text-rose-500 flex items-center justify-center mx-auto mb-8 animate-bounce">
+              <Trash2 size={32} />
+            </div>
+            <h2 className="text-2xl font-black text-slate-900 tracking-tight mb-4">Delete Client?</h2>
+            <p className="text-slate-500 text-sm leading-relaxed mb-10">
+              This will permanently delete <span className="font-bold text-slate-900">"{showDeleteConfirm.name}"</span> and all associated
+              projects and invoices. This action cannot be undone.
+            </p>
+            <div className="flex flex-col gap-3">
+              <button
+                onClick={confirmDelete}
+                className="w-full py-4 bg-rose-600 text-white rounded-2xl font-black text-xs uppercase   hover:bg-rose-700 transition-all hover:shadow-xl active:scale-95"
+              >
+                Permanently Delete
+              </button>
+              <button
+                onClick={() => setShowDeleteConfirm(null)}
+                className="w-full py-4 bg-slate-100 text-slate-500 rounded-2xl font-black text-xs uppercase   hover:bg-slate-200 transition-all"
+              >
+                Keep Client
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Toast Notification */}
+      {toast && (
+        <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[300] animate-in slide-in-from-bottom-10 fade-in duration-500">
+          <div className={`px-8 py-4 rounded-2xl shadow-2xl flex items-center gap-4 border backdrop-blur-xl ${toast.type === 'success' ? 'bg-emerald-900/95 border-emerald-800/50 text-emerald-50' :
+            toast.type === 'error' ? 'bg-rose-900/95 border-rose-800/50 text-rose-50' :
+              'bg-slate-900/95 border-white/10 text-slate-50'
+            }`}>
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${toast.type === 'success' ? 'bg-emerald-500/20' :
+              toast.type === 'error' ? 'bg-rose-500/20' : 'bg-white/10'
+              }`}>
+              {toast.type === 'success' ? <CheckCircle size={18} className="text-emerald-400" /> :
+                toast.type === 'info' ? <Zap size={18} className="text-blue-400" /> :
+                  <AlertCircle size={18} className="text-rose-400" />}
+            </div>
+            <p className="text-[11px] font-black uppercase tracking-[0.2em]">{toast.message}</p>
           </div>
         </div>
       )}

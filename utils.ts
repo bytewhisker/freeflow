@@ -41,11 +41,17 @@ export const formatRelativeTime = (date: string) => {
   if (diffInHours < 24) return `${diffInHours}h ago`;
   const diffInDays = Math.floor(diffInHours / 24);
   if (diffInDays < 30) return `${diffInDays}d ago`;
-  
+
   return formatDate(date);
 };
 
-export const generateId = () => Math.random().toString(36).substr(2, 9);
+export const generateId = () => {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === 'x' ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+};
 
 export const getStatusColor = (status: string) => {
   switch (status.toLowerCase()) {
@@ -98,50 +104,50 @@ export const ISO_CURRENCIES = [
 ];
 
 export const COUNTRY_CODES = [
-  { code: '+93', country: 'Afghanistan', flag: '🇦🇫' },
-  { code: '+355', country: 'Albania', flag: '🇦🇱' },
-  { code: '+213', country: 'Algeria', flag: '🇩🇿' },
-  { code: '+54', country: 'Argentina', flag: '🇦🇷' },
-  { code: '+61', country: 'Australia', flag: '🇦🇺' },
-  { code: '+43', country: 'Austria', flag: '🇦🇹' },
-  { code: '+880', country: 'Bangladesh', flag: '🇧🇩' },
-  { code: '+32', country: 'Belgium', flag: '🇧🇪' },
-  { code: '+55', country: 'Brazil', flag: '🇧🇷' },
-  { code: '+1', country: 'Canada', flag: '🇨🇦' },
-  { code: '+86', country: 'China', flag: '🇨🇳' },
-  { code: '+57', country: 'Colombia', flag: '🇨🇴' },
-  { code: '+20', country: 'Egypt', flag: '🇪🇬' },
-  { code: '+33', country: 'France', flag: '🇫🇷' },
-  { code: '+49', country: 'Germany', flag: '🇩🇪' },
-  { code: '+30', country: 'Greece', flag: '🇬🇷' },
-  { code: '+852', country: 'Hong Kong', flag: '🇭🇰' },
-  { code: '+91', country: 'India', flag: '🇮🇳' },
-  { code: '+62', country: 'Indonesia', flag: '🇮🇩' },
-  { code: '+39', country: 'Italy', flag: '🇮🇹' },
-  { code: '+81', country: 'Japan', flag: '🇯🇵' },
-  { code: '+254', country: 'Kenya', flag: '🇰🇪' },
-  { code: '+60', country: 'Malaysia', flag: '🇲🇾' },
-  { code: '+52', country: 'Mexico', flag: '🇲🇽' },
-  { code: '+31', country: 'Netherlands', flag: '🇳🇱' },
-  { code: '+64', country: 'New Zealand', flag: '🇳🇿' },
-  { code: '+234', country: 'Nigeria', flag: '🇳🇬' },
-  { code: '+47', country: 'Norway', flag: '🇳🇴' },
-  { code: '+92', country: 'Pakistan', flag: '🇵🇰' },
-  { code: '+63', country: 'Philippines', flag: '🇵🇭' },
-  { code: '+48', country: 'Poland', flag: '🇵🇱' },
-  { code: '+351', country: 'Portugal', flag: '🇵🇹' },
-  { code: '+7', country: 'Russia', flag: '🇷🇺' },
-  { code: '+966', country: 'Saudi Arabia', flag: '🇸🇦' },
-  { code: '+65', country: 'Singapore', flag: '🇸🇬' },
-  { code: '+27', country: 'South Africa', flag: '🇿🇦' },
-  { code: '+82', country: 'South Korea', flag: '🇰🇷' },
-  { code: '+34', country: 'Spain', flag: '🇪🇸' },
-  { code: '+46', country: 'Sweden', flag: '🇸🇪' },
-  { code: '+41', country: 'Switzerland', flag: '🇨🇭' },
-  { code: '+66', country: 'Thailand', flag: '🇹🇭' },
-  { code: '+90', country: 'Turkey', flag: '🇹🇷' },
-  { code: '+971', country: 'UAE', flag: '🇦🇪' },
-  { code: '+44', country: 'United Kingdom', flag: '🇬🇧' },
-  { code: '+1', country: 'USA', flag: '🇺🇸' },
-  { code: '+84', country: 'Vietnam', flag: '🇻🇳' }
+  { code: '+93', country: 'Afghanistan', flag: '🇦🇫', iso: 'AF' },
+  { code: '+355', country: 'Albania', flag: '🇦🇱', iso: 'AL' },
+  { code: '+213', country: 'Algeria', flag: '🇩🇿', iso: 'DZ' },
+  { code: '+54', country: 'Argentina', flag: '🇦🇷', iso: 'AR' },
+  { code: '+61', country: 'Australia', flag: '🇦🇺', iso: 'AU' },
+  { code: '+43', country: 'Austria', flag: '🇦🇹', iso: 'AT' },
+  { code: '+880', country: 'Bangladesh', flag: '🇧🇩', iso: 'BD' },
+  { code: '+32', country: 'Belgium', flag: '🇧🇪', iso: 'BE' },
+  { code: '+55', country: 'Brazil', flag: '🇧🇷', iso: 'BR' },
+  { code: '+1', country: 'Canada', flag: '🇨🇦', iso: 'CA' },
+  { code: '+86', country: 'China', flag: '🇨🇳', iso: 'CN' },
+  { code: '+57', country: 'Colombia', flag: '🇨🇴', iso: 'CO' },
+  { code: '+20', country: 'Egypt', flag: '🇪🇬', iso: 'EG' },
+  { code: '+33', country: 'France', flag: '🇫🇷', iso: 'FR' },
+  { code: '+49', country: 'Germany', flag: '🇩🇪', iso: 'DE' },
+  { code: '+30', country: 'Greece', flag: '🇬🇷', iso: 'GR' },
+  { code: '+852', country: 'Hong Kong', flag: '🇭🇰', iso: 'HK' },
+  { code: '+91', country: 'India', flag: '🇮🇳', iso: 'IN' },
+  { code: '+62', country: 'Indonesia', flag: '🇮🇩', iso: 'ID' },
+  { code: '+39', country: 'Italy', flag: '🇮🇹', iso: 'IT' },
+  { code: '+81', country: 'Japan', flag: '🇯🇵', iso: 'JP' },
+  { code: '+254', country: 'Kenya', flag: '🇰🇪', iso: 'KE' },
+  { code: '+60', country: 'Malaysia', flag: '🇲🇾', iso: 'MY' },
+  { code: '+52', country: 'Mexico', flag: '🇲🇽', iso: 'MX' },
+  { code: '+31', country: 'Netherlands', flag: '🇳🇱', iso: 'NL' },
+  { code: '+64', country: 'New Zealand', flag: '🇳🇿', iso: 'NZ' },
+  { code: '+234', country: 'Nigeria', flag: '🇳🇬', iso: 'NG' },
+  { code: '+47', country: 'Norway', flag: '🇳🇴', iso: 'NO' },
+  { code: '+92', country: 'Pakistan', flag: '🇵🇰', iso: 'PK' },
+  { code: '+63', country: 'Philippines', flag: '🇵🇭', iso: 'PH' },
+  { code: '+48', country: 'Poland', flag: '🇵🇱', iso: 'PL' },
+  { code: '+351', country: 'Portugal', flag: '🇵🇹', iso: 'PT' },
+  { code: '+7', country: 'Russia', flag: '🇷🇺', iso: 'RU' },
+  { code: '+966', country: 'Saudi Arabia', flag: '🇸🇦', iso: 'SA' },
+  { code: '+65', country: 'Singapore', flag: '🇸🇬', iso: 'SG' },
+  { code: '+27', country: 'South Africa', flag: '🇿🇦', iso: 'ZA' },
+  { code: '+82', country: 'South Korea', flag: '🇰🇷', iso: 'KR' },
+  { code: '+34', country: 'Spain', flag: '🇪🇸', iso: 'ES' },
+  { code: '+46', country: 'Sweden', flag: '🇸🇪', iso: 'SE' },
+  { code: '+41', country: 'Switzerland', flag: '🇨🇭', iso: 'CH' },
+  { code: '+66', country: 'Thailand', flag: '🇹🇭', iso: 'TH' },
+  { code: '+90', country: 'Turkey', flag: '🇹🇷', iso: 'TR' },
+  { code: '+971', country: 'UAE', flag: '🇦🇪', iso: 'AE' },
+  { code: '+44', country: 'United Kingdom', flag: '🇬🇧', iso: 'GB' },
+  { code: '+1', country: 'USA', flag: '🇺🇸', iso: 'US' },
+  { code: '+84', country: 'Vietnam', flag: '🇻🇳', iso: 'VN' }
 ].sort((a, b) => a.country.localeCompare(b.country));

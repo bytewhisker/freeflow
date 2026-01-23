@@ -6,7 +6,7 @@ import { Search, Globe, DollarSign, Check, Sliders, Palette, Building, Mail, Map
 const Settings: React.FC<{ state: AppState, setState: any }> = ({ state, setState }) => {
   const [search, setSearch] = useState('');
 
-  const filteredCurrencies = ISO_CURRENCIES.filter(curr => 
+  const filteredCurrencies = ISO_CURRENCIES.filter(curr =>
     curr.name.toLowerCase().includes(search.toLowerCase()) ||
     curr.code.toLowerCase().includes(search.toLowerCase()) ||
     curr.country.toLowerCase().includes(search.toLowerCase())
@@ -77,14 +77,14 @@ const Settings: React.FC<{ state: AppState, setState: any }> = ({ state, setStat
           </div>
           <div className="p-8 space-y-6">
             <p className="text-sm text-slate-500 italic">This information will appear at the top of all your invoices.</p>
-            
+
             <div className="space-y-4">
               <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Business Name</label>
+                <label className="text-xs font-bold text-slate-400 uppercase  ">Business Name</label>
                 <div className="relative">
                   <Building className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20 font-semibold"
                     value={state.settings.business.name}
                     onChange={(e) => updateBusinessInfo('name', e.target.value)}
@@ -93,11 +93,11 @@ const Settings: React.FC<{ state: AppState, setState: any }> = ({ state, setStat
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Email Address</label>
+                <label className="text-xs font-bold text-slate-400 uppercase  ">Email Address</label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
-                  <input 
-                    type="email" 
+                  <input
+                    type="email"
                     className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20 font-semibold"
                     value={state.settings.business.email}
                     onChange={(e) => updateBusinessInfo('email', e.target.value)}
@@ -106,11 +106,11 @@ const Settings: React.FC<{ state: AppState, setState: any }> = ({ state, setStat
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Phone Number</label>
+                <label className="text-xs font-bold text-slate-400 uppercase  ">Phone Number</label>
                 <div className="relative">
                   <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20 font-semibold"
                     value={state.settings.business.phone}
                     onChange={(e) => updateBusinessInfo('phone', e.target.value)}
@@ -119,10 +119,10 @@ const Settings: React.FC<{ state: AppState, setState: any }> = ({ state, setStat
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Physical Address</label>
+                <label className="text-xs font-bold text-slate-400 uppercase  ">Physical Address</label>
                 <div className="relative">
                   <MapPin className="absolute left-3 top-3 text-slate-300" size={18} />
-                  <textarea 
+                  <textarea
                     className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20 font-semibold h-24 resize-none"
                     value={state.settings.business.address}
                     onChange={(e) => updateBusinessInfo('address', e.target.value)}
@@ -142,7 +142,7 @@ const Settings: React.FC<{ state: AppState, setState: any }> = ({ state, setStat
             </div>
             <div className="p-8 space-y-6">
               <div className="space-y-2">
-                <label className="text-sm font-bold text-slate-500 uppercase tracking-widest">Active Currency</label>
+                <label className="text-sm font-bold text-slate-500 uppercase  ">Active Currency</label>
                 <div className="flex items-center gap-4 p-4 bg-blue-50 rounded-xl border border-blue-100">
                   <div className="w-12 h-12 bg-blue-600 text-white rounded-lg flex items-center justify-center font-black text-xl">
                     {state.settings.currency.symbol}
@@ -155,12 +155,12 @@ const Settings: React.FC<{ state: AppState, setState: any }> = ({ state, setStat
               </div>
 
               <div className="space-y-4 pt-6 border-t border-slate-50">
-                <label className="text-sm font-bold text-slate-500 uppercase tracking-widest">Change Currency</label>
+                <label className="text-sm font-bold text-slate-500 uppercase  ">Change Currency</label>
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                  <input 
-                    type="text" 
-                    placeholder="Search currencies..." 
+                  <input
+                    type="text"
+                    placeholder="Search currencies..."
                     className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-300 rounded-xl outline-none"
                     value={search}
                     onChange={e => setSearch(e.target.value)}
@@ -168,14 +168,13 @@ const Settings: React.FC<{ state: AppState, setState: any }> = ({ state, setStat
                 </div>
                 <div className="grid grid-cols-1 gap-2 max-h-64 overflow-y-auto pr-2 custom-scrollbar">
                   {filteredCurrencies.map(curr => (
-                    <button 
+                    <button
                       key={curr.code}
                       onClick={() => handleCurrencyChange(curr)}
-                      className={`flex items-center justify-between p-4 rounded-xl border transition-all ${
-                        state.settings.currency.code === curr.code 
-                        ? 'border-blue-600 bg-blue-50' 
-                        : 'border-slate-100 hover:bg-slate-50'
-                      }`}
+                      className={`flex items-center justify-between p-4 rounded-xl border transition-all ${state.settings.currency.code === curr.code
+                          ? 'border-blue-600 bg-blue-50'
+                          : 'border-slate-100 hover:bg-slate-50'
+                        }`}
                     >
                       <div className="flex items-center gap-4">
                         <span className="text-xl font-bold w-8 text-center">{curr.symbol}</span>
@@ -201,7 +200,7 @@ const Settings: React.FC<{ state: AppState, setState: any }> = ({ state, setStat
                   <p className="font-bold text-slate-900">Document Watermark</p>
                   <p className="text-xs text-slate-500">Show a large brand logo in the background</p>
                 </div>
-                <button 
+                <button
                   onClick={() => toggleWatermark(!state.settings.branding.showWatermark)}
                   className={`w-12 h-6 rounded-full transition-colors relative ${state.settings.branding.showWatermark ? 'bg-blue-600' : 'bg-slate-300'}`}
                 >
@@ -212,14 +211,14 @@ const Settings: React.FC<{ state: AppState, setState: any }> = ({ state, setStat
               <div className={`space-y-6 ${state.settings.branding.showWatermark ? 'opacity-100' : 'opacity-50 pointer-events-none'}`}>
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <label className="text-sm font-bold text-slate-500 uppercase tracking-widest">Global Opacity</label>
+                    <label className="text-sm font-bold text-slate-500 uppercase  ">Global Opacity</label>
                     <span className="text-sm font-black text-blue-600">{Math.round(state.settings.branding.watermarkOpacity * 100)}%</span>
                   </div>
-                  <input 
-                    type="range" 
-                    min="0.1" 
-                    max="0.3" 
-                    step="0.01" 
+                  <input
+                    type="range"
+                    min="0.1"
+                    max="0.3"
+                    step="0.01"
                     value={state.settings.branding.watermarkOpacity}
                     onChange={(e) => updateWatermarkOpacity(parseFloat(e.target.value))}
                     className="w-full h-2 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-blue-600"

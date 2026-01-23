@@ -24,9 +24,8 @@ const StatCard = ({ title, value, icon: Icon, sub, trend, color, className = '' 
         <Icon size={20} className="drop-shadow-sm" />
       </div>
       {trend && (
-        <div className={`flex items-center gap-2 px-2 py-1 rounded-full text-xs font-bold ${
-          trend > 0 ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-rose-50 text-rose-700 border border-rose-200'
-        }`}>
+        <div className={`flex items-center gap-2 px-2 py-1 rounded-full text-xs font-bold ${trend > 0 ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-rose-50 text-rose-700 border border-rose-200'
+          }`}>
           <span className={`w-2 h-2 rounded-full ${trend > 0 ? 'bg-emerald-500' : 'bg-rose-500'}`}></span>
           {trend > 0 ? '+' : ''}{trend}%
         </div>
@@ -40,7 +39,7 @@ const StatCard = ({ title, value, icon: Icon, sub, trend, color, className = '' 
 
 const Dashboard: React.FC<{ state: AppState }> = ({ state }) => {
   const currencyCode = state.settings.currency.code;
-  
+
   const [dateRange, setDateRange] = useState<DateRange>(() => {
     const end = new Date();
     const start = new Date();
@@ -50,13 +49,13 @@ const Dashboard: React.FC<{ state: AppState }> = ({ state }) => {
 
   const stats = useMemo(() => {
     const invoices = state.salesDocuments.filter(d => d.type === 'INVOICE');
-    
+
     const filteredInvoices = invoices.filter(i => {
       if (!dateRange.start || !dateRange.end) return true;
       const invoiceDate = new Date(i.createdAt);
       return invoiceDate >= dateRange.start && invoiceDate <= dateRange.end;
     });
-    
+
     const totalEarned = filteredInvoices.filter(i => i.status === 'paid').reduce((acc, i) => acc + i.total, 0);
     const activeCount = state.projects.filter(p => p.status === 'active').length;
     const completedCount = state.projects.filter(p => p.status === 'completed').length;
@@ -88,7 +87,7 @@ const Dashboard: React.FC<{ state: AppState }> = ({ state }) => {
     const months: { month: string; year: number; monthIndex: number }[] = [];
     let current = new Date(filterStart.getFullYear(), filterStart.getMonth(), 1);
     const rangeEnd = new Date(filterEnd.getFullYear(), filterEnd.getMonth() + 1, 0);
-    
+
     while (current <= rangeEnd) {
       months.push({
         month: current.toLocaleString('default', { month: 'long' }),
@@ -154,7 +153,7 @@ const Dashboard: React.FC<{ state: AppState }> = ({ state }) => {
             <div className="flex-1 overflow-auto">
               <table className="w-full text-left">
                 <thead className="sticky top-0 bg-white/80 backdrop-blur-md">
-                  <tr className="text-slate-400 text-[10px] font-black uppercase tracking-widest border-b border-slate-100">
+                  <tr className="text-slate-400 text-[10px] font-black uppercase   border-b border-slate-100">
                     <th className="px-8 py-4">Client Project</th>
                     <th className="px-8 py-4 text-center">Deadline</th>
                     <th className="px-8 py-4 text-right">Status</th>
@@ -173,7 +172,7 @@ const Dashboard: React.FC<{ state: AppState }> = ({ state }) => {
                         </td>
                         <td className="py-6 text-sm text-slate-500 font-bold text-center">{formatDate(project.deadline)}</td>
                         <td className="py-6 text-right px-8">
-                          <span className={`inline-flex px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${status.color}`}>
+                          <span className={`inline-flex px-3 py-1 rounded-full text-[10px] font-black uppercase   ${status.color}`}>
                             {status.label}
                           </span>
                         </td>
@@ -203,12 +202,12 @@ const Dashboard: React.FC<{ state: AppState }> = ({ state }) => {
                       </div>
                       <div>
                         <p className="font-bold text-xs text-slate-900">{client?.name}</p>
-                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{doc.docNumber}</p>
+                        <p className="text-[10px] text-slate-400 font-bold uppercase  ">{doc.docNumber}</p>
                       </div>
                     </div>
                     <div className="text-right">
                       <p className="font-black text-sm text-slate-900">{formatCurrency(doc.total, currencyCode)}</p>
-                      <span className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${getStatusColor(doc.status)}`}>
+                      <span className={`text-[8px] font-black uppercase   px-2 py-0.5 rounded-full ${getStatusColor(doc.status)}`}>
                         {doc.status}
                       </span>
                     </div>

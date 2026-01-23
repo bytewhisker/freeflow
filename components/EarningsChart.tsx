@@ -31,16 +31,16 @@ const EarningsChart: React.FC<EarningsChartProps> = ({ data, totalRevenue, onRan
     <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden w-full p-8">
       <div className="flex justify-between items-start mb-6">
         <div>
-          <h2 className="text-[10px] font-black text-slate-400 tracking-widest mb-1 uppercase">Total Revenue</h2>
+          <h2 className="text-[10px] font-black text-slate-400   mb-1 uppercase">Total Revenue</h2>
           <p className="text-4xl font-black text-slate-900 tracking-tight">
             ${totalRevenue.toLocaleString()}
           </p>
         </div>
 
         <div className="no-print">
-          <select 
+          <select
             onChange={(e) => onRangeChange(e.target.value)}
-            className="px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-black uppercase tracking-widest text-slate-600 outline-none hover:bg-slate-100 transition-colors"
+            className="px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-black uppercase   text-slate-600 outline-none hover:bg-slate-100 transition-colors"
           >
             <option value="12months">Last 12 Months</option>
             <option value="90days">Last 90 Days</option>
@@ -53,8 +53,8 @@ const EarningsChart: React.FC<EarningsChartProps> = ({ data, totalRevenue, onRan
 
       <div className="h-[350px] w-full mt-4">
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart 
-            data={data} 
+          <AreaChart
+            data={data}
             margin={{ top: 10, right: 10, left: 0, bottom: 20 }}
           >
             <defs>
@@ -72,7 +72,7 @@ const EarningsChart: React.FC<EarningsChartProps> = ({ data, totalRevenue, onRan
               tickFormatter={(val) => val.slice(0, 3)}
               dy={15}
             />
-            <YAxis 
+            <YAxis
               tickLine={false}
               axisLine={false}
               tick={{ fill: '#94a3b8', fontSize: 11, fontWeight: 600 }}

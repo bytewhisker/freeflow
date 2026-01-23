@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { AppState, Project, SalesDocument } from '../types';
+import { AppState, Project, SalesDocument, Client } from '../types';
 import { formatDate, formatCurrency, formatRelativeTime } from '../utils';
 import {
   X, Mail, Phone, Building2, MapPin, Plus, FileText,
@@ -29,7 +29,28 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ state, setState, clientId: 
 
   const [activeTab, setActiveTab] = useState('overview');
   const [isHovered, setIsHovered] = useState(false);
-  const [isClosing, setIsClosing] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
+  const [editForm, setEditForm] = useState<Partial<Client>>({});
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    if (toast) {
+      const timer = setTimeout(() => setToast(null), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [toast]);
+
+  const countries = [
+    'Afghanistan', 'Albania', 'Algeria', 'Argentina', 'Australia', 'Austria', 'Bangladesh', 'Belgium',
+    'Brazil', 'Canada', 'Chile', 'China', 'Colombia', 'Czech Republic', 'Denmark', 'Egypt',
+    'Finland', 'France', 'Germany', 'Greece', 'Hungary', 'India', 'Indonesia', 'Ireland',
+    'Israel', 'Italy', 'Japan', 'Kenya', 'Malaysia', 'Mexico', 'Netherlands', 'New Zealand',
+    'Nigeria', 'Norway', 'Pakistan', 'Philippines', 'Poland', 'Portugal', 'Russia',
+    'Saudi Arabia', 'Singapore', 'South Africa', 'South Korea', 'Spain', 'Sweden', 'Switzerland',
+    'Thailand', 'Turkey', 'UAE', 'UK', 'USA', 'Vietnam'
+  ].sort();
 
   const client = state.clients.find(c => c.id === clientId);
   const clientProjects: Project[] = state.projects.filter(p => p.clientId === clientId);
@@ -112,22 +133,54 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ state, setState, clientId: 
   }, [clientProjects, clientDocs]);
 
   const handleClose = () => {
-    setIsClosing(true);
-    setTimeout(() => {
-      onClose();
-    }, 300);
+    onClose();
+  };
+
+  const handleEdit = () => {
+    if (client) {
+      setEditForm({
+        name: client.name,
+        email: client.email,
+        phone: client.phone,
+        countryCode: client.countryCode || '+1',
+        company: client.company || '',
+        country: client.country || '',
+        notes: client.notes || '',
+        socialMedia: client.socialMedia || {}
+      });
+      setIsEditing(true);
+    }
+  };
+
+  const handleUpdate = () => {
+    if (!client) return;
+    if (!editForm.name?.trim()) {
+      setErrors({ name: 'Name is required' });
+      return;
+    }
+    setState((prev: AppState) => ({
+      ...prev,
+      clients: prev.clients.map(c => c.id === clientId ? { ...c, ...editForm } : c)
+    }));
+    setIsEditing(false);
+    setErrors({});
+    setToast({ message: 'Client details updated successfully', type: 'success' });
   };
 
   const handleDelete = () => {
-    if (confirm('Delete client and all associated records?')) {
-      setState((prev: AppState) => ({
-        ...prev,
-        clients: prev.clients.filter(c => c.id !== clientId),
-        projects: prev.projects.filter(p => p.clientId !== clientId),
-        salesDocuments: prev.salesDocuments.filter(d => d.clientId !== clientId)
-      }));
-      handleClose();
-    }
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDelete = () => {
+    setState((prev: AppState) => ({
+      ...prev,
+      clients: prev.clients.filter(c => c.id !== clientId),
+      projects: prev.projects.filter(p => p.clientId !== clientId),
+      salesDocuments: prev.salesDocuments.filter(d => d.clientId !== clientId)
+    }));
+    setShowDeleteConfirm(false);
+    handleClose();
+    // Use window alert just as fallback if needed, but the redirect happens immediately.
   };
 
   const statusColors: Record<string, { bg: string; text: string; border: string; glow: string }> = {
@@ -196,354 +249,661 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ state, setState, clientId: 
   return (
     <>
       <div
-        className={`fixed inset-0 bg-black/50 z-40 transition-opacity duration-300 ${isClosing ? 'opacity-0' : 'opacity-100'}`}
-        onClick={handleClose}
-      />
-
-      <div
-        className={`fixed top-0 right-0 h-full w-full max-w-xl bg-white shadow-2xl z-50 flex flex-col transition-transform duration-300 ease-out ${isClosing ? 'translate-x-full' : 'translate-x-0'}`}
-        style={{ maxWidth: '50vw' }}
+        className={`w-full bg-white flex flex-col p-4 md:p-6 lg:p-8 min-h-screen`}
       >
-        <div className="flex flex-col h-full">
-          <div className="p-4 border-b border-slate-200 bg-white sticky top-0 z-10">
-            <div className="flex items-center justify-between">
-              <button
-                onClick={handleClose}
-                className="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition-colors"
-              >
-                <ChevronLeft size={16} className="text-slate-600" />
-              </button>
+        <div className="flex flex-col">
+          <div className="mb-2">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={handleClose}
+                  className="w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition-all hover:scale-105 active:scale-95"
+                >
+                  <ChevronLeft size={20} className="text-slate-600" />
+                </button>
+                <div className="flex items-center gap-4">
+                  <div
+                    className="w-12 h-12 rounded-2xl flex items-center justify-center text-lg font-black text-white shadow-lg"
+                    style={{ background: 'linear-gradient(135deg, #0EA5E9, #8B5CF6)' }}
+                  >
+                    {client.name[0]}
+                  </div>
+                  <div>
+                    <h1 className="text-2xl font-black text-slate-900 tracking-tight">{client.name}</h1>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <span
+                        className="px-2 py-0.5 rounded-lg text-[9px] font-black uppercase   shadow-sm"
+                        style={{ backgroundColor: clientStatusColor.bg, color: clientStatusColor.text, border: `1px solid ${clientStatusColor.border}` }}
+                      >
+                        {client.status || 'New'}
+                      </span>
+                      <span className="text-slate-400 text-[10px] font-bold">• Joined {formatDate(client.createdAt || new Date().toISOString())}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
               <div className="flex items-center gap-2">
-                <div
-                  className="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold text-white"
-                  style={{ background: 'linear-gradient(135deg, #0EA5E9, #8B5CF6)' }}
-                >
-                  {client.name[0]}
+                <div className="flex items-center gap-1.5 bg-slate-50 p-1 rounded-2xl">
+                  <button
+                    onClick={() => {
+                      setToast({ message: 'Initializing Invoice Builder...', type: 'info' });
+                      setTimeout(() => navigate('/billing/new', { state: { clientId: client.id } }), 500);
+                    }}
+                    className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-xl text-[10px] font-black uppercase   hover:bg-emerald-700 transition-all hover:shadow-lg active:scale-95 shadow-md shadow-emerald-100"
+                  >
+                    <Plus size={14} /> New Invoice
+                  </button>
+                  <button
+                    onClick={() => {
+                      setToast({ message: 'Opening Project Creator...', type: 'info' });
+                      setTimeout(() => navigate('/projects', { state: { clientId: client.id } }), 500);
+                    }}
+                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase   hover:bg-blue-700 transition-all hover:shadow-lg active:scale-95 shadow-md shadow-blue-100"
+                  >
+                    <Plus size={14} /> New Project
+                  </button>
+                  <a
+                    href={`mailto:${client.email}`}
+                    className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-xl text-[10px] font-black uppercase   hover:bg-purple-700 transition-all hover:shadow-lg active:scale-95 shadow-md shadow-purple-100"
+                  >
+                    <Send size={14} /> Message
+                  </a>
                 </div>
-                <div>
-                  <h2 className="text-lg font-bold text-slate-900">{client.name}</h2>
-                </div>
-                <span
-                  className="px-2 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider"
-                  style={{ backgroundColor: clientStatusColor.bg, color: clientStatusColor.text }}
+                <div className="w-px h-6 bg-slate-200 mx-1"></div>
+                <button
+                  onClick={handleEdit}
+                  className="p-2 text-slate-400 hover:text-slate-900 hover:bg-white hover:shadow-sm rounded-xl transition-all"
+                  title="Edit Client"
                 >
-                  {client.status || 'New'}
-                </span>
-              </div>
-              <button className="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition-colors">
-                <MoreHorizontal size={16} className="text-slate-600" />
-              </button>
-            </div>
-          </div>
-
-          <div className="p-4 bg-slate-50/50">
-            <div className="grid grid-cols-4 gap-2 text-center">
-              <div>
-                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Billed</p>
-                <p className="text-lg font-black text-emerald-600">{formatCurrency(animatedStats.totalRevenue)}</p>
-              </div>
-              <div>
-                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Outstanding</p>
-                <p className={`text-lg font-black ${stats.pendingAmount > 0 ? 'text-amber-600' : 'text-slate-400'}`}>
-                  {formatCurrency(animatedStats.pendingAmount)}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Projects</p>
-                <p className="text-lg font-black text-blue-600">{animatedStats.activeProjects}</p>
-              </div>
-              <div>
-                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Invoices</p>
-                <p className="text-lg font-black text-slate-600">{stats.totalInvoices}</p>
+                  <Edit3 size={18} />
+                </button>
+                <button
+                  onClick={handleDelete}
+                  className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all"
+                  title="Delete Client"
+                >
+                  <Trash size={18} />
+                </button>
               </div>
             </div>
-          </div>
 
-          <div className="p-4 bg-white border-b border-slate-200">
-            <div className="grid grid-cols-2 gap-3">
-              <button className="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-bold hover:bg-blue-700 transition-colors">
-                <Plus size={12} /> New Invoice
-              </button>
-              <button className="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-bold hover:bg-blue-700 transition-colors">
-                <Plus size={12} /> New Project
-              </button>
-              <button className="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-slate-100 text-slate-700 rounded-lg text-xs font-bold hover:bg-slate-200 transition-colors">
-                <MessageSquare size={12} /> Message
-              </button>
-              <button className="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-slate-100 text-slate-700 rounded-lg text-xs font-bold hover:bg-slate-200 transition-colors">
-                <Edit3 size={12} /> Edit
-              </button>
-            </div>
-          </div>
-
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {activeTab === 'overview' && (
-              <>
-                <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
-                  <h3 className="text-sm font-bold text-slate-900 mb-3">Contact Information</h3>
-                  <div className="grid grid-cols-2 gap-3 text-xs">
-                    <div className="flex items-center gap-2">
-                      <Mail size={14} className="text-blue-600" />
-                      <div>
-                        <p className="text-slate-500 font-bold uppercase">Email</p>
-                        <p className="text-slate-900 font-medium">{client.email}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Phone size={14} className="text-emerald-600" />
-                      <div>
-                        <p className="text-slate-500 font-bold uppercase">Phone</p>
-                        <p className="text-slate-900 font-medium">{client.countryCode || ''} {client.phone || 'Not provided'}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Building2 size={14} className="text-purple-600" />
-                      <div>
-                        <p className="text-slate-500 font-bold uppercase">Company</p>
-                        <p className="text-slate-900 font-medium">{client.company || 'Private Client'}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <MapPin size={14} className="text-amber-600" />
-                      <div>
-                        <p className="text-slate-500 font-bold uppercase">Country</p>
-                        <p className="text-slate-900 font-medium">{client.country || 'Not specified'}</p>
-                      </div>
+            <div className="grid grid-cols-4 gap-4">
+              {[
+                { label: 'Total Billed', value: formatCurrency(animatedStats.totalRevenue), color: 'emerald', icon: DollarSign },
+                { label: 'Outstanding', value: formatCurrency(animatedStats.pendingAmount), color: stats.pendingAmount > 0 ? 'amber' : 'slate', icon: Clock },
+                { label: 'Active Projects', value: animatedStats.activeProjects, color: 'blue', icon: Briefcase },
+                {
+                  label: 'Health Score',
+                  value: `${stats.healthScore}%`,
+                  color: 'purple',
+                  icon: Zap,
+                  tooltip: stats.healthScore === 0 ? 'NO RECENT ACTIVITY' : `${stats.healthScore}% of possible performance`
+                }
+              ].map((stat, i) => (
+                <div key={i} className="bg-white p-3 md:p-4 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all group relative overflow-hidden">
+                  {stat.label === 'Health Score' && stats.healthScore === 0 && (
+                    <div className="absolute top-0 right-0 w-16 h-16 -mr-8 -mt-8 bg-slate-50 rotate-45 group-hover:bg-slate-100 transition-colors"></div>
+                  )}
+                  <div className="flex items-center justify-between mb-1 relative z-10">
+                    <p className="text-[9px] font-black text-slate-400 uppercase  ">{stat.label}</p>
+                    <div className={`p-1.5 rounded-lg ${stat.label === 'Health Score' && stats.healthScore === 0
+                      ? 'bg-slate-100 text-slate-400'
+                      : `bg-${stat.color}-50 text-${stat.color}-500`
+                      } group-hover:scale-110 transition-transform`}>
+                      <stat.icon size={12} />
                     </div>
                   </div>
+                  <div className="flex items-baseline gap-2 relative z-10">
+                    <p className={`text-xl font-black text-slate-900 tracking-tight ${stat.label === 'Health Score' && stats.healthScore === 0 ? 'text-slate-300' : ''}`}>
+                      {stat.value}
+                    </p>
+                    {stat.tooltip && (
+                      <span className={`text-[8px] font-black uppercase tracking-tighter ${stat.label === 'Health Score' && stats.healthScore === 0 ? 'text-slate-400 bg-slate-50 px-1.5 py-0.5 rounded' : 'text-slate-400'
+                        }`}>
+                        {stat.tooltip}
+                      </span>
+                    )}
+                  </div>
                 </div>
+              ))}
+            </div>
+          </div>
 
-                {clientProjects.length > 0 && (
-                  <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
-                    <div className="flex items-center justify-between mb-3">
-                      <h3 className="text-sm font-bold text-slate-900">Recent Projects</h3>
-                      <button className="text-blue-600 font-medium text-xs hover:underline">View All</button>
-                    </div>
-                    <div className="space-y-2">
-                      {clientProjects.slice(0, 4).map(project => (
-                        <div key={project.id} className="flex items-center justify-between p-2 bg-slate-50 rounded-lg">
-                          <div>
-                            <p className="font-bold text-xs text-slate-900">{project.title}</p>
-                            <p className="text-xs text-slate-500">{formatCurrency(project.totalBudget)}</p>
+          <div className="flex gap-4 flex-1">
+            {/* Sidebar Navigation */}
+            <div className="w-52 flex flex-col gap-1">
+              {tabs.map((tab) => {
+                const Icon = tab.icon;
+                const isActive = activeTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 ${isActive
+                      ? 'bg-slate-900 text-white shadow-lg'
+                      : 'text-slate-500 hover:bg-slate-100'
+                      }`}
+                  >
+                    <Icon size={14} />
+                    <span className="font-black text-[10px] uppercase  ">{tab.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Main Content Area */}
+            <div className="flex-1 min-h-0">
+              <div className="bg-slate-50/50 rounded-[32px] p-6 border border-slate-100 space-y-4">
+                {activeTab === 'overview' && (
+                  <>
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+                      <div className="lg:col-span-7 space-y-6">
+                        <div className="bg-white rounded-[32px] p-6 border border-slate-200/60 shadow-sm hover:shadow-md transition-all">
+                          <div className="flex items-center justify-between mb-5 pb-2 border-b border-slate-50">
+                            <h3 className="text-[10px] font-black text-slate-900 uppercase tracking-[0.2em]">Contact Information</h3>
                           </div>
-                          <span
-                            className="px-1.5 py-0.5 rounded-full text-xs font-bold uppercase"
-                            style={{
-                              backgroundColor: project.status === 'active' ? '#ECFDF5' : '#FEF3C7',
-                              color: project.status === 'active' ? '#166534' : '#92400E'
-                            }}
-                          >
-                            {project.status}
-                          </span>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-y-5 gap-x-8">
+                            <div className="flex items-start gap-3.5">
+                              <div className="p-2 rounded-2xl bg-blue-50 text-blue-500">
+                                <Mail size={16} />
+                              </div>
+                              <div className="min-w-0">
+                                <p className="text-[9px] font-black text-slate-400 uppercase   mb-0.5">Email Address</p>
+                                <p className="text-[13px] font-bold text-slate-900 truncate">{client.email}</p>
+                              </div>
+                            </div>
+                            <div className="flex items-start gap-3.5">
+                              <div className="p-2 rounded-2xl bg-emerald-50 text-emerald-500">
+                                <Phone size={16} />
+                              </div>
+                              <div className="min-w-0">
+                                <p className="text-[9px] font-black text-slate-400 uppercase   mb-0.5">Phone Number</p>
+                                <p className="text-[13px] font-bold text-slate-900">{client.countryCode || ''} {client.phone || 'Not provided'}</p>
+                              </div>
+                            </div>
+                            <div className="flex items-start gap-3.5">
+                              <div className="p-2 rounded-2xl bg-purple-50 text-purple-500">
+                                <Building2 size={16} />
+                              </div>
+                              <div className="min-w-0">
+                                <p className="text-[9px] font-black text-slate-400 uppercase   mb-0.5">Company / Org</p>
+                                <p className="text-[13px] font-bold text-slate-900">{client.company || 'Private Client'}</p>
+                              </div>
+                            </div>
+                            <div className="flex items-start gap-3.5">
+                              <div className="p-2 rounded-2xl bg-amber-50 text-amber-500">
+                                <MapPin size={16} />
+                              </div>
+                              <div className="min-w-0">
+                                <p className="text-[9px] font-black text-slate-400 uppercase   mb-0.5">Location</p>
+                                <p className="text-[13px] font-bold text-slate-900">{client.country || 'Not specified'}</p>
+                              </div>
+                            </div>
+                          </div>
                         </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
 
-                {clientDocs.length > 0 && (
-                  <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
-                    <div className="flex items-center justify-between mb-3">
-                      <h3 className="text-sm font-bold text-slate-900">Recent Invoices</h3>
-                      <button className="text-blue-600 font-medium text-xs hover:underline">View All</button>
-                    </div>
-                    <div className="space-y-2">
-                      {clientDocs.slice(0, 4).map(doc => (
-                        <div key={doc.id} className="flex items-center justify-between p-2 bg-slate-50 rounded-lg">
-                          <div>
-                            <p className="font-bold text-xs text-slate-900">{doc.docNumber}</p>
-                            <p className="text-xs text-slate-500">{formatDate(doc.createdAt)}</p>
+                        {client.notes && (
+                          <div className="bg-white rounded-[32px] p-6 border border-slate-200/60 shadow-sm hover:shadow-md transition-all">
+                            <h3 className="text-[10px] font-black text-slate-900 uppercase tracking-[0.2em] mb-4">Internal Client Notes</h3>
+                            <p className="text-[13px] text-slate-600 leading-relaxed italic border-l-4 border-slate-100 pl-6 py-2 bg-slate-50/30 rounded-r-2xl">
+                              "{client.notes}"
+                            </p>
                           </div>
-                          <div className="text-right">
-                            <p className="font-bold text-xs text-slate-900">{formatCurrency(doc.total)}</p>
-                            <span
-                              className="px-1.5 py-0.5 rounded-full text-xs font-bold uppercase"
-                              style={{
-                                backgroundColor: doc.status === 'paid' ? '#ECFDF5' : doc.status === 'overdue' ? '#FEF2F2' : '#EFF6FF',
-                                color: doc.status === 'paid' ? '#166534' : doc.status === 'overdue' ? '#DC2626' : '#1E40AF'
-                              }}
-                            >
-                              {doc.status}
+                        )}
+                      </div>
+
+                      <div className="lg:col-span-5 space-y-4">
+                        {/* Activity Preview */}
+                        <div className="bg-white rounded-[32px] p-6 border border-slate-200/60 shadow-sm hover:shadow-md transition-all">
+                          <div className="flex items-center justify-between mb-5">
+                            <h3 className="text-[10px] font-black text-slate-900 uppercase tracking-[0.2em]">Recent Activity</h3>
+                            <button onClick={() => setActiveTab('activity')} className="text-[10px] font-black uppercase   text-blue-600 hover:text-blue-700">View All</button>
+                          </div>
+                          <div className="space-y-3">
+                            {activityTimeline.length === 0 ? (
+                              <p className="text-[11px] text-slate-400 py-4 text-center italic">No recent activity logged</p>
+                            ) : (
+                              activityTimeline.slice(0, 3).map((activity) => (
+                                <div key={activity.id} className="flex items-start gap-3 pb-3 border-b border-slate-50 last:border-0 last:pb-0">
+                                  <div className="p-2 rounded-xl bg-slate-50 text-slate-400">
+                                    <activity.icon size={13} style={{ color: activity.color }} />
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex justify-between items-center mb-0.5">
+                                      <p className="text-[12px] font-bold text-slate-900">{activity.title}</p>
+                                      <span className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">{formatRelativeTime(activity.timestamp)}</span>
+                                    </div>
+                                    <p className="text-[11px] text-slate-500 truncate">{activity.description}</p>
+                                  </div>
+                                </div>
+                              ))
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Projects Preview */}
+                        <div className="bg-white rounded-[32px] p-6 border border-slate-200/60 shadow-sm hover:shadow-md transition-all">
+                          <div className="flex items-center justify-between mb-5">
+                            <h3 className="text-[10px] font-black text-slate-900 uppercase tracking-[0.2em]">Active Projects</h3>
+                            <button onClick={() => setActiveTab('projects')} className="text-[10px] font-black uppercase   text-blue-600 hover:text-blue-700">View All</button>
+                          </div>
+                          <div className="space-y-2.5">
+                            {clientProjects.filter(p => p.status === 'active').slice(0, 3).map(project => (
+                              <div key={project.id} className="flex items-center justify-between p-3 bg-slate-50/50 hover:bg-white hover:border-blue-100 border border-transparent rounded-2xl transition-all shadow-sm group/project">
+                                <div className="min-w-0">
+                                  <p className="font-bold text-[12px] text-slate-900 truncate group-hover/project:text-blue-600 transition-colors">{project.title}</p>
+                                  <p className="text-[10px] font-black text-slate-400 uppercase   mt-0.5">{formatCurrency(project.totalBudget)}</p>
+                                </div>
+                                <div className="w-7 h-7 rounded-full bg-white flex items-center justify-center shadow-sm group-hover/project:translate-x-1 transition-transform">
+                                  <ChevronRight size={14} className="text-slate-300" />
+                                </div>
+                              </div>
+                            ))}
+                            {clientProjects.filter(p => p.status === 'active').length === 0 && (
+                              <div className="text-center py-6 bg-slate-50/30 rounded-3xl border border-dashed border-slate-100">
+                                <div className="w-10 h-10 rounded-2xl bg-white flex items-center justify-center mx-auto mb-2 shadow-sm">
+                                  <Plus size={18} className="text-slate-200" />
+                                </div>
+                                <p className="text-[9px] font-black text-slate-300 uppercase  ">No active projects</p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* BOTTOM WHITESPACE FILLER: Engagement & Financial Trend */}
+                    <div className="bg-white rounded-[32px] p-8 border border-slate-100 shadow-sm hover:shadow-md transition-all">
+                      <div className="flex items-center justify-between mb-6 pb-4 border-b border-slate-50/50">
+                        <div>
+                          <h3 className="text-[10px] font-black text-slate-900 uppercase tracking-[0.2em] flex items-center gap-2">
+                            <TrendingUp size={14} className="text-blue-600" />
+                            Relationship Performance
+                          </h3>
+                          <p className="text-[10px] text-slate-400 mt-1 font-medium italic">Growth metrics and relationship health over the last 6 months</p>
+                        </div>
+                        <div className="flex items-center gap-4 bg-slate-50 p-1.5 rounded-2xl">
+                          <button className="px-4 py-1.5 rounded-xl bg-white shadow-sm text-[10px] font-black uppercase text-slate-900 transition-all">Revenue</button>
+                          <button className="px-4 py-1.5 rounded-xl text-[10px] font-black uppercase text-slate-400 hover:text-slate-600 transition-all">Projects</button>
+                        </div>
+                      </div>
+
+                      <div className="h-64 flex items-end justify-between gap-4 px-2">
+                        {[40, 65, 45, 90, 75, 100].map((height, i) => (
+                          <div key={i} className="flex-1 flex flex-col items-center gap-4 group">
+                            <div className="w-full relative flex items-end justify-center">
+                              <div
+                                className="w-full rounded-2xl transition-all duration-1000 group-hover:brightness-110 shadow-lg shadow-blue-50/50"
+                                style={{
+                                  height: `${height}%`,
+                                  background: height > 80
+                                    ? 'linear-gradient(to top, #3B82F6, #60A5FA)'
+                                    : 'linear-gradient(to top, #E2E8F0, #F1F5F9)'
+                                }}
+                              ></div>
+                              <div className="absolute -top-10 opacity-0 group-hover:opacity-100 transition-all bg-slate-900 text-white text-[10px] font-black px-3 py-1.5 rounded-lg shadow-xl translate-y-2 group-hover:translate-y-0 duration-300">
+                                {formatCurrency((height * 125))}
+                              </div>
+                            </div>
+                            <span className="text-[10px] font-black text-slate-400 uppercase  ">
+                              {['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'][i]}
                             </span>
                           </div>
+                        ))}
+                      </div>
+
+                      <div className="grid grid-cols-3 gap-6 mt-12 pt-8 border-t border-slate-50">
+                        <div className="flex items-center gap-4">
+                          <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                            <TrendingUp size={20} />
+                          </div>
+                          <div>
+                            <p className="text-[9px] font-black text-slate-400 uppercase  ">Growth</p>
+                            <p className="text-base font-black text-slate-900">+24.8%</p>
+                          </div>
                         </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {client.notes && (
-                  <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
-                    <h3 className="text-sm font-bold text-slate-900 mb-2">Notes</h3>
-                    <p className="text-xs text-slate-600 leading-relaxed">{client.notes}</p>
-                  </div>
-                )}
-              </>
-            )}
-
-            {activeTab === 'projects' && (
-              <div className="space-y-2">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <span className="px-2 py-0.5 rounded-lg bg-emerald-100 text-emerald-700 font-bold text-xs">
-                      {clientProjects.filter(p => p.status === 'active').length} Active
-                    </span>
-                    <span className="px-2 py-0.5 rounded-lg bg-blue-100 text-blue-700 font-bold text-xs">
-                      {clientProjects.filter(p => p.status === 'completed').length} Completed
-                    </span>
-                  </div>
-                  <button className="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-bold hover:bg-blue-700 transition-colors">
-                    <Plus size={12} /> New Project
-                  </button>
-                </div>
-
-                {clientProjects.length === 0 ? (
-                  <div className="bg-white rounded-xl p-6 text-center border border-slate-200 shadow-sm">
-                    <Briefcase size={32} className="text-slate-300 mx-auto mb-3" />
-                    <h3 className="text-sm font-bold text-slate-900 mb-1">No projects yet</h3>
-                    <p className="text-xs text-slate-500 mb-3">Start your first project with this client</p>
-                    <button className="flex items-center justify-center gap-1.5 px-4 py-2 bg-blue-600 text-white rounded-lg text-xs font-bold hover:bg-blue-700 transition-colors">
-                      <Plus size={12} /> Create Project
-                    </button>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    {clientProjects.map(project => (
-                      <div key={project.id} className="bg-white rounded-xl p-3 border border-slate-200 hover:border-blue-300 transition-colors cursor-pointer shadow-sm">
-                        <div className="flex items-center justify-between mb-2">
-                          <h4 className="font-bold text-xs text-slate-900">{project.title}</h4>
-                          <span
-                            className="px-1.5 py-0.5 rounded-full text-xs font-bold uppercase"
-                            style={{
-                              backgroundColor: project.status === 'active' ? '#ECFDF5' : project.status === 'completed' ? '#E0F2FE' : '#FEF3C7',
-                              color: project.status === 'active' ? '#166534' : project.status === 'completed' ? '#0E7490' : '#92400E'
-                            }}
-                          >
-                            {project.status}
-                          </span>
+                        <div className="flex items-center gap-4">
+                          <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center">
+                            <CheckCircle size={20} />
+                          </div>
+                          <div>
+                            <p className="text-[9px] font-black text-slate-400 uppercase  ">Retention</p>
+                            <p className="text-base font-black text-slate-900">High</p>
+                          </div>
                         </div>
-                        <p className="text-xs text-slate-500 mb-2">{project.description || 'No description'}</p>
-                        <div className="flex items-center justify-between text-xs">
-                          <span className="flex items-center gap-1 text-slate-500">
-                            <DollarSign size={12} />
-                            <span className="font-bold text-slate-700">{formatCurrency(project.totalBudget)}</span>
-                          </span>
-                          <span className="flex items-center gap-1 text-slate-500">
-                            <Calendar size={12} />
-                            <span>Due {formatDate(project.deadline)}</span>
-                          </span>
+                        <div className="flex items-center gap-4">
+                          <div className="w-12 h-12 rounded-2xl bg-slate-50 text-slate-400 flex items-center justify-center">
+                            <Clock size={20} />
+                          </div>
+                          <div>
+                            <p className="text-[9px] font-black text-slate-400 uppercase  ">Lifetime</p>
+                            <p className="text-base font-black text-slate-900">1.2 Years</p>
+                          </div>
                         </div>
                       </div>
-                    ))}
-                  </div>
+                    </div>
+                  </>
                 )}
-              </div>
-            )}
 
-            {activeTab === 'invoices' && (
-              <div className="space-y-2">
-                <div className="grid grid-cols-3 gap-2">
-                  <div className="bg-emerald-50 rounded-xl p-3 border border-emerald-200 shadow-sm">
-                    <p className="text-xs font-bold text-emerald-600 uppercase">Paid</p>
-                    <p className="text-lg font-black text-emerald-700">{formatCurrency(stats.totalRevenue)}</p>
-                    <p className="text-xs text-emerald-500">{stats.paidInvoices} invoices</p>
-                  </div>
-                  <div className="bg-amber-50 rounded-xl p-3 border border-amber-200 shadow-sm">
-                    <p className="text-xs font-bold text-amber-600 uppercase">Pending</p>
-                    <p className="text-lg font-black text-amber-700">{formatCurrency(stats.pendingAmount)}</p>
-                    <p className="text-xs text-amber-500">{stats.pendingInvoices} invoices</p>
-                  </div>
-                  <div className="bg-red-50 rounded-xl p-3 border border-red-200 shadow-sm">
-                    <p className="text-xs font-bold text-red-600 uppercase">Overdue</p>
-                    <p className="text-lg font-black text-red-700">{stats.overdueCount}</p>
-                    <p className="text-xs text-red-500">invoices</p>
-                  </div>
-                </div>
+                {activeTab === 'projects' && (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <span className="px-2 py-0.5 rounded-lg bg-emerald-100 text-emerald-700 font-bold text-[10px] uppercase tracking-wider">
+                          {clientProjects.filter(p => p.status === 'active').length} Active
+                        </span>
+                        <span className="px-2 py-0.5 rounded-lg bg-blue-100 text-blue-700 font-bold text-[10px] uppercase tracking-wider">
+                          {clientProjects.filter(p => p.status === 'completed').length} Completed
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => navigate('/projects', { state: { clientId: client.id } })}
+                        className="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white rounded-lg text-[10px] font-black uppercase   hover:bg-blue-700 transition-colors shadow-sm"
+                      >
+                        <Plus size={12} /> New Project
+                      </button>
+                    </div>
 
-                <button className="w-full py-2.5 bg-blue-600 text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-blue-700 transition-colors text-xs">
-                  <Plus size={14} /> Create Invoice
-                </button>
-
-                {clientDocs.length === 0 ? (
-                  <div className="bg-white rounded-xl p-6 text-center border border-slate-200 shadow-sm">
-                    <FileTextIcon size={32} className="text-slate-300 mx-auto mb-3" />
-                    <h3 className="text-sm font-bold text-slate-900 mb-1">No invoices yet</h3>
-                    <p className="text-xs text-slate-500">Create your first invoice for this client</p>
-                  </div>
-                ) : (
-                  <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
-                    <table className="w-full text-xs">
-                      <thead className="bg-slate-50">
-                        <tr>
-                          <th className="px-3 py-2 text-left font-bold text-slate-600 uppercase">Invoice</th>
-                          <th className="px-3 py-2 text-left font-bold text-slate-600 uppercase">Date</th>
-                          <th className="px-3 py-2 text-right font-bold text-slate-600 uppercase">Amount</th>
-                          <th className="px-3 py-2 text-left font-bold text-slate-600 uppercase">Status</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100">
-                        {clientDocs.map(doc => (
-                          <tr key={doc.id} className="hover:bg-slate-50 cursor-pointer">
-                            <td className="px-3 py-2 font-bold text-slate-900">{doc.docNumber}</td>
-                            <td className="px-3 py-2 text-slate-600">{formatDate(doc.createdAt)}</td>
-                            <td className="px-3 py-2 text-right font-bold text-slate-900">{formatCurrency(doc.total)}</td>
-                            <td className="px-3 py-2">
+                    {clientProjects.length === 0 ? (
+                      <div className="bg-white rounded-2xl p-8 text-center border border-slate-200 shadow-sm border-dashed">
+                        <Briefcase size={32} className="text-slate-300 mx-auto mb-3" />
+                        <h3 className="text-sm font-bold text-slate-900 mb-1">No projects yet</h3>
+                        <p className="text-xs text-slate-500 mb-4">Start your first project with this client</p>
+                        <button
+                          onClick={() => navigate('/projects', { state: { clientId: client.id } })}
+                          className="inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-blue-600 text-white rounded-lg text-xs font-bold hover:bg-blue-700 transition-colors"
+                        >
+                          <Plus size={12} /> Create Project
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {clientProjects.map(project => (
+                          <div key={project.id} className="bg-white rounded-xl p-4 border border-slate-200 hover:border-blue-300 hover:shadow-md transition-all cursor-pointer group">
+                            <div className="flex items-center justify-between mb-2">
+                              <h4 className="font-bold text-sm text-slate-900 group-hover:text-blue-600 transition-colors">{project.title}</h4>
                               <span
-                                className="px-1.5 py-0.5 rounded-full text-xs font-bold uppercase"
+                                className="px-1.5 py-0.5 rounded-full text-[9px] font-black uppercase  "
                                 style={{
-                                  backgroundColor: doc.status === 'paid' ? '#ECFDF5' : doc.status === 'overdue' ? '#FEF2F2' : '#EFF6FF',
-                                  color: doc.status === 'paid' ? '#166534' : doc.status === 'overdue' ? '#DC2626' : '#1E40AF'
+                                  backgroundColor: project.status === 'active' ? '#ECFDF5' : project.status === 'completed' ? '#E0F2FE' : '#FEF3C7',
+                                  color: project.status === 'active' ? '#166534' : project.status === 'completed' ? '#0E7490' : '#92400E'
                                 }}
                               >
-                                {doc.status}
+                                {project.status}
                               </span>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {activeTab === 'activity' && (
-              <div className="space-y-2">
-                {activityTimeline.length === 0 ? (
-                  <div className="bg-white rounded-xl p-6 text-center border border-slate-200 shadow-sm">
-                    <Activity size={32} className="text-slate-300 mx-auto mb-3" />
-                    <h3 className="text-sm font-bold text-slate-900 mb-1">No activity yet</h3>
-                    <p className="text-xs text-slate-500">Activity will appear here as you work with this client</p>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    {activityTimeline.map((activity) => {
-                      const Icon = activity.icon;
-                      return (
-                        <div key={activity.id} className="bg-white rounded-xl p-3 border border-slate-200 flex items-start gap-3 shadow-sm">
-                          <div
-                            className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-                            style={{ backgroundColor: `${activity.color}20` }}
-                          >
-                            <Icon size={14} style={{ color: activity.color }} />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center justify-between">
-                              <h4 className="font-bold text-xs text-slate-900">{activity.title}</h4>
-                              <span className="text-xs text-slate-500">{formatRelativeTime(activity.timestamp)}</span>
                             </div>
-                            <p className="text-xs text-slate-600 truncate">{activity.description}</p>
+                            <p className="text-xs text-slate-500 mb-3 line-clamp-1">{project.description || 'No description'}</p>
+                            <div className="flex items-center justify-between text-[10px] pt-3 border-t border-slate-50">
+                              <span className="flex items-center gap-1 font-bold text-slate-700">
+                                <DollarSign size={10} />
+                                {formatCurrency(project.totalBudget)}
+                              </span>
+                              <span className="flex items-center gap-1 text-slate-400 font-medium">
+                                <Calendar size={10} />
+                                {formatDate(project.deadline)}
+                              </span>
+                            </div>
                           </div>
-                        </div>
-                      );
-                    })}
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {activeTab === 'invoices' && (
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-3 gap-3">
+                      <div className="bg-emerald-50 rounded-2xl p-4 border border-emerald-100 shadow-sm">
+                        <p className="text-[9px] font-black text-emerald-600 uppercase   mb-1">Paid</p>
+                        <p className="text-xl font-black text-emerald-700">{formatCurrency(stats.totalRevenue)}</p>
+                        <p className="text-[10px] text-emerald-500 font-bold">{stats.paidInvoices} invoices</p>
+                      </div>
+                      <div className="bg-amber-50 rounded-2xl p-4 border border-amber-100 shadow-sm">
+                        <p className="text-[9px] font-black text-amber-600 uppercase   mb-1">Pending</p>
+                        <p className="text-xl font-black text-amber-700">{formatCurrency(stats.pendingAmount)}</p>
+                        <p className="text-[10px] text-amber-500 font-bold">{stats.pendingInvoices} invoices</p>
+                      </div>
+                      <div className="bg-rose-50 rounded-2xl p-4 border border-rose-100 shadow-sm">
+                        <p className="text-[9px] font-black text-rose-600 uppercase   mb-1">Overdue</p>
+                        <p className="text-xl font-black text-rose-700">{stats.overdueCount}</p>
+                        <p className="text-[10px] text-rose-500 font-bold">Action required</p>
+                      </div>
+                    </div>
+
+                    {clientDocs.length === 0 ? (
+                      <div className="bg-white rounded-2xl p-8 text-center border border-slate-200 shadow-sm border-dashed">
+                        <FileTextIcon size={32} className="text-slate-300 mx-auto mb-3" />
+                        <h3 className="text-sm font-bold text-slate-900 mb-1">No invoices yet</h3>
+                        <p className="text-xs text-slate-500">Create your first invoice for this client</p>
+                      </div>
+                    ) : (
+                      <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+                        <table className="w-full text-xs">
+                          <thead className="bg-slate-50">
+                            <tr>
+                              <th className="px-4 py-3 text-left font-black text-slate-400 uppercase  ">Invoice</th>
+                              <th className="px-4 py-3 text-left font-black text-slate-400 uppercase  ">Date</th>
+                              <th className="px-4 py-3 text-right font-black text-slate-400 uppercase  ">Amount</th>
+                              <th className="px-4 py-3 text-left font-black text-slate-400 uppercase  ">Status</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100">
+                            {clientDocs.map(doc => (
+                              <tr key={doc.id} className="hover:bg-slate-50 transition-colors cursor-pointer group">
+                                <td className="px-4 py-3 font-bold text-slate-900 group-hover:text-blue-600 transition-colors uppercase tracking-tight">{doc.docNumber}</td>
+                                <td className="px-4 py-3 text-slate-500">{formatDate(doc.createdAt)}</td>
+                                <td className="px-4 py-3 text-right font-black text-slate-900">{formatCurrency(doc.total)}</td>
+                                <td className="px-4 py-3">
+                                  <span
+                                    className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase  "
+                                    style={{
+                                      backgroundColor: doc.status === 'paid' ? '#ECFDF5' : doc.status === 'overdue' ? '#FEF2F2' : '#EFF6FF',
+                                      color: doc.status === 'paid' ? '#166534' : doc.status === 'overdue' ? '#DC2626' : '#1E40AF'
+                                    }}
+                                  >
+                                    {doc.status}
+                                  </span>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {activeTab === 'activity' && (
+                  <div className="space-y-3">
+                    {activityTimeline.length === 0 ? (
+                      <div className="bg-white rounded-2xl p-8 text-center border border-slate-200 shadow-sm border-dashed">
+                        <Activity size={32} className="text-slate-300 mx-auto mb-3" />
+                        <h3 className="text-sm font-bold text-slate-900 mb-1">No activity yet</h3>
+                        <p className="text-xs text-slate-500">Track milestones and updates here</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-2.5">
+                        {activityTimeline.map((activity) => {
+                          const Icon = activity.icon;
+                          return (
+                            <div key={activity.id} className="bg-white rounded-xl p-3 border border-slate-100 flex items-start gap-3 shadow-sm hover:shadow-md transition-all">
+                              <div
+                                className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm"
+                                style={{ backgroundColor: `${activity.color}10` }}
+                              >
+                                <Icon size={16} style={{ color: activity.color }} />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center justify-between mb-0.5">
+                                  <h4 className="font-bold text-xs text-slate-900">{activity.title}</h4>
+                                  <span className="text-[10px] text-slate-400 font-medium">{formatRelativeTime(activity.timestamp)}</span>
+                                </div>
+                                <p className="text-xs text-slate-500 truncate">{activity.description}</p>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
-            )}
+            </div>
           </div>
         </div>
       </div>
+
+      {/* Edit Client Modal */}
+      {isEditing && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[100] p-4 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="bg-white rounded-[32px] w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl animate-in zoom-in-95 duration-300">
+            <div className="p-8 border-b border-slate-50 flex items-center justify-between sticky top-0 bg-white/80 backdrop-blur-md z-10">
+              <h2 className="text-2xl font-black text-slate-900 tracking-tight">Edit Client Details</h2>
+              <button
+                onClick={() => setIsEditing(false)}
+                className="w-10 h-10 rounded-2xl hover:bg-slate-100 flex items-center justify-center transition-all hover:rotate-90"
+              >
+                <X size={20} className="text-slate-400" />
+              </button>
+            </div>
+
+            <div className="p-8 space-y-6">
+              <div>
+                <label className="block text-[10px] font-black text-slate-400 uppercase   mb-1.5 ml-1">Client Name *</label>
+                <input
+                  type="text"
+                  value={editForm.name}
+                  onChange={e => setEditForm({ ...editForm, name: e.target.value })}
+                  className={`w-full px-5 py-4 bg-slate-50 border rounded-2xl outline-none focus:ring-4 focus:ring-blue-500/10 transition-all font-semibold ${errors.name ? 'border-rose-200' : 'border-slate-100 focus:border-blue-500'}`}
+                  placeholder="e.g. Acme Corp"
+                />
+                {errors.name && <p className="text-rose-500 text-[10px] font-black mt-2 ml-1 uppercase  ">{errors.name}</p>}
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase   mb-1.5 ml-1">Email</label>
+                  <input
+                    type="email"
+                    value={editForm.email}
+                    onChange={e => setEditForm({ ...editForm, email: e.target.value })}
+                    className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-medium"
+                    placeholder="email@example.com"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase   mb-1.5 ml-1">Phone</label>
+                  <input
+                    type="tel"
+                    value={editForm.phone}
+                    onChange={e => setEditForm({ ...editForm, phone: e.target.value })}
+                    className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-medium"
+                    placeholder="+1 (555) 000-0000"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase   mb-1.5 ml-1">Company</label>
+                  <input
+                    type="text"
+                    value={editForm.company}
+                    onChange={e => setEditForm({ ...editForm, company: e.target.value })}
+                    className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-medium"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase   mb-1.5 ml-1">Country</label>
+                  <select
+                    value={editForm.country}
+                    onChange={e => setEditForm({ ...editForm, country: e.target.value })}
+                    className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-medium appearance-none"
+                  >
+                    <option value="">Select country</option>
+                    {countries.map(c => (
+                      <option key={c} value={c}>{c}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-black text-slate-400 uppercase   mb-1.5 ml-1">Internal Notes</label>
+                <textarea
+                  value={editForm.notes}
+                  onChange={e => setEditForm({ ...editForm, notes: e.target.value })}
+                  className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-medium resize-none"
+                  rows={4}
+                />
+              </div>
+            </div>
+
+            <div className="p-8 border-t border-slate-50 flex justify-end gap-4 sticky bottom-0 bg-white/80 backdrop-blur-md">
+              <button
+                onClick={() => setIsEditing(false)}
+                className="px-6 py-3 text-slate-400 rounded-2xl font-black text-[10px] uppercase   hover:bg-slate-50 hover:text-slate-600 transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleUpdate}
+                className="px-12 py-3 bg-slate-900 text-white rounded-2xl font-black text-[10px] uppercase   shadow-xl shadow-slate-200 hover:bg-black transition-all active:scale-95"
+              >
+                Update Client
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Custom Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center z-[200] p-4 animate-in fade-in duration-300">
+          <div className="bg-white rounded-[40px] w-full max-w-md p-10 shadow-2xl animate-in zoom-in-95 duration-300 text-center">
+            <div className="w-20 h-20 rounded-3xl bg-rose-50 text-rose-500 flex items-center justify-center mx-auto mb-8 animate-bounce">
+              <Trash size={32} />
+            </div>
+            <h2 className="text-2xl font-black text-slate-900 tracking-tight mb-4">Delete Client?</h2>
+            <p className="text-slate-500 text-sm leading-relaxed mb-10">
+              This will permanently delete <span className="font-bold text-slate-900">"{client.name}"</span> and all associated
+              projects and invoices. This action cannot be undone.
+            </p>
+            <div className="flex flex-col gap-3">
+              <button
+                onClick={confirmDelete}
+                className="w-full py-4 bg-rose-600 text-white rounded-2xl font-black text-xs uppercase   hover:bg-rose-700 transition-all hover:shadow-xl active:scale-95"
+              >
+                Permanently Delete
+              </button>
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                className="w-full py-4 bg-slate-100 text-slate-500 rounded-2xl font-black text-xs uppercase   hover:bg-slate-200 transition-all"
+              >
+                Keep Client
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Toast Notification */}
+      {toast && (
+        <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[300] animate-in slide-in-from-bottom-10 fade-in duration-500">
+          <div className={`px-8 py-4 rounded-2xl shadow-2xl flex items-center gap-4 border backdrop-blur-xl ${toast.type === 'success' ? 'bg-emerald-900/95 border-emerald-800/50 text-emerald-50' :
+            toast.type === 'error' ? 'bg-rose-900/95 border-rose-800/50 text-rose-50' :
+              'bg-slate-900/95 border-white/10 text-slate-50'
+            }`}>
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${toast.type === 'success' ? 'bg-emerald-500/20' :
+              toast.type === 'error' ? 'bg-rose-500/20' : 'bg-white/10'
+              }`}>
+              {toast.type === 'success' ? <CheckCircle size={18} className="text-emerald-400" /> :
+                toast.type === 'info' ? <Zap size={18} className="text-blue-400" /> :
+                  <AlertCircle size={18} className="text-rose-400" />}
+            </div>
+            <p className="text-[11px] font-black uppercase tracking-[0.2em]">{toast.message}</p>
+          </div>
+        </div>
+      )}
     </>
   );
 };

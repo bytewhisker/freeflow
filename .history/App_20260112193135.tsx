@@ -1,11 +1,11 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { HashRouter, Routes, Route, Link, useLocation, Navigate } from 'react-router-dom';
-import { 
-  LayoutDashboard, 
-  Users, 
-  Briefcase, 
-  Receipt, 
+import {
+  LayoutDashboard,
+  Users,
+  Briefcase,
+  Receipt,
   Search,
   Bell,
   Wallet,
@@ -40,11 +40,10 @@ import Auth from './views/Auth';
 const SidebarLink = ({ to, icon: Icon, label, active }: any) => (
   <Link
     to={to}
-    className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
-      active 
-        ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' 
+    className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${active
+        ? 'bg-blue-600 text-white shadow-lg shadow-blue-200'
         : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900'
-    }`}
+      }`}
   >
     <Icon size={18} />
     <span className="font-bold text-sm">{label}</span>
@@ -62,11 +61,11 @@ const ConfigErrorScreen = () => (
         The application could not establish a connection to your Supabase backend. Please verify your URL and Anon Key.
       </p>
       <div className="space-y-3">
-        <a 
-          href="https://supabase.com/dashboard" 
-          target="_blank" 
+        <a
+          href="https://supabase.com/dashboard"
+          target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center justify-center gap-2 w-full py-4 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-800 transition-all"
+          className="flex items-center justify-center gap-2 w-full py-4 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase   hover:bg-slate-800 transition-all"
         >
           Open Supabase Dashboard <ExternalLink size={14} />
         </a>
@@ -140,7 +139,7 @@ const App: React.FC = () => {
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
           <Loader2 className="animate-spin text-blue-600" size={48} />
-          <p className="text-sm font-black text-slate-400 uppercase tracking-widest">Waking up FreeFlow...</p>
+          <p className="text-sm font-black text-slate-400 uppercase  ">Waking up FreeFlow...</p>
         </div>
       </div>
     );
@@ -157,7 +156,7 @@ const App: React.FC = () => {
       <div className="flex min-h-screen bg-white">
         <Routes>
           <Route path="/portal/:docId" element={<ClientPortal state={state} />} />
-          
+
           <Route path="/*" element={
             <>
               <aside className="w-64 bg-[#FAF9F7] border-r border-slate-200 flex flex-col sticky top-0 h-screen no-print">
@@ -173,7 +172,7 @@ const App: React.FC = () => {
                   </nav>
                 </div>
                 <div className="mt-auto p-6 border-t border-slate-100">
-                  <div className="flex items-center gap-2 px-4 py-3 text-[9px] font-black uppercase text-slate-400 tracking-widest bg-slate-100/50 rounded-xl mb-6">
+                  <div className="flex items-center gap-2 px-4 py-3 text-[9px] font-black uppercase text-slate-400   bg-slate-100/50 rounded-xl mb-6">
                     {syncing ? (
                       <RefreshCw size={12} className="animate-spin text-blue-600" />
                     ) : (
@@ -191,10 +190,10 @@ const App: React.FC = () => {
                     </div>
                     <div className="overflow-hidden">
                       <p className="text-sm font-black text-slate-900 truncate">{session.user.email?.split('@')[0]}</p>
-                      <p className="text-[10px] font-bold text-blue-600 uppercase tracking-widest">Pro Member</p>
+                      <p className="text-[10px] font-bold text-blue-600 uppercase  ">Pro Member</p>
                     </div>
                   </div>
-                  <button onClick={() => supabase?.auth.signOut()} className="flex items-center gap-2 text-slate-400 hover:text-rose-500 text-xs font-black uppercase tracking-widest transition-colors px-4 py-2 w-full">
+                  <button onClick={() => supabase?.auth.signOut()} className="flex items-center gap-2 text-slate-400 hover:text-rose-500 text-xs font-black uppercase   transition-colors px-4 py-2 w-full">
                     <LogOut size={14} />
                     Sign Out
                   </button>
@@ -207,7 +206,7 @@ const App: React.FC = () => {
                     <Search size={18} className="text-slate-400" />
                     <input type="text" placeholder="Quick find clients, projects..." className="bg-transparent border-none outline-none text-sm w-full text-slate-900 font-medium" />
                   </div>
-                  
+
                 </header>
 
                 <div className="p-3 w-full overflow-y-auto">

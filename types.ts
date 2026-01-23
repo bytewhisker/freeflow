@@ -67,6 +67,7 @@ export interface SalesDocument {
   logo?: string;
   companyInfo?: string;
   billTo?: string;
+  useProTemplate?: boolean;
 }
 
 export interface AppState {
@@ -88,6 +89,20 @@ export interface AppState {
       address: string;
       email: string;
       phone: string;
+    },
+    paymentDetails: {
+      bankName: string;
+      accountNumber: string;
+      routingNumber: string;
+      swiftCode: string;
+      payPal: string;
+    },
+    profile: {
+      name: string;
+      title: string;
+      bio: string;
+      website: string;
+      avatarUrl: string;
     }
   }
 }

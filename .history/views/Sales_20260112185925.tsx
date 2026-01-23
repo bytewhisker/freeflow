@@ -1,12 +1,12 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { AppState, DocType, DocStatus } from '../types';
 import { formatCurrency, formatDate, getStatusColor } from '../utils';
-import { 
-  Plus, 
-  Filter, 
-  Search, 
-  Eye, 
-  Edit3, 
+import {
+  Plus,
+  Filter,
+  Search,
+  Eye,
+  Edit3,
   Trash2,
   ArrowRight,
   Receipt,
@@ -39,8 +39,8 @@ const Billing: React.FC<{ state: AppState, setState: any }> = ({ state, setState
 
   // Selection management
   const handleSelectItem = (id: string) => {
-    setSelectedItems(prev => 
-      prev.includes(id) 
+    setSelectedItems(prev =>
+      prev.includes(id)
         ? prev.filter(item => item !== id)
         : [...prev, id]
     );
@@ -57,7 +57,7 @@ const Billing: React.FC<{ state: AppState, setState: any }> = ({ state, setState
   const handleBulkStatusUpdate = (newStatus: DocStatus) => {
     setState((prev: AppState) => ({
       ...prev,
-      salesDocuments: prev.salesDocuments.map(doc => 
+      salesDocuments: prev.salesDocuments.map(doc =>
         selectedItems.includes(doc.id) ? { ...doc, status: newStatus } : doc
       )
     }));
@@ -96,9 +96,9 @@ const Billing: React.FC<{ state: AppState, setState: any }> = ({ state, setState
       const matchesType = filterType === 'ALL' || doc.type === filterType;
       const matchesStatus = filterStatus === 'ALL' || doc.status === filterStatus;
       const client = state.clients.find(c => c.id === doc.clientId);
-      const matchesSearch = client?.name.toLowerCase().includes(search.toLowerCase()) || 
-                            doc.docNumber.toLowerCase().includes(search.toLowerCase());
-      
+      const matchesSearch = client?.name.toLowerCase().includes(search.toLowerCase()) ||
+        doc.docNumber.toLowerCase().includes(search.toLowerCase());
+
       // Time-based filtering
       let matchesTime = true;
       if (filterTime === 'TODAY') {
@@ -108,7 +108,7 @@ const Billing: React.FC<{ state: AppState, setState: any }> = ({ state, setState
       } else if (filterTime === 'RECENT') {
         matchesTime = isRecent(doc.createdAt);
       }
-      
+
       return matchesType && matchesStatus && matchesSearch && matchesTime;
     });
 
@@ -143,15 +143,15 @@ const Billing: React.FC<{ state: AppState, setState: any }> = ({ state, setState
       <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-wrap gap-4 items-center">
         <div className="flex-1 min-w-[300px] relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-          <input 
-            type="text" 
-            placeholder="Search documents or clients..." 
+          <input
+            type="text"
+            placeholder="Search documents or clients..."
             className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 text-slate-900 rounded-lg outline-none focus:ring-2 focus:ring-blue-500/20"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
-        <select 
+        <select
           className="px-4 py-2.5 bg-white border border-slate-200 rounded-lg outline-none cursor-pointer font-semibold text-slate-600"
           value={filterType}
           onChange={(e) => setFilterType(e.target.value as any)}
@@ -159,7 +159,7 @@ const Billing: React.FC<{ state: AppState, setState: any }> = ({ state, setState
           <option value="ALL">All Invoices</option>
           <option value="INVOICE">Invoices Only</option>
         </select>
-        <select 
+        <select
           className="px-4 py-2.5 bg-white border border-slate-200 rounded-lg outline-none cursor-pointer font-semibold text-slate-600"
           value={filterStatus}
           onChange={(e) => setFilterStatus(e.target.value as any)}
@@ -183,11 +183,10 @@ const Billing: React.FC<{ state: AppState, setState: any }> = ({ state, setState
           <button
             key={key}
             onClick={() => setFilterTime(key as TimeFilter)}
-            className={`px-4 py-2 rounded-full text-sm font-semibold transition-all ${
-              filterTime === key
+            className={`px-4 py-2 rounded-full text-sm font-semibold transition-all ${filterTime === key
                 ? 'bg-blue-600 text-white shadow-md'
                 : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-            }`}
+              }`}
           >
             {label} ({count})
           </button>
@@ -226,7 +225,7 @@ const Billing: React.FC<{ state: AppState, setState: any }> = ({ state, setState
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
         <table className="w-full text-left border-collapse">
           <thead>
-            <tr className="bg-slate-50 text-slate-400 text-[10px] uppercase font-black tracking-widest border-b border-slate-100">
+            <tr className="bg-slate-50 text-slate-400 text-[10px] uppercase font-black   border-b border-slate-100">
               <th className="px-6 py-4">
                 <button
                   onClick={handleSelectAll}
@@ -293,7 +292,7 @@ const Billing: React.FC<{ state: AppState, setState: any }> = ({ state, setState
                       <Link to={`/billing/edit/${doc.id}`} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg">
                         <Edit3 size={18} />
                       </Link>
-                      <button 
+                      <button
                         onClick={() => handleDelete(doc.id)}
                         className="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-lg"
                       >

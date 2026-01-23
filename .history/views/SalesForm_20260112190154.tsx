@@ -100,7 +100,7 @@ const SalesForm: React.FC<{ state: AppState, setState: any }> = ({ state, setSta
     const total = subtotal + taxAmount + shippingAmount - discountAmount;
     const amountPaid = doc.amountPaid || 0;
     const balanceDue = total - amountPaid;
-    
+
     return { subtotal, taxAmount, discountAmount, shippingAmount, total, amountPaid, balanceDue };
   };
 
@@ -135,7 +135,7 @@ const SalesForm: React.FC<{ state: AppState, setState: any }> = ({ state, setSta
 
     setState((prev: AppState) => ({
       ...prev,
-      salesDocuments: isEditing 
+      salesDocuments: isEditing
         ? prev.salesDocuments.map(d => d.id === id ? finalDoc : d)
         : [...prev.salesDocuments, finalDoc]
     }));
@@ -158,7 +158,7 @@ const SalesForm: React.FC<{ state: AppState, setState: any }> = ({ state, setSta
           {/* Logo Upload */}
           <div className="space-y-2">
             <label className="block text-sm font-bold text-slate-500 uppercase tracking-wider">Logo</label>
-            <div 
+            <div
               className="border-2 border-dashed border-slate-300 rounded-xl p-8 text-center cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-all"
               onClick={() => fileInputRef.current?.click()}
             >
@@ -196,8 +196,8 @@ const SalesForm: React.FC<{ state: AppState, setState: any }> = ({ state, setSta
                 <label className="block text-sm font-bold text-slate-500 uppercase tracking-wider mb-2">Invoice #</label>
                 <div className="flex items-center">
                   <span className="text-2xl font-black text-slate-600 mr-2">#</span>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     className="text-2xl font-black text-slate-900 bg-transparent border-b-2 border-slate-200 focus:border-blue-500 outline-none"
                     value={doc.docNumber}
                     onChange={(e) => setDoc({ ...doc, docNumber: e.target.value })}
@@ -205,10 +205,10 @@ const SalesForm: React.FC<{ state: AppState, setState: any }> = ({ state, setSta
                 </div>
               </div>
             </div>
-            
+
             <div className="space-y-2">
               <label className="block text-sm font-bold text-slate-500 uppercase tracking-wider">Who is this from?</label>
-              <textarea 
+              <textarea
                 placeholder="Your business name and address..."
                 className="w-full px-4 py-3 bg-white border border-slate-300 text-slate-900 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20 text-base"
                 rows={3}
@@ -230,7 +230,7 @@ const SalesForm: React.FC<{ state: AppState, setState: any }> = ({ state, setSta
               {state.clients.length > 0 ? (
                 <div className="space-y-3">
                   {/* Client Selection Dropdown */}
-                  <select 
+                  <select
                     className="w-full px-4 py-3 bg-white border border-slate-300 text-slate-900 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20 text-base"
                     value={doc.clientId || ''}
                     onChange={(e) => {
@@ -238,8 +238,8 @@ const SalesForm: React.FC<{ state: AppState, setState: any }> = ({ state, setSta
                       if (clientId) {
                         const selectedClient = state.clients.find(c => c.id === clientId);
                         if (selectedClient) {
-                          setDoc({ 
-                            ...doc, 
+                          setDoc({
+                            ...doc,
                             clientId,
                             billTo: doc.billTo ? doc.billTo : `${selectedClient.name}\n${selectedClient.company}\n${selectedClient.email}\n${selectedClient.phone}`
                           });
@@ -256,10 +256,10 @@ const SalesForm: React.FC<{ state: AppState, setState: any }> = ({ state, setSta
                       </option>
                     ))}
                   </select>
-                  
+
                   {/* Custom Text Area */}
                   <div className="relative">
-                    <textarea 
+                    <textarea
                       placeholder="Customize billing address or add additional details..."
                       className="w-full px-4 py-3 bg-white border border-slate-300 text-slate-900 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20 text-base"
                       rows={3}
@@ -273,7 +273,7 @@ const SalesForm: React.FC<{ state: AppState, setState: any }> = ({ state, setSta
                 </div>
               ) : (
                 /* No clients exist - show only text area */
-                <textarea 
+                <textarea
                   placeholder="Who is this invoice to?"
                   className="w-full px-4 py-3 bg-white border border-slate-300 text-slate-900 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20 text-base"
                   rows={4}
@@ -282,7 +282,7 @@ const SalesForm: React.FC<{ state: AppState, setState: any }> = ({ state, setSta
                 />
               )}
             </div>
-            
+
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <label className="block text-sm font-bold text-slate-500 uppercase tracking-wider">Ship To</label>
@@ -295,7 +295,7 @@ const SalesForm: React.FC<{ state: AppState, setState: any }> = ({ state, setSta
                 </button>
               </div>
               {showShipTo && (
-                <textarea 
+                <textarea
                   placeholder="Shipping address (optional)"
                   className="w-full px-4 py-3 bg-white border border-slate-300 text-slate-900 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20 text-base"
                   rows={4}
@@ -310,8 +310,8 @@ const SalesForm: React.FC<{ state: AppState, setState: any }> = ({ state, setSta
           <div className="space-y-4">
             <div className="space-y-2">
               <label className="block text-sm font-bold text-slate-500 uppercase tracking-wider">Date</label>
-              <input 
-                type="date" 
+              <input
+                type="date"
                 className="w-full px-4 py-3 bg-white border border-slate-300 text-slate-900 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20 text-base"
                 value={doc.createdAt?.split('T')[0] || new Date().toISOString().split('T')[0]}
                 onChange={(e) => setDoc({ ...doc, createdAt: new Date(e.target.value).toISOString() })}
@@ -320,8 +320,8 @@ const SalesForm: React.FC<{ state: AppState, setState: any }> = ({ state, setSta
 
             <div className="space-y-2">
               <label className="block text-sm font-bold text-slate-500 uppercase tracking-wider">Payment Terms</label>
-              <input 
-                type="text" 
+              <input
+                type="text"
                 placeholder="e.g., Net 30"
                 className="w-full px-4 py-3 bg-white border border-slate-300 text-slate-900 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20 text-base"
                 value={doc.paymentTerms}
@@ -331,8 +331,8 @@ const SalesForm: React.FC<{ state: AppState, setState: any }> = ({ state, setSta
 
             <div className="space-y-2">
               <label className="block text-sm font-bold text-slate-500 uppercase tracking-wider">Due Date</label>
-              <input 
-                type="date" 
+              <input
+                type="date"
                 className="w-full px-4 py-3 bg-white border border-slate-300 text-slate-900 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20 text-base"
                 value={doc.dueDate?.split('T')[0] || ''}
                 onChange={(e) => setDoc({ ...doc, dueDate: new Date(e.target.value).toISOString() })}
@@ -341,8 +341,8 @@ const SalesForm: React.FC<{ state: AppState, setState: any }> = ({ state, setSta
 
             <div className="space-y-2">
               <label className="block text-sm font-bold text-slate-500 uppercase tracking-wider">PO Number</label>
-              <input 
-                type="text" 
+              <input
+                type="text"
                 placeholder="Purchase order number"
                 className="w-full px-4 py-3 bg-white border border-slate-300 text-slate-900 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20 text-base"
                 value={doc.poNumber}
@@ -370,8 +370,8 @@ const SalesForm: React.FC<{ state: AppState, setState: any }> = ({ state, setSta
           {doc.items?.map((item) => (
             <div key={item.id} className="grid grid-cols-12 gap-4 px-6 py-4 items-center">
               <div className="col-span-6">
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   placeholder="Item description"
                   className="w-full px-4 py-3 bg-white border border-slate-200 text-slate-900 rounded-lg outline-none focus:ring-2 focus:ring-blue-500/10 text-base"
                   value={item.description}
@@ -379,8 +379,8 @@ const SalesForm: React.FC<{ state: AppState, setState: any }> = ({ state, setSta
                 />
               </div>
               <div className="col-span-2">
-                <input 
-                  type="number" 
+                <input
+                  type="number"
                   min="0"
                   step="0.01"
                   className="w-full px-4 py-3 bg-white border border-slate-200 text-slate-900 rounded-lg outline-none focus:ring-2 focus:ring-blue-500/10 text-base text-center"
@@ -391,8 +391,8 @@ const SalesForm: React.FC<{ state: AppState, setState: any }> = ({ state, setSta
               <div className="col-span-3">
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-medium">{currencySymbol}</span>
-                  <input 
-                    type="number" 
+                  <input
+                    type="number"
                     min="0"
                     step="0.01"
                     className="w-full pl-8 pr-4 py-3 bg-white border border-slate-200 text-slate-900 rounded-lg outline-none focus:ring-2 focus:ring-blue-500/10 text-base"
@@ -402,7 +402,7 @@ const SalesForm: React.FC<{ state: AppState, setState: any }> = ({ state, setSta
                 </div>
               </div>
               <div className="col-span-1 text-right">
-                <button 
+                <button
                   onClick={() => removeItem(item.id)}
                   className="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-colors"
                   disabled={(doc.items?.length || 0) <= 1}
@@ -416,7 +416,7 @@ const SalesForm: React.FC<{ state: AppState, setState: any }> = ({ state, setSta
 
         {/* Add Line Item Button */}
         <div className="px-6 py-4 border-t border-slate-100">
-          <button 
+          <button
             onClick={addItem}
             className="flex items-center gap-2 px-6 py-3 border-2 border-green-500 text-green-600 rounded-lg font-bold text-sm uppercase tracking-wider hover:bg-green-50 transition-all"
           >
@@ -432,7 +432,7 @@ const SalesForm: React.FC<{ state: AppState, setState: any }> = ({ state, setSta
         <div className="space-y-6">
           <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
             <h3 className="text-lg font-black text-slate-900 uppercase tracking-wider mb-4">Notes</h3>
-            <textarea 
+            <textarea
               placeholder="Additional notes or internal memos..."
               className="w-full px-4 py-3 bg-white border border-slate-300 text-slate-900 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20 text-base"
               rows={4}
@@ -443,7 +443,7 @@ const SalesForm: React.FC<{ state: AppState, setState: any }> = ({ state, setSta
 
           <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
             <h3 className="text-lg font-black text-slate-900 uppercase tracking-wider mb-4">Terms</h3>
-            <textarea 
+            <textarea
               placeholder="Terms and conditions, late fees, payment methods..."
               className="w-full px-4 py-3 bg-white border border-slate-300 text-slate-900 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20 text-base"
               rows={4}
@@ -456,7 +456,7 @@ const SalesForm: React.FC<{ state: AppState, setState: any }> = ({ state, setSta
         {/* Financial Summary */}
         <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
           <h3 className="text-lg font-black text-slate-900 uppercase tracking-wider mb-6">Summary</h3>
-          
+
           <div className="space-y-4">
             {/* Subtotal */}
             <div className="flex justify-between items-center py-2 border-b border-slate-100">
@@ -469,8 +469,8 @@ const SalesForm: React.FC<{ state: AppState, setState: any }> = ({ state, setSta
               <div className="flex items-center gap-2">
                 <span className="font-bold text-slate-600">Tax</span>
                 <div className="flex items-center">
-                  <input 
-                    type="number" 
+                  <input
+                    type="number"
                     min="0"
                     max="100"
                     step="0.01"
@@ -490,8 +490,8 @@ const SalesForm: React.FC<{ state: AppState, setState: any }> = ({ state, setSta
                 <span className="font-bold text-slate-600">Discount</span>
                 <div className="flex items-center gap-2">
                   <span className="text-slate-400">{currencySymbol}</span>
-                  <input 
-                    type="number" 
+                  <input
+                    type="number"
                     min="0"
                     step="0.01"
                     className="w-20 px-2 py-1 text-sm border border-slate-200 rounded text-center"
@@ -502,7 +502,7 @@ const SalesForm: React.FC<{ state: AppState, setState: any }> = ({ state, setSta
               </div>
             )}
             {!showDiscount && (
-              <button 
+              <button
                 onClick={() => setShowDiscount(true)}
                 className="text-green-600 hover:text-green-700 font-medium text-sm"
               >
@@ -516,8 +516,8 @@ const SalesForm: React.FC<{ state: AppState, setState: any }> = ({ state, setSta
                 <span className="font-bold text-slate-600">Shipping</span>
                 <div className="flex items-center gap-2">
                   <span className="text-slate-400">{currencySymbol}</span>
-                  <input 
-                    type="number" 
+                  <input
+                    type="number"
                     min="0"
                     step="0.01"
                     className="w-20 px-2 py-1 text-sm border border-slate-200 rounded text-center"
@@ -528,7 +528,7 @@ const SalesForm: React.FC<{ state: AppState, setState: any }> = ({ state, setSta
               </div>
             )}
             {!showShipping && (
-              <button 
+              <button
                 onClick={() => setShowShipping(true)}
                 className="text-green-600 hover:text-green-700 font-medium text-sm"
               >
@@ -547,8 +547,8 @@ const SalesForm: React.FC<{ state: AppState, setState: any }> = ({ state, setSta
               <span className="font-bold text-slate-600">Amount Paid</span>
               <div className="flex items-center gap-2">
                 <span className="text-slate-400">{currencySymbol}</span>
-                <input 
-                  type="number" 
+                <input
+                  type="number"
                   min="0"
                   step="0.01"
                   className="w-24 px-2 py-1 text-sm border border-slate-200 rounded text-center"
@@ -569,15 +569,15 @@ const SalesForm: React.FC<{ state: AppState, setState: any }> = ({ state, setSta
 
       {/* Action Buttons */}
       <div className="flex justify-end gap-6">
-        <button 
+        <button
           onClick={() => navigate('/billing')}
-          className="px-10 py-4 rounded-xl border border-slate-200 font-black text-slate-500 text-sm uppercase tracking-widest hover:bg-slate-50 transition-colors"
+          className="px-10 py-4 rounded-xl border border-slate-200 font-black text-slate-500 text-sm uppercase   hover:bg-slate-50 transition-colors"
         >
           Discard
         </button>
-        <button 
+        <button
           onClick={handleSave}
-          className="px-16 py-4 rounded-xl bg-blue-600 text-white font-black text-sm uppercase tracking-widest shadow-xl shadow-blue-100 hover:bg-blue-700 transition-all flex items-center gap-2"
+          className="px-16 py-4 rounded-xl bg-blue-600 text-white font-black text-sm uppercase   shadow-xl shadow-blue-100 hover:bg-blue-700 transition-all flex items-center gap-2"
         >
           <Save size={20} />
           {isEditing ? 'Update Invoice' : 'Create Invoice'}

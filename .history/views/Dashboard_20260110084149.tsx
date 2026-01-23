@@ -28,16 +28,15 @@ const StatCard = ({ title, value, icon: Icon, sub, trend, color, className = '' 
         <Icon size={22} className="text-white" />
       </div>
       {trend && (
-        <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-black ${
-          trend > 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'
-        }`}>
+        <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-black ${trend > 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'
+          }`}>
           {trend > 0 ? '↑' : '↓'} {Math.abs(trend)}%
         </div>
       )}
     </div>
-    <h3 className="text-slate-500 text-xs font-black uppercase tracking-widest mb-1">{title}</h3>
+    <h3 className="text-slate-500 text-xs font-black uppercase   mb-1">{title}</h3>
     <p className="text-3xl font-black text-slate-900 mb-1">{value}</p>
-    {sub && <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{sub}</p>}
+    {sub && <p className="text-[10px] text-slate-400 font-bold uppercase  ">{sub}</p>}
   </div>
 );
 
@@ -56,7 +55,7 @@ const QuickAction = ({ to, icon: Icon, label, description, color }: any) => (
 
 const Dashboard: React.FC<{ state: AppState }> = ({ state }) => {
   const currencyCode = state.settings.currency.code;
-  
+
   const [dateRange, setDateRange] = useState<DateRange>(() => {
     const end = new Date();
     const start = new Date();
@@ -66,13 +65,13 @@ const Dashboard: React.FC<{ state: AppState }> = ({ state }) => {
 
   const stats = useMemo(() => {
     const invoices = state.salesDocuments.filter(d => d.type === 'INVOICE');
-    
+
     const filteredInvoices = invoices.filter(i => {
       if (!dateRange.start || !dateRange.end) return true;
       const invoiceDate = new Date(i.createdAt);
       return invoiceDate >= dateRange.start && invoiceDate <= dateRange.end;
     });
-    
+
     const totalEarned = filteredInvoices.filter(i => i.status === 'paid').reduce((acc, i) => acc + i.total, 0);
     const activeCount = state.projects.filter(p => p.status === 'active').length;
     const completedCount = state.projects.filter(p => p.status === 'completed').length;
@@ -104,7 +103,7 @@ const Dashboard: React.FC<{ state: AppState }> = ({ state }) => {
     const months: { month: string; year: number; monthIndex: number }[] = [];
     let current = new Date(filterStart.getFullYear(), filterStart.getMonth(), 1);
     const rangeEnd = new Date(filterEnd.getFullYear(), filterEnd.getMonth() + 1, 0);
-    
+
     while (current <= rangeEnd) {
       months.push({
         month: current.toLocaleString('default', { month: 'long' }),
@@ -179,14 +178,14 @@ const Dashboard: React.FC<{ state: AppState }> = ({ state }) => {
         <div className="lg:col-span-2">
           <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden h-[500px] flex flex-col">
             <div className="px-8 py-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/30">
-              <h2 className="text-sm font-black text-slate-900 uppercase tracking-widest">Active Mandates</h2>
+              <h2 className="text-sm font-black text-slate-900 uppercase  ">Active Mandates</h2>
               <Link to="/projects" className="text-[10px] font-black text-blue-600 uppercase hover:underline">View All Mandates</Link>
             </div>
             <div className="flex-1 overflow-auto">
               {projectSummary.length > 0 ? (
                 <table className="w-full text-left">
                   <thead className="sticky top-0 bg-white/80 backdrop-blur-md">
-                    <tr className="text-slate-400 text-[9px] font-black uppercase tracking-widest border-b border-slate-100">
+                    <tr className="text-slate-400 text-[9px] font-black uppercase   border-b border-slate-100">
                       <th className="px-8 py-4">Client Project</th>
                       <th className="px-8 py-4 text-center">Deadline</th>
                       <th className="px-8 py-4 text-right">Health</th>
@@ -207,7 +206,7 @@ const Dashboard: React.FC<{ state: AppState }> = ({ state }) => {
                           </td>
                           <td className="py-6 text-sm text-slate-500 font-bold text-center">{formatDate(project.deadline)}</td>
                           <td className="py-6 text-right px-8">
-                            <span className={`inline-flex px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${status.color}`}>
+                            <span className={`inline-flex px-3 py-1 rounded-full text-[10px] font-black uppercase   ${status.color}`}>
                               {status.label}
                             </span>
                           </td>
@@ -223,7 +222,7 @@ const Dashboard: React.FC<{ state: AppState }> = ({ state }) => {
                   </div>
                   <h3 className="text-slate-900 font-black mb-1">No Active Projects</h3>
                   <p className="text-slate-500 text-xs mb-6">Kickstart your workflow by adding your first project.</p>
-                  <Link to="/projects" className="px-6 py-2 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 transition-all">
+                  <Link to="/projects" className="px-6 py-2 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase   hover:bg-slate-800 transition-all">
                     Initialize Project
                   </Link>
                 </div>
@@ -235,7 +234,7 @@ const Dashboard: React.FC<{ state: AppState }> = ({ state }) => {
         <div>
           <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden h-[500px] flex flex-col">
             <div className="px-8 py-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/30">
-              <h2 className="text-sm font-black text-slate-900 uppercase tracking-widest">Recent Activity</h2>
+              <h2 className="text-sm font-black text-slate-900 uppercase  ">Recent Activity</h2>
               <FileText size={16} className="text-slate-300" />
             </div>
             <div className="flex-1 p-4 space-y-2 overflow-auto">
@@ -249,12 +248,12 @@ const Dashboard: React.FC<{ state: AppState }> = ({ state }) => {
                       </div>
                       <div>
                         <p className="font-bold text-xs text-slate-900">{client?.name}</p>
-                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{doc.docNumber}</p>
+                        <p className="text-[10px] text-slate-400 font-bold uppercase  ">{doc.docNumber}</p>
                       </div>
                     </div>
                     <div className="text-right">
                       <p className="font-black text-sm text-slate-900">{formatCurrency(doc.total, currencyCode)}</p>
-                      <span className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${getStatusColor(doc.status)}`}>
+                      <span className={`text-[8px] font-black uppercase   px-2 py-0.5 rounded-full ${getStatusColor(doc.status)}`}>
                         {doc.status}
                       </span>
                     </div>
@@ -262,12 +261,12 @@ const Dashboard: React.FC<{ state: AppState }> = ({ state }) => {
                 );
               }) : (
                 <div className="h-full flex flex-col items-center justify-center text-center p-6">
-                  <p className="text-slate-400 text-xs font-bold uppercase tracking-widest italic">No recent transactions</p>
+                  <p className="text-slate-400 text-xs font-bold uppercase   italic">No recent transactions</p>
                 </div>
               )}
             </div>
             <div className="p-4 border-t border-slate-50 bg-slate-50/50">
-              <Link to="/billing" className="block w-full text-center py-2 text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-blue-600 transition-colors">
+              <Link to="/billing" className="block w-full text-center py-2 text-[10px] font-black text-slate-400 uppercase   hover:text-blue-600 transition-colors">
                 Audit Full Financials
               </Link>
             </div>

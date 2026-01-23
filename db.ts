@@ -9,7 +9,9 @@ const INITIAL_STATE: AppState = {
   settings: {
     currency: { code: 'USD', symbol: '$', name: 'US Dollar' },
     branding: { watermarkOpacity: 0.15, showWatermark: true },
-    business: { name: 'New Freelancer', address: 'Add your address', email: 'hello@yourbrand.com', phone: '+1 555-0123' }
+    business: { name: 'New Freelancer', address: 'Add your address', email: 'hello@yourbrand.com', phone: '+1 555-0123' },
+    paymentDetails: { bankName: '', accountNumber: '', routingNumber: '', swiftCode: '', payPal: '' },
+    profile: { name: '', title: 'Freelancer', bio: '', website: '', avatarUrl: '' }
   }
 };
 
@@ -32,6 +34,7 @@ const mapDoc = (d: any): SalesDocument => ({
   clientId: d.client_id,
   projectId: d.project_id,
   docNumber: d.doc_number,
+  items: d.items || [],
   shipping: Number(d.shipping || 0),
   amountPaid: Number(d.amount_paid || 0),
   balanceDue: Number(d.balance_due || 0),
@@ -51,24 +54,47 @@ const mapDoc = (d: any): SalesDocument => ({
 export const db = {
   getState: async (userId: string): Promise<AppState> => {
     if (!supabase) return INITIAL_STATE;
-    
+
     try {
-      const [pRes, cRes, prRes, dRes] = await Promise.all([
+      const results = await Promise.all([
         supabase.from('profiles').select('settings').eq('id', userId).maybeSingle(),
         supabase.from('clients').select('*').eq('user_id', userId),
         supabase.from('projects').select('*').eq('user_id', userId),
         supabase.from('sales_documents').select('*').eq('user_id', userId)
       ]);
 
+      const [pRes, cRes, prRes, dRes] = results;
+
       if (!pRes.data) {
         await supabase.from('profiles').insert({ id: userId, settings: INITIAL_STATE.settings });
       }
+
+      const remoteSettings = pRes.data?.settings || {};
 
       return {
         clients: (cRes.data || []).map(mapClient),
         projects: (prRes.data || []).map(mapProject),
         salesDocuments: (dRes.data || []).map(mapDoc),
-        settings: pRes.data?.settings || INITIAL_STATE.settings
+        settings: {
+          ...INITIAL_STATE.settings,
+          ...remoteSettings,
+          business: {
+            ...INITIAL_STATE.settings.business,
+            ...(remoteSettings.business || {})
+          },
+          branding: {
+            ...INITIAL_STATE.settings.branding,
+            ...(remoteSettings.branding || {})
+          },
+          paymentDetails: {
+            ...INITIAL_STATE.settings.paymentDetails,
+            ...(remoteSettings.paymentDetails || {})
+          },
+          profile: {
+            ...INITIAL_STATE.settings.profile,
+            ...(remoteSettings.profile || {})
+          }
+        }
       };
     } catch (err) {
       console.error('Error fetching state:', err);
@@ -76,22 +102,18 @@ export const db = {
     }
   },
 
-  saveState: async (state: AppState, userId: string) => {
+  saveState: async (state: AppState, userId: string): Promise<void> => {
     if (!supabase || !userId) return;
-    
+
     try {
-      const currentIds = {
-        clients: state.clients.map(c => c.id),
-        projects: state.projects.map(p => p.id),
-        docs: state.salesDocuments.map(d => d.id)
-      };
+      const clientIds = state.clients.map(c => c.id);
+      const projectIds = state.projects.map(p => p.id);
+      const docIds = state.salesDocuments.map(d => d.id);
 
-      const promises: Promise<any>[] = [];
+      // 1. Sync Settings
+      await db.saveSettings(state.settings, userId);
 
-      // 1. Settings (Profile)
-      promises.push(db.saveSettings(state.settings, userId));
-
-      // 2. Clients Sync (Upsert existing + prune deleted)
+      // 2. Sync Clients
       if (state.clients.length > 0) {
         const payload = state.clients.map(c => ({
           id: c.id,
@@ -107,17 +129,16 @@ export const db = {
           social_media: c.socialMedia || {},
           created_at: c.createdAt
         }));
-        promises.push(supabase.from('clients').upsert(payload));
-      }
-      
-      // Delete orphans
-      if (currentIds.clients.length > 0) {
-        promises.push(supabase.from('clients').delete().eq('user_id', userId).not('id', 'in', `(${currentIds.clients.join(',')})`));
-      } else {
-        promises.push(supabase.from('clients').delete().eq('user_id', userId));
+        const { error } = await supabase.from('clients').upsert(payload);
+        if (error) console.error('[Sync Error] Clients:', error.message);
       }
 
-      // 3. Projects Sync
+      const { error: cDelErr } = clientIds.length > 0
+        ? await supabase.from('clients').delete().eq('user_id', userId).not('id', 'in', `(${clientIds.join(',')})`)
+        : await supabase.from('clients').delete().eq('user_id', userId);
+      if (cDelErr) console.error('[Sync Error] Clients Deletion:', cDelErr.message);
+
+      // 3. Sync Projects
       if (state.projects.length > 0) {
         const payload = state.projects.map(p => ({
           id: p.id,
@@ -131,22 +152,22 @@ export const db = {
           deadline: p.deadline,
           created_at: p.createdAt
         }));
-        promises.push(supabase.from('projects').upsert(payload));
-      }
-      
-      if (currentIds.projects.length > 0) {
-        promises.push(supabase.from('projects').delete().eq('user_id', userId).not('id', 'in', `(${currentIds.projects.join(',')})`));
-      } else {
-        promises.push(supabase.from('projects').delete().eq('user_id', userId));
+        const { error } = await supabase.from('projects').upsert(payload);
+        if (error) console.error('[Sync Error] Projects:', error.message);
       }
 
-      // 4. Docs Sync
+      const { error: pDelErr } = projectIds.length > 0
+        ? await supabase.from('projects').delete().eq('user_id', userId).not('id', 'in', `(${projectIds.join(',')})`)
+        : await supabase.from('projects').delete().eq('user_id', userId);
+      if (pDelErr) console.error('[Sync Error] Projects Deletion:', pDelErr.message);
+
+      // 4. Sync Documents
       if (state.salesDocuments.length > 0) {
         const payload = state.salesDocuments.map(d => ({
           id: d.id,
           user_id: userId,
-          client_id: d.clientId,
-          project_id: d.projectId,
+          client_id: d.clientId || null,
+          project_id: d.projectId || null,
           type: d.type,
           doc_number: d.docNumber,
           status: d.status || 'draft',
@@ -169,31 +190,31 @@ export const db = {
           company_info: d.companyInfo,
           bill_to: d.billTo
         }));
-        promises.push(supabase.from('sales_documents').upsert(payload));
-      }
-      
-      if (currentIds.docs.length > 0) {
-        promises.push(supabase.from('sales_documents').delete().eq('user_id', userId).not('id', 'in', `(${currentIds.docs.join(',')})`));
-      } else {
-        promises.push(supabase.from('sales_documents').delete().eq('user_id', userId));
+        const { error } = await supabase.from('sales_documents').upsert(payload);
+        if (error) console.error('[Sync Error] Documents:', error.message);
       }
 
-      return Promise.all(promises);
-    } catch (err) {
-      console.error('Critical Sync Error:', err);
+      const { error: dDelErr } = docIds.length > 0
+        ? await supabase.from('sales_documents').delete().eq('user_id', userId).not('id', 'in', `(${docIds.join(',')})`)
+        : await supabase.from('sales_documents').delete().eq('user_id', userId);
+      if (dDelErr) console.error('[Sync Error] Documents Deletion:', dDelErr.message);
+
+    } catch (err: any) {
+      console.error('Critical database synchronization failure:', err.message || err);
     }
   },
 
-  saveSettings: async (settings: any, userId: string) => {
+  saveSettings: async (settings: any, userId: string): Promise<void> => {
     if (!supabase) return;
-    return supabase.from('profiles').upsert({
+    const { error } = await supabase.from('profiles').upsert({
       id: userId,
       settings,
       updated_at: new Date().toISOString()
     });
+    if (error) console.error('[Sync Error] Settings:', error.message);
   },
 
-  reset: async () => {
+  reset: async (): Promise<void> => {
     if (supabase) await supabase.auth.signOut();
     window.location.reload();
   }

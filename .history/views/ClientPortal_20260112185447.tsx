@@ -82,22 +82,22 @@ const ClientPortal: React.FC<{ state: AppState }> = ({ state }) => {
                 )}
                 <div className="text-sm space-y-1">
                   <div>
-                    <p className="text-slate-400 font-black uppercase tracking-widest text-xs">Reference</p>
+                    <p className="text-slate-400 font-black uppercase   text-xs">Reference</p>
                     <p className="font-black text-slate-900">{doc.docNumber}</p>
                   </div>
                   <div>
-                    <p className="text-slate-400 font-black uppercase tracking-widest text-xs mt-1">Issue Date</p>
+                    <p className="text-slate-400 font-black uppercase   text-xs mt-1">Issue Date</p>
                     <p className="font-black text-slate-900">{formatDate(doc.createdAt)}</p>
                   </div>
                   {doc.paymentTerms && (
                     <div>
-                      <p className="text-slate-400 font-black uppercase tracking-widest text-xs mt-1">Payment Terms</p>
+                      <p className="text-slate-400 font-black uppercase   text-xs mt-1">Payment Terms</p>
                       <p className="font-black text-slate-900">{doc.paymentTerms}</p>
                     </div>
                   )}
                   {doc.poNumber && (
                     <div>
-                      <p className="text-slate-400 font-black uppercase tracking-widest text-xs mt-1">PO Number</p>
+                      <p className="text-slate-400 font-black uppercase   text-xs mt-1">PO Number</p>
                       <p className="font-black text-slate-900">{doc.poNumber}</p>
                     </div>
                   )}
@@ -108,13 +108,13 @@ const ClientPortal: React.FC<{ state: AppState }> = ({ state }) => {
             {/* Recipient & Project */}
             <div className="grid grid-cols-2 gap-8 mb-10 py-6 border-y border-slate-100">
               <div>
-                <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Bill To</h4>
+                <h4 className="text-xs font-black text-slate-400 uppercase   mb-2">Bill To</h4>
                 <div className="text-sm space-y-1 whitespace-pre-line">
                   {doc.billTo || 'No billing information provided'}
                 </div>
                 {doc.shipTo && (
                   <>
-                    <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest mt-4 mb-2">Ship To</h4>
+                    <h4 className="text-xs font-black text-slate-400 uppercase   mt-4 mb-2">Ship To</h4>
                     <div className="text-sm space-y-1 whitespace-pre-line">
                       {doc.shipTo}
                     </div>
@@ -122,11 +122,11 @@ const ClientPortal: React.FC<{ state: AppState }> = ({ state }) => {
                 )}
               </div>
               <div className="text-right">
-                <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Project</h4>
+                <h4 className="text-xs font-black text-slate-400 uppercase   mb-2">Project</h4>
                 <p className="font-black text-slate-900">{state.projects.find(p => p.id === doc.projectId)?.title || 'General Services'}</p>
                 {doc.dueDate && (
                   <div className="mt-4">
-                    <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Due Date</h4>
+                    <h4 className="text-xs font-black text-slate-400 uppercase   mb-2">Due Date</h4>
                     <p className="font-black text-slate-900">{formatDate(doc.dueDate)}</p>
                   </div>
                 )}
@@ -201,14 +201,14 @@ const ClientPortal: React.FC<{ state: AppState }> = ({ state }) => {
             <div className="mt-12 pt-6 border-t border-slate-100 text-sm space-y-4">
               {doc.notes && (
                 <div>
-                  <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Notes</h4>
+                  <h4 className="text-xs font-black text-slate-400 uppercase   mb-2">Notes</h4>
                   <p className="text-slate-500 leading-relaxed whitespace-pre-line">
                     {doc.notes}
                   </p>
                 </div>
               )}
               <div>
-                <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Terms & Conditions</h4>
+                <h4 className="text-xs font-black text-slate-400 uppercase   mb-2">Terms & Conditions</h4>
                 <p className="text-slate-500 italic leading-relaxed whitespace-pre-line">
                   {doc.terms || 'Please remit payment within the due date. Thank you for your business.'}
                 </p>
