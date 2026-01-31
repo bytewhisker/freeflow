@@ -24,8 +24,8 @@ export interface Client {
 
 export interface Project {
   id: string;
-  clientId: string;
-  title: string;
+  clientId?: string;
+  title?: string;
   description: string;
   status: Status;
   totalBudget: number;
@@ -43,7 +43,7 @@ export interface SalesItem {
 
 export interface SalesDocument {
   id: string;
-  clientId: string;
+  clientId?: string;
   projectId?: string;
   type: DocType;
   docNumber: string;

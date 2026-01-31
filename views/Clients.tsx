@@ -459,8 +459,8 @@ const Clients: React.FC<{ state: AppState, setState: any }> = ({ state, setState
   };
 
   return (
-    <div className="h-screen overflow-hidden" style={{ backgroundColor: '#F8FAFC' }}>
-      <div className="w-full mx-auto px-6 h-full flex flex-col" style={{ maxWidth: '1600px' }}>
+    <div className="h-screen overflow-hidden m-0 p-8 pt-4" >
+      <div className="w-full mx-auto px-0 h-full flex flex-col" style={{ maxWidth: '1600px' }}>
 
         <div className="flex justify-between items-center py-6 mb-2" style={{ height: '25px' }}>
           <div className="flex items-center gap-4">
@@ -468,7 +468,7 @@ const Clients: React.FC<{ state: AppState, setState: any }> = ({ state, setState
               <Users size={24} className="text-white" />
             </div> */}
             <div>
-              <h1 className="text-2xl font-black text-slate-900 tracking-tight">Client Management</h1>
+              <h1 className="text-2xl font-bold text-slate-900">Client Management</h1>
             </div>
           </div>
 
@@ -488,35 +488,35 @@ const Clients: React.FC<{ state: AppState, setState: any }> = ({ state, setState
         </div>
 
         <div className="grid grid-cols-3 gap-6 mb-5" style={{ height: '140px' }}>
-          <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl p-5 text-white shadow-lg">
+          <div className="bg-gray-100 rounded-2xl p-5 text-white">
             <div className="flex items-center justify-between">
               <div>
-                <div className="text-sm font-bold text-blue-100 uppercase tracking-wide mb-1">Total Clients</div>
-                <div className="text-3xl font-bold">{globalStats.totalClients}</div>
+                <div className="text-sm font-bold text-black uppercase tracking-wide mb-1">Total Clients</div>
+                <div className="text-3xl font-bold text-black">{globalStats.totalClients}</div>
               </div>
-              <div className="bg-white/20 p-3 rounded-xl"><Users size={24} /></div>
+              <div className="bg-black p-3 rounded-xl"><Users size={24} /></div>
             </div>
-            <div className="mt-1 flex items-center gap-2"><div className="w-2 h-2 bg-white rounded-full"></div><span className="text-sm text-blue-100">All active clients</span></div>
+            <div className="mt-1 flex items-center gap-2"><div className="w-2 h-2 bg-black rounded-full"></div><span className="text-sm text-black">All active clients</span></div>
           </div>
-          <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-2xl p-5 text-white shadow-lg">
+          <div className="bg-gray-100 rounded-2xl p-5 text-white ">
             <div className="flex items-center justify-between">
               <div>
-                <div className="text-sm font-bold text-green-100 uppercase tracking-wide mb-2">Active Projects</div>
-                <div className="text-3xl font-bold">{globalStats.activeProjects}</div>
+                <div className="text-sm font-bold text-black uppercase tracking-wide mb-2">Active Projects</div>
+                <div className="text-3xl font-bold text-black">{globalStats.activeProjects}</div>
               </div>
-              <div className="bg-white/20 p-3 rounded-xl"><Briefcase size={24} /></div>
+              <div className="bg-black p-3 rounded-xl"><Briefcase size={24} /></div>
             </div>
-            <div className="mt-1 flex items-center gap-2"><div className="w-2 h-2 bg-white rounded-full"></div><span className="text-sm text-green-100">Currently in progress</span></div>
+            <div className="mt-1 flex items-center gap-2"><div className="w-2 h-2 bg-black rounded-full"></div><span className="text-sm text-black">Currently in progress</span></div>
           </div>
-          <div className="bg-gradient-to-br from-amber-500 to-amber-600 rounded-2xl p-5 text-white shadow-lg">
+          <div className="bg-gray-100 rounded-2xl p-5 text-white ">
             <div className="flex items-center justify-between">
               <div>
-                <div className="text-sm font-bold text-amber-100 uppercase tracking-wide mb-2">Pending Invoices</div>
-                <div className="text-3xl font-bold">{globalStats.pendingInvoices}</div>
+                <div className="text-sm font-bold text-black uppercase tracking-wide mb-2">Pending Invoices</div>
+                <div className="text-3xl font-bold text-black">{globalStats.pendingInvoices}</div>
               </div>
-              <div className="bg-white/20 p-3 rounded-xl"><AlertCircle size={24} /></div>
+              <div className="bg-black p-3 rounded-xl"><AlertCircle size={24} /></div>
             </div>
-            <div className="mt-1 flex items-center gap-2"><div className="w-2 h-2 bg-white rounded-full"></div><span className="text-sm text-amber-100">Awaiting payment</span></div>
+            <div className="mt-1 flex items-center gap-2"><div className="w-2 h-2 bg-black rounded-full"></div><span className="text-sm text-black">Awaiting payment</span></div>
           </div>
         </div>
 
@@ -583,20 +583,28 @@ const Clients: React.FC<{ state: AppState, setState: any }> = ({ state, setState
             </div>
           )}
 
-          <div className={`bg-slate-50 border-b border-slate-200 px-6 py-4 ${selectedClients.size > 0 ? 'border-t' : ''}`} style={{ height: '50px' }}>
+
+
+
+
+
+          <div className={`bg-slate-50 border-b border-slate-200 px-6 py-4 ${selectedClients.size > 0 ? 'border-t border-t-black' : ''}`} style={{ height: '50px' }}>
             <div className="flex items-center justify-between h-full">
               <div className="flex items-center gap-2">
                 <h2 className="text-lg font-bold text-slate-900">Client Directory</h2>
                 <span className="text-sm text-slate-500 font-medium">({filteredClients.length})</span>
               </div>
-              {selectedClients.size === 0 && (
-                <div className="flex items-center gap-2 text-sm text-slate-500">
-                  <span>Select clients to perform bulk actions</span>
-                </div>
-              )}
+
             </div>
           </div>
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 mb-6" style={{ height: '70px' }}>
+
+
+
+
+
+
+          {/* Search Clients Box */}
+          <div className="bg-white  p-6 mb-6" style={{ height: '70px' }}>
             <div className="flex items-center justify-between h-full">
               <div className="flex-1 relative">
                 <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" aria-hidden="true"><Search size={20} /></div>
@@ -604,7 +612,7 @@ const Clients: React.FC<{ state: AppState, setState: any }> = ({ state, setState
                   type="text"
                   placeholder="Search clients..."
                   aria-label="Search clients"
-                  className="w-full pl-12 pr-4 py-3 text-sm bg-white border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20 shadow-sm"
+                  className="w-full pl-12 pr-4 py-3 text-sm bg-white border border-black rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20 shadow-sm"
                   value={search}
                   onChange={e => setSearch(e.target.value)}
                 />
@@ -659,10 +667,10 @@ const Clients: React.FC<{ state: AppState, setState: any }> = ({ state, setState
                 )}
               </div>
             ) : (
-              <table className="w-full relative">
+              <table className="w-full relative text-center">
                 <thead className="bg-slate-50 sticky top-0 z-20">
                   <tr>
-                    <th className="px-5 py-4 text-left w-12">
+                    <th className="px-5 py-4 text-left w-12 ">
                       <input
                         type="checkbox"
                         checked={paginatedClients.length > 0 && paginatedClients.every(c => selectedClients.has(c.id))}
@@ -671,16 +679,16 @@ const Clients: React.FC<{ state: AppState, setState: any }> = ({ state, setState
                         className="w-4 h-4 rounded border-slate-300"
                       />
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">Client</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">Contact</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">Phone</th>
-                    <th className="px-4 py-3 text-right text-xs font-bold text-slate-600 uppercase tracking-wider">Total Billed</th>
-                    <th className="px-4 py-3 text-right text-xs font-bold text-slate-600 uppercase tracking-wider">Outstanding</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">Status</th>
+                    <th className="px-4 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-wider">Client</th>
+                    <th className="px-4 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-wider">Contact</th>
+                    <th className="px-4 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-wider">Phone</th>
+                    <th className="px-4 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-wider">Total Billed</th>
+                    <th className="px-4 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-wider">Outstanding</th>
+                    <th className="px-4 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-wider">Status</th>
                     <th className="px-4 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-wider w-28">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-slate-300">
                   {paginatedClients.map((client) => {
                     const stats = getClientStats(client.id);
                     const statusInfo = getStatusColor(client.status || 'new');
@@ -689,8 +697,8 @@ const Clients: React.FC<{ state: AppState, setState: any }> = ({ state, setState
                     return (
                       <tr
                         key={client.id}
-                        className="hover:bg-slate-50/50 transition-all duration-200 cursor-pointer group"
-                        style={{ height: '56px' }}
+                        className="hover:bg-blue-50 transition-all duration-200 cursor-pointer group"
+                        style={{ height: '50px' }}
                         onClick={() => navigate(`/clients/${client.id}`)}
                       >
                         <td className="px-4 py-2">
@@ -703,23 +711,23 @@ const Clients: React.FC<{ state: AppState, setState: any }> = ({ state, setState
                             className="w-4 h-4 rounded border-slate-300 cursor-pointer"
                           />
                         </td>
-                        <td className="px-4 py-2">
-                          <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-sm shadow-sm" aria-hidden="true">{client.name[0]}</div>
-                            <div>
-                              <div className="text-sm font-semibold text-slate-900 leading-tight">{client.name}</div>
+                        <td className="px-4 py-2 ">
+                          <div className="flex items-center justify-center gap-3  ">
+
+                            <div className="text-center">
+                              <div className="text-sm font-semibold text-slate-900  ">{client.name}</div>
                             </div>
                           </div>
                         </td>
-                        <td className="px-4 py-2">
+                        <td className="px-4 py-2 text-center">
                           <div className="text-xs font-medium text-slate-600">{client.email}</div>
                         </td>
-                        <td className="px-4 py-2">
+                        <td className="px-4 py-2 text-center">
                           <div className="text-xs font-medium text-slate-600">{client.countryCode || ''} {client.phone}</div>
                         </td>
-                        <td className="px-4 py-2 text-right font-semibold text-slate-900">{formatCurrency(stats.totalRevenue)}</td>
-                        <td className="px-4 py-2 text-right font-semibold text-amber-600">{formatCurrency(stats.pendingAmount)}</td>
-                        <td className="px-4 py-2">
+                        <td className="px-4 py-2 text-center font-semibold text-slate-900">{formatCurrency(stats.totalRevenue)}</td>
+                        <td className="px-4 py-2 text-center font-semibold text-amber-600">{formatCurrency(stats.pendingAmount)}</td>
+                        <td className="px-4 py-2 text-center">
                           <div className={`relative status-dropdown-overlay ${isDropdownOpen ? 'z-50' : 'z-10'}`}>
                             <button
                               onClick={(e) => { e.stopPropagation(); setStatusDropdown(isDropdownOpen ? null : client.id); }}
@@ -780,7 +788,7 @@ const Clients: React.FC<{ state: AppState, setState: any }> = ({ state, setState
                             )}
                           </div>
                         </td>
-                        <td className="px-4 py-2">
+                        <td className="px-4 py-2 text-center">
                           <div className="flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                             <button
                               className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
@@ -814,7 +822,7 @@ const Clients: React.FC<{ state: AppState, setState: any }> = ({ state, setState
           </div>
         </div>
 
-        <div className="bg-white border-t border-slate-200 px-6 py-4 sticky bottom-0 z-20 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]" style={{ height: '64px' }}>
+        <div className="bg-white border-t  px-6 py-4 sticky bottom-0 z-20 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]" style={{ height: '64px' }}>
           <div className="flex justify-between items-center h-full">
             <div className="text-xs font-bold text-slate-400 uppercase  ">
               Showing {filteredClients.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0}–{Math.min(currentPage * itemsPerPage, filteredClients.length)} of {filteredClients.length}
@@ -882,9 +890,18 @@ const Clients: React.FC<{ state: AppState, setState: any }> = ({ state, setState
                 {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
               </div>
 
-              <div className="grid grid-cols-3 gap-3">
-
-                <div className="col-span-2">
+              <div className="grid grid-cols-4 gap-3">
+                <div className="col-span-1">
+                  <label className="block text-sm font-bold text-slate-700 mb-1">Code</label>
+                  <input
+                    type="text"
+                    value={newClient.countryCode}
+                    onChange={e => setNewClient({ ...newClient, countryCode: e.target.value })}
+                    className="w-full px-4 py-3 border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20"
+                    placeholder="+1"
+                  />
+                </div>
+                <div className="col-span-3">
                   <label className="block text-sm font-bold text-slate-700 mb-1">Phone</label>
                   <input
                     type="tel"
@@ -907,18 +924,36 @@ const Clients: React.FC<{ state: AppState, setState: any }> = ({ state, setState
                 />
               </div>
 
-              <div>
-                <label className="block text-sm font-bold text-slate-700 mb-1">Country</label>
-                <select
-                  value={newClient.country}
-                  onChange={e => setNewClient({ ...newClient, country: e.target.value })}
-                  className="w-full px-4 py-3 border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20"
-                >
-                  <option value="">Select country</option>
-                  {countries.map(c => (
-                    <option key={c} value={c}>{c}</option>
-                  ))}
-                </select>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-1">Country</label>
+                  <select
+                    value={newClient.country}
+                    onChange={e => setNewClient({ ...newClient, country: e.target.value })}
+                    className="w-full px-4 py-3 border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20"
+                  >
+                    <option value="">Select country</option>
+                    {countries.map(c => (
+                      <option key={c} value={c}>{c}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-1">Status</label>
+                  <select
+                    value={newClient.status || 'new'}
+                    onChange={e => setNewClient({ ...newClient, status: e.target.value })}
+                    className="w-full px-4 py-3 border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20"
+                  >
+                    <option value="new">New</option>
+                    <option value="active">Active</option>
+                    <option value="on_hold">On Hold</option>
+                    <option value="completed">Completed</option>
+                    <option value="inactive">Inactive</option>
+                    <option value="archived">Archived</option>
+                    <option value="vip">VIP</option>
+                  </select>
+                </div>
               </div>
 
               <div>
@@ -987,9 +1022,18 @@ const Clients: React.FC<{ state: AppState, setState: any }> = ({ state, setState
                 {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
               </div>
 
-              <div className="grid grid-cols-3 gap-3">
-
-                <div className="col-span-2">
+              <div className="grid grid-cols-4 gap-3">
+                <div className="col-span-1">
+                  <label className="block text-sm font-bold text-slate-700 mb-1">Code</label>
+                  <input
+                    type="text"
+                    value={newClient.countryCode}
+                    onChange={e => setNewClient({ ...newClient, countryCode: e.target.value })}
+                    className="w-full px-4 py-3 border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20"
+                    placeholder="+1"
+                  />
+                </div>
+                <div className="col-span-3">
                   <label className="block text-sm font-bold text-slate-700 mb-1">Phone</label>
                   <input
                     type="tel"
@@ -1012,18 +1056,36 @@ const Clients: React.FC<{ state: AppState, setState: any }> = ({ state, setState
                 />
               </div>
 
-              <div>
-                <label className="block text-sm font-bold text-slate-700 mb-1">Country</label>
-                <select
-                  value={newClient.country}
-                  onChange={e => setNewClient({ ...newClient, country: e.target.value })}
-                  className="w-full px-4 py-3 border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20"
-                >
-                  <option value="">Select country</option>
-                  {countries.map(c => (
-                    <option key={c} value={c}>{c}</option>
-                  ))}
-                </select>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-1">Country</label>
+                  <select
+                    value={newClient.country}
+                    onChange={e => setNewClient({ ...newClient, country: e.target.value })}
+                    className="w-full px-4 py-3 border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20"
+                  >
+                    <option value="">Select country</option>
+                    {countries.map(c => (
+                      <option key={c} value={c}>{c}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-1">Status</label>
+                  <select
+                    value={newClient.status || 'new'}
+                    onChange={e => setNewClient({ ...newClient, status: e.target.value })}
+                    className="w-full px-4 py-3 border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20"
+                  >
+                    <option value="new">New</option>
+                    <option value="active">Active</option>
+                    <option value="on_hold">On Hold</option>
+                    <option value="completed">Completed</option>
+                    <option value="inactive">Inactive</option>
+                    <option value="archived">Archived</option>
+                    <option value="vip">VIP</option>
+                  </select>
+                </div>
               </div>
 
               <div>

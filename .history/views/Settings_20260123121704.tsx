@@ -396,7 +396,7 @@ const Settings: React.FC<{ state: AppState; setState: any }> = ({
                 </div>
 
                 {/* Email Address */}
-                <Label htmlFor="businessEmail">Email Address</Label>
+                <Label htmlFor="businessEmail">Email Addssress</Label>
                 <div className="relative mb-4">
                   
                   <Input

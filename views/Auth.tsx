@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import {
   Wallet,
@@ -12,16 +12,36 @@ import {
   Zap,
   Globe,
   Stars,
-  Sparkles
+  Sparkles,
+  KeyRound,
+  ShieldCheck as ShieldIcon
 } from 'lucide-react';
+
+type AuthMode = 'signin' | 'signup' | 'forgot' | 'reset';
 
 const Auth: React.FC = () => {
   const [loading, setLoading] = useState(false);
-  const [isSignUp, setIsSignUp] = useState(false);
+  const [mode, setMode] = useState<AuthMode>('signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [otpToken, setOtpToken] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<boolean>(false);
+
+  // Listen for recovery link redirect
+  useEffect(() => {
+    if (!supabase) return;
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        setMode('reset');
+        if (session?.user?.email) setEmail(session.user.email);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,7 +52,7 @@ const Auth: React.FC = () => {
     setSuccess(false);
 
     try {
-      if (isSignUp) {
+      if (mode === 'signup') {
         const { error } = await supabase.auth.signUp({
           email,
           password,
@@ -42,9 +62,36 @@ const Auth: React.FC = () => {
         });
         if (error) throw error;
         setSuccess(true);
-      } else {
+      } else if (mode === 'signin') {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
+      } else if (mode === 'forgot') {
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: window.location.origin,
+        });
+        if (error) throw error;
+        setSuccess(true);
+      } else if (mode === 'reset') {
+        if (password !== confirmPassword) {
+          throw new Error('Passwords do not match');
+        }
+
+        // Verify the OTP first
+        const { error: verifyError } = await supabase.auth.verifyOtp({
+          email,
+          token: otpToken,
+          type: 'recovery'
+        });
+        if (verifyError) throw verifyError;
+
+        // Update the password
+        const { error: updateError } = await supabase.auth.updateUser({
+          password: password
+        });
+        if (updateError) throw updateError;
+
+        // Successfully reset, go to sign in or just let them stay signed in
+        setSuccess(true);
       }
     } catch (err: any) {
       setError(err.message || 'An error occurred during authentication');
@@ -64,17 +111,27 @@ const Auth: React.FC = () => {
           <div className="w-24 h-24 bg-gradient-to-tr from-emerald-100 to-emerald-50 text-emerald-600 rounded-[28px] flex items-center justify-center mx-auto mb-8 shadow-inner ring-8 ring-emerald-50/50">
             <CheckCircle2 size={40} className="drop-shadow-sm" />
           </div>
-          <h2 className="text-3xl font-black text-slate-900 mb-4 tracking-tight">Check your inbox</h2>
+          <h2 className="text-3xl font-black text-slate-900 mb-4 tracking-tight">
+            {mode === 'reset' ? 'Password Reset!' : 'Step 1 Complete'}
+          </h2>
           <p className="text-slate-500 font-medium leading-relaxed mb-8 text-lg">
-            We've sent a magic link to <br />
-            <span className="text-slate-900 font-bold bg-slate-100 px-2 py-0.5 rounded-lg">{email}</span>
+            {mode === 'reset'
+              ? 'Your password has been successfully updated.'
+              : `Check your email for reset instructions.`
+            }
           </p>
           <div className="space-y-4">
             <p className="text-sm text-slate-400 font-medium">
-              Click the link to verify your account and start your freelance journey.
+              {mode === 'reset'
+                ? 'You can now sign in with your new credentials.'
+                : `We've sent a code/link to reset your password.`
+              }
             </p>
             <button
-              onClick={() => setSuccess(false)}
+              onClick={() => {
+                setSuccess(false);
+                setMode('signin');
+              }}
               className="text-xs font-black text-blue-600 uppercase   hover:text-blue-700 transition-colors py-2"
             >
               Back to Sign In
@@ -169,41 +226,52 @@ const Auth: React.FC = () => {
             <div className="px-8 pt-8 pb-6">
               <div className="flex items-center justify-between mb-8">
                 <div>
-                  <h2 className="text-2xl font-black text-slate-900 tracking-tight">
-                    {isSignUp ? 'Get Started' : 'Welcome Back'}
+                  <h2 className="text-2xl font-black text-slate-900 tracking-tight text-center lg:text-left">
+                    {mode === 'signup' && 'Get Started'}
+                    {mode === 'signin' && 'Welcome Back'}
+                    {mode === 'forgot' && 'Reset Password'}
+                    {mode === 'reset' && 'Create New Password'}
                   </h2>
-                  <p className="text-slate-500 font-medium text-sm mt-1">
-                    {isSignUp ? 'Create your professional workspace.' : 'Enter your details to access account.'}
+                  <p className="text-slate-500 font-medium text-sm mt-1 text-center lg:text-left">
+                    {mode === 'signup' && 'Create your professional workspace.'}
+                    {mode === 'signin' && 'Enter your details to access account.'}
+                    {mode === 'forgot' && 'Enter your email to receive a reset code.'}
+                    {mode === 'reset' && 'Enter the reset code or set your new password.'}
                   </p>
                 </div>
                 {/* Icon decoration */}
-                <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center">
-                  {isSignUp ? <Stars size={24} /> : <Lock size={24} />}
+                <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl hidden lg:flex items-center justify-center shrink-0">
+                  {mode === 'signup' && <Stars size={24} />}
+                  {mode === 'signin' && <Lock size={24} />}
+                  {(mode === 'forgot' || mode === 'reset') && <KeyRound size={24} />}
                 </div>
               </div>
 
-              {/* Custom Tab Toggle */}
-              <div className="bg-slate-100/80 p-1.5 rounded-xl flex relative">
-                <div
-                  className={`absolute top-1.5 bottom-1.5 w-[calc(50%-6px)] bg-white rounded-lg shadow-sm border border-slate-200/50 transition-all duration-300 ease-out ${isSignUp ? 'translate-x-[calc(100%+6px)]' : 'translate-x-0'}`}
-                ></div>
-                <button
-                  onClick={() => setIsSignUp(false)}
-                  className={`flex-1 relative z-10 text-xs font-black uppercase   py-2.5 text-center transition-colors ${!isSignUp ? 'text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
-                >
-                  Sign In
-                </button>
-                <button
-                  onClick={() => setIsSignUp(true)}
-                  className={`flex-1 relative z-10 text-xs font-black uppercase   py-2.5 text-center transition-colors ${isSignUp ? 'text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
-                >
-                  Sign Up
-                </button>
-              </div>
+              {/* Custom Tab Toggle (Only for Sign In / Sign Up) */}
+              {(mode === 'signin' || mode === 'signup') && (
+                <div className="bg-slate-100/80 p-1.5 rounded-xl flex relative">
+                  <div
+                    className={`absolute top-1.5 bottom-1.5 w-[calc(50%-6px)] bg-white rounded-lg shadow-sm border border-slate-200/50 transition-all duration-300 ease-out ${mode === 'signup' ? 'translate-x-[calc(100%+6px)]' : 'translate-x-0'}`}
+                  ></div>
+                  <button
+                    onClick={() => setMode('signin')}
+                    className={`flex-1 relative z-10 text-xs font-black uppercase   py-2.5 text-center transition-colors ${mode === 'signin' ? 'text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
+                  >
+                    Sign In
+                  </button>
+                  <button
+                    onClick={() => setMode('signup')}
+                    className={`flex-1 relative z-10 text-xs font-black uppercase   py-2.5 text-center transition-colors ${mode === 'signup' ? 'text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
+                  >
+                    Sign Up
+                  </button>
+                </div>
+              )}
             </div>
 
             <div className="px-8 pb-8">
               <form onSubmit={handleAuth} className="space-y-5">
+                {/* Email Field - Always shown unless in reset mode (though email is useful there too) */}
                 <div className="space-y-1.5">
                   <label className="label-work-email text-xs font-black text-slate-500 ml-1 uppercase tracking-wider">Email Address</label>
                   <div className="relative group">
@@ -214,7 +282,8 @@ const Auth: React.FC = () => {
                       type="email"
                       required
                       autoComplete="email"
-                      className="w-full pl-14 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-[18px] outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-600 font-bold transition-all text-slate-900 placeholder:text-slate-300 text-sm"
+                      disabled={mode === 'reset'}
+                      className="w-full pl-14 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-[18px] outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-600 font-bold transition-all text-slate-900 placeholder:text-slate-300 text-sm disabled:opacity-50"
                       placeholder="name@company.com"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
@@ -222,28 +291,80 @@ const Auth: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="space-y-1.5">
-                  <div className="flex justify-between items-center px-1">
-                    <label className="label-work-email text-xs font-black text-slate-500 uppercase tracking-wider">Password</label>
-                    {!isSignUp && (
-                      <button type="button" className="text-[10px] font-black text-blue-600 uppercase   hover:underline">Forgot?</button>
-                    )}
-                  </div>
-                  <div className="relative group">
-                    <div className="absolute left-4 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-400 group-focus-within:text-blue-600 group-focus-within:bg-blue-50 transition-colors">
-                      <Lock size={16} />
+                {/* Reset Code Field - Shown in reset mode (optional if they clicked link) */}
+                {mode === 'reset' && (
+                  <div className="space-y-1.5">
+                    <label className="label-work-email text-xs font-black text-slate-500 ml-1 uppercase tracking-wider">
+                      Reset Code <span className="text-[10px] lowercase font-medium opacity-50">(Optional if link was clicked)</span>
+                    </label>
+                    <div className="relative group">
+                      <div className="absolute left-4 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-400 group-focus-within:text-blue-600 group-focus-within:bg-blue-50 transition-colors">
+                        <KeyRound size={16} />
+                      </div>
+                      <input
+                        type="text"
+                        className="w-full pl-14 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-[18px] outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-600 font-bold transition-all text-slate-900 placeholder:text-slate-300 text-sm tracking-widest"
+                        placeholder="Enter 6-digit code"
+                        value={otpToken}
+                        onChange={(e) => setOtpToken(e.target.value)}
+                      />
                     </div>
-                    <input
-                      type="password"
-                      required
-                      autoComplete={isSignUp ? "new-password" : "current-password"}
-                      className="w-full pl-14 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-[18px] outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-600 font-bold transition-all text-slate-900 placeholder:text-slate-300 text-sm"
-                      placeholder="••••••••"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                    />
                   </div>
-                </div>
+                )}
+
+                {/* Password Field - Shown in signin, signup, and reset modes */}
+                {mode !== 'forgot' && (
+                  <div className="space-y-1.5">
+                    <div className="flex justify-between items-center px-1">
+                      <label className="label-work-email text-xs font-black text-slate-500 uppercase tracking-wider">
+                        {mode === 'reset' ? 'New Password' : 'Password'}
+                      </label>
+                      {mode === 'signin' && (
+                        <button
+                          type="button"
+                          onClick={() => setMode('forgot')}
+                          className="text-[10px] font-black text-blue-600 uppercase   hover:underline"
+                        >
+                          Forgot?
+                        </button>
+                      )}
+                    </div>
+                    <div className="relative group">
+                      <div className="absolute left-4 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-400 group-focus-within:text-blue-600 group-focus-within:bg-blue-50 transition-colors">
+                        <Lock size={16} />
+                      </div>
+                      <input
+                        type="password"
+                        required
+                        autoComplete={mode === 'signup' ? "new-password" : "current-password"}
+                        className="w-full pl-14 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-[18px] outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-600 font-bold transition-all text-slate-900 placeholder:text-slate-300 text-sm"
+                        placeholder="••••••••"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Confirm Password Field - Only shown in reset mode */}
+                {mode === 'reset' && (
+                  <div className="space-y-1.5">
+                    <label className="label-work-email text-xs font-black text-slate-500 ml-1 uppercase tracking-wider">Confirm New Password</label>
+                    <div className="relative group">
+                      <div className="absolute left-4 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-400 group-focus-within:text-blue-600 group-focus-within:bg-blue-50 transition-colors">
+                        <ShieldIcon size={16} />
+                      </div>
+                      <input
+                        type="password"
+                        required
+                        className="w-full pl-14 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-[18px] outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-600 font-bold transition-all text-slate-900 placeholder:text-slate-300 text-sm"
+                        placeholder="••••••••"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                )}
 
                 {error && (
                   <div className="flex items-center gap-3 p-4 bg-rose-50 border border-rose-100 text-rose-600 rounded-[18px] text-xs font-bold animate-in fade-in slide-in-from-top-2">
@@ -258,11 +379,27 @@ const Auth: React.FC = () => {
                 >
                   {loading ? <Loader2 className="animate-spin" size={18} /> : (
                     <>
-                      {isSignUp ? 'Create Account' : 'Sign In'}
+                      {mode === 'signup' && 'Create Account'}
+                      {mode === 'signin' && 'Sign In'}
+                      {mode === 'forgot' && 'Send Reset Code'}
+                      {mode === 'reset' && 'Update Password'}
                       <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
                     </>
                   )}
                 </button>
+
+                {mode !== 'signin' && mode !== 'signup' && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMode('signin');
+                      setError(null);
+                    }}
+                    className="w-full py-2 text-xs font-black text-slate-400 uppercase   hover:text-slate-600 transition-colors"
+                  >
+                    Back to Sign In
+                  </button>
+                )}
               </form>
             </div>
 
@@ -281,3 +418,4 @@ const Auth: React.FC = () => {
 };
 
 export default Auth;
+

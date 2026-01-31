@@ -13,14 +13,14 @@ import {
 import { supabase } from '../lib/supabase';
 
 // Sidebar Item Component
-const SidebarItem = ({ to, icon: Icon, label, active, onClick }: { to: string; icon: any; label: string; active: boolean; onClick?: () => void }) => (
+const SidebarItem = ({ to, icon: Icon, label, active, onClick }: { to: string; icon: any; label: string; active: boolean; onClick?: () => void; key?: string }) => (
   <Link
     to={to}
     onClick={onClick}
     className={`group relative flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 outline-none
-      ${active 
-        ? 'bg-blue-50 text-blue-700 font-medium' 
-        : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+      ${active
+        ? 'bg-slate-100 text-black font-bold'
+        : 'text-black hover:bg-slate-100'
       }`}
   >
     {/* Active Indicator Bar */}
@@ -28,7 +28,7 @@ const SidebarItem = ({ to, icon: Icon, label, active, onClick }: { to: string; i
       <div className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-1 bg-blue-600 rounded-r-full" />
     )}
 
-    <Icon size={20} strokeWidth={active ? 2.5 : 2} className={`transition-colors ${active ? 'text-blue-600' : 'text-slate-400 group-hover:text-slate-600'}`} />
+    <Icon size={20} strokeWidth={active ? 2.5 : 2} className={`transition-colors ${active ? 'text-black' : 'text-black group-hover:text-black'}`} />
     <span className="text-[15px]">{label}</span>
   </Link>
 );
@@ -62,15 +62,15 @@ const Sidebar = ({ session, state, mobileOpen, setMobileOpen }: { session: any; 
     <>
       {/* Mobile Backdrop */}
       {mobileOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-slate-900/20 backdrop-blur-sm z-40 md:hidden"
           onClick={() => setMobileOpen(false)}
         />
       )}
 
       {/* Sidebar Container */}
-      <aside 
-        className={`fixed md:sticky top-0 h-screen w-[260px] bg-[#FAFAFB] border-r border-slate-200 flex flex-col z-50 transition-transform duration-300 ease-in-out
+      <aside
+        className={`fixed md:sticky top-0 h-screen w-[260px] bg-side-panel border-r border-slate-200 flex flex-col z-50 transition-transform duration-300 ease-in-out
           ${mobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
         `}
       >
@@ -80,9 +80,9 @@ const Sidebar = ({ session, state, mobileOpen, setMobileOpen }: { session: any; 
             <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white shadow-md shadow-blue-500/20">
               <Wallet size={18} strokeWidth={2.5} />
             </div>
-            <span className="text-xl font-bold tracking-tight text-slate-900">FreeFlow</span>
+            <span className="text-xl font-bold tracking-tight text-black">FreeFlow</span>
           </div>
-          <button 
+          <button
             onClick={() => setMobileOpen(false)}
             className="md:hidden p-1 text-slate-400 hover:text-slate-600"
           >
@@ -106,16 +106,16 @@ const Sidebar = ({ session, state, mobileOpen, setMobileOpen }: { session: any; 
 
         {/* Bottom Section */}
         <div className="p-3">
-           <SidebarItem 
-            to="/settings" 
-            icon={Settings} 
-            label="Settings" 
+          <SidebarItem
+            to="/settings"
+            icon={Settings}
+            label="Settings"
             active={isActive('/settings')}
             onClick={() => setMobileOpen(false)}
           />
 
           <Separator />
-          
+
           {/* User Profile */}
           <div className="mt-2 p-2 rounded-xl border border-slate-200 bg-white shadow-sm group hover:border-blue-200 transition-colors">
             <div className="flex items-center gap-3">
@@ -126,9 +126,9 @@ const Sidebar = ({ session, state, mobileOpen, setMobileOpen }: { session: any; 
                   <span className="font-semibold text-slate-600 text-sm">{userInitial}</span>
                 )}
               </div>
-              
+
               <div className="flex-1 min-w-0 pr-1">
-                <p className="text-sm font-semibold text-slate-900 truncate leading-tight">
+                <p className="text-sm font-semibold text-black truncate leading-tight">
                   {userName}
                 </p>
                 <div className="flex items-center gap-1.5 pt-0.5">
@@ -137,7 +137,7 @@ const Sidebar = ({ session, state, mobileOpen, setMobileOpen }: { session: any; 
                   </span>
                 </div>
               </div>
-              
+
               <button
                 onClick={() => supabase?.auth.signOut()}
                 className="text-slate-400 hover:text-red-500 hover:bg-red-50 p-1.5 rounded-lg transition-colors"

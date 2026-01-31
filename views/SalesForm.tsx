@@ -132,10 +132,6 @@ const SalesForm: React.FC<{ state: AppState, setState: any }> = ({ state, setSta
   }, [subtotal, total, amountPaid, balanceDue]);
 
   const handleSave = () => {
-    if (!doc.clientId && !doc.billTo?.trim()) {
-      alert('Please select a client or enter billing information');
-      return;
-    }
 
     const finalDoc: SalesDocument = {
       ...(doc as SalesDocument),

@@ -57,10 +57,6 @@ const Projects: React.FC<{ state: AppState, setState: any }> = ({ state, setStat
   const completedCount = state.projects.filter(p => p.status === 'completed').length;
 
   const handleSubmit = () => {
-    if (!formData.title || !formData.clientId) {
-      alert('Please provide a title and select a client');
-      return;
-    }
 
     if (editingProject) {
       setState((prev: AppState) => ({
@@ -224,10 +220,10 @@ const Projects: React.FC<{ state: AppState, setState: any }> = ({ state, setStat
   };
 
   return (
-    <div className="min-h-screen bg-[#F9FAFB]">
+    <div className="min-h-screen m-0 p-8 pt-4 ">
       <div className="w-full p-3">
         {/* Navigation Bar */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-00 p-6 mb-8">
           <div className="flex justify-between items-center">
             {/* Left: Tabs */}
             <div className="flex space-x-8">
@@ -471,7 +467,7 @@ const Projects: React.FC<{ state: AppState, setState: any }> = ({ state, setStat
                   {/* Project Title and Description */}
                   <div className="mb-4">
                     <h3 className="text-lg font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">
-                      {project.title}
+                      {project.title || 'Untitled Project'}
                     </h3>
                     <p className="text-sm text-gray-500 leading-relaxed">
                       {project.description}

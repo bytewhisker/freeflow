@@ -131,7 +131,7 @@ const Billing: React.FC<{ state: AppState, setState: any }> = ({ state, setState
 
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 m-0 p-8 pt-4 ">
       <div className="flex justify-between items-end">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Invoice Management</h1>
@@ -255,7 +255,7 @@ const Billing: React.FC<{ state: AppState, setState: any }> = ({ state, setState
             {filteredDocs.length > 0 ? filteredDocs.map((doc) => {
               const client = state.clients.find(c => c.id === doc.clientId);
               return (
-                <tr key={doc.id} className="hover:bg-slate-50 transition-colors group">
+                <tr key={doc.id} className="hover:bg-blue-50 transition-all duration-200 group">
                   <td className="px-6 py-4">
                     <button
                       onClick={() => handleSelectItem(doc.id)}
@@ -270,8 +270,8 @@ const Billing: React.FC<{ state: AppState, setState: any }> = ({ state, setState
                   </td>
                   <td className="px-6 py-4 font-bold text-sm text-slate-900">{doc.docNumber}</td>
                   <td className="px-6 py-4">
-                    <p className="font-bold text-sm text-slate-900">{client?.name}</p>
-                    <p className="text-xs text-slate-400 font-medium">{client?.company}</p>
+                    <p className="font-bold text-sm text-slate-900">{client?.name || doc.billTo?.split('\n')[0] || 'Private Client'}</p>
+                    <p className="text-xs text-slate-400 font-medium">{client?.company || (doc.billTo?.split('\n').length! > 1 ? doc.billTo?.split('\n')[1] : '')}</p>
                   </td>
                   <td className="px-6 py-4">
                     <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-blue-50 text-blue-600">

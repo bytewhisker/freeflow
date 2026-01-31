@@ -12,7 +12,7 @@ const CustomTooltip = ({ active, payload }: any) => {
   if (active && payload && payload.length) {
     return (
       <div className="bg-slate-900 text-white px-3 py-1.5 rounded-lg shadow-xl relative mb-2">
-        <p className="text-xs font-black tracking-tight">${payload[0].value.toLocaleString()}</p>
+        <p className="text-xs font-bold tracking-tight">${payload[0].value.toLocaleString()}</p>
         <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-slate-900 rotate-45" />
       </div>
     );
@@ -28,11 +28,11 @@ const formatYAxis = (value: number) => {
 
 const EarningsChart: React.FC<EarningsChartProps> = ({ data, totalRevenue, onRangeChange }) => {
   return (
-    <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden w-full p-8">
+    <div className="bg-white rounded-3xl border border-slate-300 shadow-sm overflow-hidden w-full p-8">
       <div className="flex justify-between items-start mb-6">
         <div>
-          <h2 className="text-[10px] font-black text-slate-400   mb-1 uppercase">Total Revenue</h2>
-          <p className="text-4xl font-black text-slate-900 tracking-tight">
+          <h2 className="text-[10px] font-bold mb-1 uppercase">Total Revenue</h2>
+          <p className="text-4xl font-bold text-slate-900 tracking-tight">
             ${totalRevenue.toLocaleString()}
           </p>
         </div>
@@ -40,7 +40,7 @@ const EarningsChart: React.FC<EarningsChartProps> = ({ data, totalRevenue, onRan
         <div className="no-print">
           <select
             onChange={(e) => onRangeChange(e.target.value)}
-            className="px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-black uppercase   text-slate-600 outline-none hover:bg-slate-100 transition-colors"
+            className="px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold uppercase   text-slate-600 outline-none hover:bg-slate-100 transition-colors"
           >
             <option value="12months">Last 12 Months</option>
             <option value="90days">Last 90 Days</option>

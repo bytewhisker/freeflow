@@ -63,7 +63,7 @@ const ProjectDetail: React.FC<{ state: AppState }> = ({ state }) => {
 
           <div className="flex-1">
             <h1 className="text-3xl font-extrabold text-slate-900">
-              {project.title}
+              {project.title || 'Untitled Project'}
             </h1>
             <p className="text-slate-500 text-sm">
               Project workspace overview

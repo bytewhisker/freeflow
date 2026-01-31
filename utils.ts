@@ -96,6 +96,7 @@ export const ISO_CURRENCIES = [
   { code: 'CAD', symbol: 'C$', name: 'Canadian Dollar', country: 'Canada' },
   { code: 'AUD', symbol: 'A$', name: 'Australian Dollar', country: 'Australia' },
   { code: 'INR', symbol: '₹', name: 'Indian Rupee', country: 'India' },
+  { code: 'BDT', symbol: '৳', name: 'Bangladeshi Taka', country: 'Bangladesh' },
   { code: 'AED', symbol: 'د.إ', name: 'UAE Dirham', country: 'United Arab Emirates' },
   { code: 'SAR', symbol: '﷼', name: 'Saudi Riyal', country: 'Saudi Arabia' },
   { code: 'CNY', symbol: '¥', name: 'Chinese Yuan', country: 'China' },

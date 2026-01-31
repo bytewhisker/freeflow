@@ -126,7 +126,7 @@ const App: React.FC = () => {
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
           <Loader2 className="animate-spin text-blue-600" size={48} />
-          <p className="text-sm font-black text-slate-400 uppercase  ">Waking up FreeFlow...</p>
+          <p className="text-sm font-bold  ">Waking up FreeFlow...</p>
         </div>
       </div>
     );
@@ -154,21 +154,7 @@ const App: React.FC = () => {
               />
 
               <main className="flex-1 flex flex-col min-w-0">
-                <header className="h-16 md:h-20 bg-white/80 backdrop-blur-md border-b border-slate-100 flex items-center gap-4 px-4 md:px-10 sticky top-0 z-10 no-print">
-                  <button
-                    onClick={() => setMobileSidebarOpen(true)}
-                    className="md:hidden p-2 text-slate-500 hover:bg-slate-100 rounded-lg"
-                  >
-                    <Menu size={24} />
-                  </button>
-                  <div className="flex-1 flex items-center gap-4 bg-slate-100/50 px-6 py-3 rounded-2xl max-w-[400px] border border-transparent focus-within:border-blue-500/20 focus-within:bg-white transition-all">
-                    <Search size={18} className="text-slate-400" />
-                    <input type="text" placeholder="Quick find clients, projects..." className="bg-transparent border-none outline-none text-sm w-full text-slate-900 font-medium" />
-                  </div>
-
-                </header>
-
-                <div className="p-6 w-full overflow-y-auto">
+                <div className="w-full overflow-y-auto">
                   <Routes>
                     <Route path="/" element={<Dashboard state={state} />} />
                     <Route path="/clients" element={<Clients state={state} setState={updateStateAndSync} />} />
