@@ -172,7 +172,7 @@ const SalesForm: React.FC<{ state: AppState, setState: any }> = ({ state, setSta
                 <div className="space-y-4">
                   <Upload size={48} className="mx-auto text-slate-400" />
                   <div>
-                    <p className="text-lg font-bold text-slate-600">Upload Logo</p>
+                    <p className="text-lg font-bold text-black">Upload Logo</p>
                     <p className="text-sm text-slate-400">Click to upload or drag and drop</p>
                   </div>
                 </div>
@@ -196,7 +196,7 @@ const SalesForm: React.FC<{ state: AppState, setState: any }> = ({ state, setSta
               <div className="text-right">
                 <label className="block text-sm font-bold text-slate-500 uppercase tracking-wider mb-2">Invoice #</label>
                 <div className="flex items-center">
-                  <span className="text-2xl font-black text-slate-600 mr-2">#</span>
+                  <span className="text-2xl font-black text-black mr-2">#</span>
                   <input
                     type="text"
                     className="text-2xl font-black text-slate-900 bg-transparent border-b-2 border-slate-200 focus:border-blue-500 outline-none"
@@ -461,14 +461,14 @@ const SalesForm: React.FC<{ state: AppState, setState: any }> = ({ state, setSta
           <div className="space-y-4">
             {/* Subtotal */}
             <div className="flex justify-between items-center py-2 border-b border-slate-100">
-              <span className="font-bold text-slate-600">Subtotal</span>
+              <span className="font-bold text-black">Subtotal</span>
               <span className="font-black text-slate-900">{formatCurrency(subtotal, currencyCode)}</span>
             </div>
 
             {/* Tax */}
             <div className="flex justify-between items-center py-2 border-b border-slate-100">
               <div className="flex items-center gap-2">
-                <span className="font-bold text-slate-600">Tax</span>
+                <span className="font-bold text-black">Tax</span>
                 <div className="flex items-center">
                   <input
                     type="number"
@@ -488,7 +488,7 @@ const SalesForm: React.FC<{ state: AppState, setState: any }> = ({ state, setSta
             {/* Discount */}
             {showDiscount && (
               <div className="flex justify-between items-center py-2 border-b border-slate-100">
-                <span className="font-bold text-slate-600">Discount</span>
+                <span className="font-bold text-black">Discount</span>
                 <div className="flex items-center gap-2">
                   <span className="text-slate-400">{currencySymbol}</span>
                   <input
@@ -514,7 +514,7 @@ const SalesForm: React.FC<{ state: AppState, setState: any }> = ({ state, setSta
             {/* Shipping */}
             {showShipping && (
               <div className="flex justify-between items-center py-2 border-b border-slate-100">
-                <span className="font-bold text-slate-600">Shipping</span>
+                <span className="font-bold text-black">Shipping</span>
                 <div className="flex items-center gap-2">
                   <span className="text-slate-400">{currencySymbol}</span>
                   <input
@@ -545,7 +545,7 @@ const SalesForm: React.FC<{ state: AppState, setState: any }> = ({ state, setSta
 
             {/* Amount Paid */}
             <div className="flex justify-between items-center py-2 border-b border-slate-100">
-              <span className="font-bold text-slate-600">Amount Paid</span>
+              <span className="font-bold text-black">Amount Paid</span>
               <div className="flex items-center gap-2">
                 <span className="text-slate-400">{currencySymbol}</span>
                 <input

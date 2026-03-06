@@ -48,7 +48,8 @@ const Clients: React.FC<{ state: AppState, setState: any }> = ({ state, setState
   const [filters, setFilters] = useState({
     pendingInvoices: false,
     highRevenue: false,
-    active: false
+    active: false,
+    atRisk: false
   });
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [selectedClients, setSelectedClients] = useState<Set<string>>(new Set());
@@ -287,6 +288,10 @@ const Clients: React.FC<{ state: AppState, setState: any }> = ({ state, setState
       clients = clients.filter(client => getClientStats(client.id).activeProjects > 0);
     }
 
+    if (filters.atRisk) {
+      clients = clients.filter(client => getClientStats(client.id).healthScore < 50 || getClientStats(client.id).hasOverdue);
+    }
+
     return clients.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   }, [state.clients, state.projects, state.salesDocuments, search, filters, getClientStats]);
 
@@ -331,13 +336,14 @@ const Clients: React.FC<{ state: AppState, setState: any }> = ({ state, setState
   ];
 
   const getStatusColor = (status: string) => {
+    const isDark = document.documentElement.classList.contains('dark');
     switch (status.toLowerCase()) {
-      case 'new': return { bg: '#F3F4F6', text: '#6B7280', border: '#E5E7EB' };
-      case 'active': return { bg: '#ECFDF5', text: '#166534', border: '#BBF7D0' };
-      case 'on_hold': return { bg: '#FEF3C7', text: '#92400E', border: '#FDE68A' };
-      case 'archived': return { bg: '#F1F5F9', text: '#475569', border: '#E2E8F0' };
-      case 'vip': return { bg: '#E0F2FE', text: '#0E7490', border: '#B3E5FC' };
-      default: return { bg: '#F3F4F6', text: '#374151', border: '#E5E7EB' };
+      case 'new': return { bg: isDark ? '#1e293b' : '#F3F4F6', text: isDark ? '#94a3b8' : '#6B7280', border: isDark ? '#334155' : '#E5E7EB' };
+      case 'active': return { bg: isDark ? '#064e3b' : '#ECFDF5', text: isDark ? '#34d399' : '#166534', border: isDark ? '#065f46' : '#BBF7D0' };
+      case 'on_hold': return { bg: isDark ? '#78350f' : '#FEF3C7', text: isDark ? '#fbbf24' : '#92400E', border: isDark ? '#92400e' : '#FDE68A' };
+      case 'archived': return { bg: isDark ? '#1e293b' : '#F1F5F9', text: isDark ? '#94a3b8' : '#475569', border: isDark ? '#334155' : '#E2E8F0' };
+      case 'vip': return { bg: isDark ? '#1e3a8a' : '#E0F2FE', text: isDark ? '#60a5fa' : '#0E7490', border: isDark ? '#1e40af' : '#B3E5FC' };
+      default: return { bg: isDark ? '#1e293b' : '#F3F4F6', text: isDark ? '#94a3b8' : '#374151', border: isDark ? '#334155' : '#E5E7EB' };
     }
   };
 
@@ -459,70 +465,96 @@ const Clients: React.FC<{ state: AppState, setState: any }> = ({ state, setState
   };
 
   return (
-    <div className="h-screen overflow-hidden m-0 p-8 pt-4" >
-      <div className="w-full mx-auto px-0 h-full flex flex-col" style={{ maxWidth: '1600px' }}>
+    <div className="min-h-screen m-0 p-4 sm:p-2 pt-4 bg-slate-50 dark:bg-slate-950 flex flex-col" >
+      <div className="w-full mx-auto px-0 flex flex-col flex-1" style={{ maxWidth: '1600px' }}>
 
-        <div className="flex justify-between items-center py-6 mb-2" style={{ height: '25px' }}>
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center py-6 mb-2 gap-6">
           <div className="flex items-center gap-4">
-            {/* <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg">
-              <Users size={24} className="text-white" />
-            </div> */}
-            <div>
-              <h1 className="text-2xl font-bold text-slate-900">Client Management</h1>
-            </div>
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-white whitespace-nowrap">Client Management</h1>
           </div>
 
-
-
-          <button
-            onClick={() => setShowAdd(true)}
-            aria-label="Add new client"
-            className="flex items-center gap-3 px-3 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white text-[13px] rounded-xl font-bold shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
-          >
-            <Plus size={15} aria-hidden="true" />
-            <span>Add Client</span>
-          </button>
-
-
-
-        </div>
-
-        <div className="grid grid-cols-3 gap-6 mb-5" style={{ height: '140px' }}>
-          <div className="bg-gray-100 rounded-2xl p-5 text-white">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-sm font-bold text-black uppercase tracking-wide mb-1">Total Clients</div>
-                <div className="text-3xl font-bold text-black">{globalStats.totalClients}</div>
-              </div>
-              <div className="bg-black p-3 rounded-xl"><Users size={24} /></div>
+          <div className="flex flex-col sm:flex-row items-center gap-4 w-full lg:w-auto flex-1 lg:max-w-2xl">
+            <div className="relative w-full">
+              <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" aria-hidden="true"><Search size={18} /></div>
+              <input
+                type="text"
+                placeholder="Search clients..."
+                aria-label="Search clients"
+                className="w-full pl-11 pr-4 py-2.5 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20 shadow-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 transition-all font-open-sans"
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+              />
             </div>
-            <div className="mt-1 flex items-center gap-2"><div className="w-2 h-2 bg-black rounded-full"></div><span className="text-sm text-black">All active clients</span></div>
-          </div>
-          <div className="bg-gray-100 rounded-2xl p-5 text-white ">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-sm font-bold text-black uppercase tracking-wide mb-2">Active Projects</div>
-                <div className="text-3xl font-bold text-black">{globalStats.activeProjects}</div>
-              </div>
-              <div className="bg-black p-3 rounded-xl"><Briefcase size={24} /></div>
+
+            <div className="flex items-center gap-3 w-full sm:w-auto">
+              {/* <button
+                onClick={() => {
+                  const reportData = state.clients.map(c => {
+                    const s = getClientStats(c.id);
+                    return `${c.name},${c.company},${s.totalRevenue},${s.pendingAmount},${c.status || 'new'}`;
+                  }).join('\n');
+                  const blob = new Blob([`Name,Company,Total Revenue,Pending Amount,Status\n${reportData}`], { type: 'text/csv' });
+                  const url = window.URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = `client_report_${new Date().toISOString().split('T')[0]}.csv`;
+                  a.click();
+                  setToast({ message: 'Comprehensive client report exported', type: 'success' });
+                }}
+                className="flex items-center gap-2 px-4 py-2.5 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 text-[13px] rounded-xl font-bold hover:bg-white dark:hover:bg-slate-900 transition-all font-open-sans h-[42px] whitespace-nowrap"
+              >
+                <Download size={16} />
+                <span>Export Report</span>
+              </button> */}
+
+              <button
+                onClick={() => setShowAdd(true)}
+                aria-label="Add new client"
+                className="flex items-center gap-3 px-6 py-2.5 bg-slate-900 dark:bg-blue-600 text-white text-[13px] rounded-xl font-bold shadow-lg hover:shadow-xl transition-all duration-200 h-[42px] whitespace-nowrap"
+              >
+                <Plus size={15} aria-hidden="true" />
+                <span>Add Client</span>
+              </button>
             </div>
-            <div className="mt-1 flex items-center gap-2"><div className="w-2 h-2 bg-black rounded-full"></div><span className="text-sm text-black">Currently in progress</span></div>
-          </div>
-          <div className="bg-gray-100 rounded-2xl p-5 text-white ">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-sm font-bold text-black uppercase tracking-wide mb-2">Pending Invoices</div>
-                <div className="text-3xl font-bold text-black">{globalStats.pendingInvoices}</div>
-              </div>
-              <div className="bg-black p-3 rounded-xl"><AlertCircle size={24} /></div>
-            </div>
-            <div className="mt-1 flex items-center gap-2"><div className="w-2 h-2 bg-black rounded-full"></div><span className="text-sm text-black">Awaiting payment</span></div>
           </div>
         </div>
 
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-5">
+          <div className="rounded-2xl p-5 text-white shadow-sm bg-white border border-slate-300 dark:bg-slate-800">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-sm font-bold text-slate-600 dark:text-slate-300 tracking-wide mb-1">Total Clients</div>
+                <div className="text-3xl font-bold text-slate-900 dark:text-white font-open-sans">{globalStats.totalClients}</div>
+              </div>
+              <div className="bg-slate-900 dark:bg-white/10 p-3 rounded-xl"><Users size={24} className="text-white" /></div>
+            </div>
+            <div className="mt-1 flex items-center gap-2"><div className="w-2 h-2 bg-slate-900 dark:bg-white rounded-full"></div><span className="text-sm text-slate-600 dark:text-slate-300 font-medium">All active clients</span></div>
+          </div>
+          <div className="rounded-2xl p-5 text-white shadow-sm bg-white border border-slate-300 dark:bg-slate-800">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-sm font-bold text-slate-600 dark:text-slate-300 tracking-wide mb-2">Active Projects</div>
+                <div className="text-3xl font-bold text-slate-900 dark:text-white font-open-sans">{globalStats.activeProjects}</div>
+              </div>
+              <div className="bg-slate-900 dark:bg-white/10 p-3 rounded-xl"><Briefcase size={24} className="text-white" /></div>
+            </div>
+            <div className="mt-1 flex items-center gap-2"><div className="w-2 h-2 bg-slate-900 dark:bg-white rounded-full"></div><span className="text-sm text-slate-600 dark:text-slate-300 font-medium">Currently in progress</span></div>
+          </div>
+          <div className="rounded-2xl p-5 text-white shadow-sm bg-white border border-slate-300 dark:bg-slate-800">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-sm font-bold text-slate-600 dark:text-slate-300 tracking-wide mb-2">Pending Invoices</div>
+                <div className="text-3xl font-bold text-slate-900 dark:text-white font-open-sans">{globalStats.pendingInvoices}</div>
+              </div>
+              <div className="bg-slate-900 dark:bg-white/10 p-3 rounded-xl"><AlertCircle size={24} className="text-white" /></div>
+            </div>
+            <div className="mt-1 flex items-center gap-2"><div className="w-2 h-2 bg-slate-900 dark:bg-white rounded-full"></div><span className="text-sm text-slate-600 dark:text-slate-300 font-medium">Awaiting payment</span></div>
+          </div>
+        </div>
 
 
-        <div className="flex-1 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col" style={{ height: 'calc(100vh - 40px)' }}>
+
+        <div className="flex-1 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col min-h-[700px]">
           {/* Sticky Bulk Action Bar */}
           {selectedClients.size > 0 && (
             <div className="sticky top-0 z-30 bg-blue-600 px-6 py-3 flex items-center justify-between shadow-md">
@@ -553,14 +585,14 @@ const Clients: React.FC<{ state: AppState, setState: any }> = ({ state, setState
                   {bulkActionDropdown && (
                     <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden animate-in fade-in zoom-in-95 duration-100 origin-top-right z-50">
                       <div className="p-1.5 bg-slate-50/50">
-                        <div className="px-3 py-2 text-xs font-bold text-slate-400 uppercase  ">
+                        <div className="px-3 py-2 text-xs font-bold text-slate-400 font-open-sans">
                           Change Status
                         </div>
                         {statusOptions.map(option => (
                           <button
                             key={option.value}
                             onClick={() => handleBulkStatusChange(option.value)}
-                            className="w-full text-left px-4 py-2.5 text-xs font-bold uppercase tracking-wider rounded-xl hover:bg-white hover:shadow-sm transition-all flex items-center gap-2"
+                            className="w-full text-left px-4 py-2.5 text-[11px] font-bold tracking-tight rounded-xl hover:bg-white hover:shadow-sm transition-all flex items-center gap-2"
                             style={{ color: option.color }}
                           >
                             <div className="w-2 h-2 rounded-full" style={{ backgroundColor: option.color }} aria-hidden="true"></div>
@@ -570,7 +602,7 @@ const Clients: React.FC<{ state: AppState, setState: any }> = ({ state, setState
                         <div className="my-2 border-t border-slate-200"></div>
                         <button
                           onClick={handleBulkDelete}
-                          className="w-full text-left px-4 py-2.5 text-xs font-bold uppercase tracking-wider rounded-xl hover:bg-rose-50 hover:text-rose-600 transition-all flex items-center gap-2 text-rose-600"
+                          className="w-full text-left px-4 py-2.5 text-[11px] font-bold tracking-tight rounded-xl hover:bg-rose-50 hover:text-rose-600 transition-all flex items-center gap-2 text-rose-600"
                         >
                           <Trash2 size={16} aria-hidden="true" />
                           Delete Selected
@@ -588,11 +620,11 @@ const Clients: React.FC<{ state: AppState, setState: any }> = ({ state, setState
 
 
 
-          <div className={`bg-slate-50 border-b border-slate-200 px-6 py-4 ${selectedClients.size > 0 ? 'border-t border-t-black' : ''}`} style={{ height: '50px' }}>
+          <div className={`bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800 px-6 py-4 ${selectedClients.size > 0 ? 'border-t border-t-black dark:border-t-blue-500' : ''}`}>
             <div className="flex items-center justify-between h-full">
               <div className="flex items-center gap-2">
-                <h2 className="text-lg font-bold text-slate-900">Client Directory</h2>
-                <span className="text-sm text-slate-500 font-medium">({filteredClients.length})</span>
+                <h2 className="text-lg font-bold text-slate-900 dark:text-white">Client Directory</h2>
+                <span className="text-sm text-slate-500 dark:text-slate-400 font-medium">({filteredClients.length})</span>
               </div>
 
             </div>
@@ -603,92 +635,102 @@ const Clients: React.FC<{ state: AppState, setState: any }> = ({ state, setState
 
 
 
-          {/* Search Clients Box */}
-          <div className="bg-white  p-6 mb-6" style={{ height: '70px' }}>
-            <div className="flex items-center justify-between h-full">
-              <div className="flex-1 relative">
-                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" aria-hidden="true"><Search size={20} /></div>
-                <input
-                  type="text"
-                  placeholder="Search clients..."
-                  aria-label="Search clients"
-                  className="w-full pl-12 pr-4 py-3 text-sm bg-white border border-black rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20 shadow-sm"
-                  value={search}
-                  onChange={e => setSearch(e.target.value)}
-                />
-              </div>
-              <div className="flex items-center gap-3 ml-6">
-                {[
-                  { k: 'pendingInvoices', l: 'Pending', i: Clock, c: 'amber', label: 'Filter by pending invoices' },
-                  { k: 'active', l: 'Active', i: Target, c: 'green', label: 'Filter by active projects' },
-                  { k: 'highRevenue', l: 'High Revenue', i: TrendingUp, c: 'blue', label: 'Filter by high revenue' }
-                ].map(f => (
-                  <button
-                    key={f.k}
-                    onClick={() => setFilters(prev => ({ ...prev, [f.k]: !prev[f.k] }))}
-                    aria-pressed={filters[f.k as keyof typeof filters]}
-                    aria-label={f.label}
-                    className={`px-4 py-2 rounded-lg font-bold text-sm transition-all duration-200 ${filters[f.k as keyof typeof filters] ? `bg-${f.c}-500 text-white shadow-lg` : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                      }`}
-                  >
-                    <div className="flex items-center gap-2">
-                      <f.i size={16} />
-                      <span>{filters[f.k as keyof typeof filters] ? `✓ ${f.l}` : f.l}</span>
-                    </div>
-                  </button>
-                ))}
-              </div>
+          {/* Filters Bar */}
+          <div className="bg-white dark:bg-slate-900 p-4 border-b border-slate-100 dark:border-slate-800">
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mr-2 font-open-sans">Quick Filters:</div>
+              {[
+                { k: 'pendingInvoices', l: 'Pending', i: Clock, c: 'amber', label: 'Filter by pending invoices' },
+                { k: 'active', l: 'Active', i: Target, c: 'green', label: 'Filter by active projects' },
+                { k: 'highRevenue', l: 'High Revenue', i: TrendingUp, c: 'blue', label: 'Filter by high revenue' },
+                { k: 'atRisk', l: 'At Risk', i: AlertCircle, c: 'rose', label: 'Filter by at-risk clients' }
+              ].map(f => (
+                <button
+                  key={f.k}
+                  onClick={() => setFilters(prev => {
+                    const isAlreadyActive = (prev as any)[f.k];
+                    return {
+                      pendingInvoices: false,
+                      highRevenue: false,
+                      active: false,
+                      atRisk: false,
+                      [f.k]: !isAlreadyActive
+                    };
+                  })}
+                  aria-pressed={filters[f.k as keyof typeof filters]}
+                  aria-label={f.label}
+                  className={`px-4 py-1.5 rounded-full font-bold text-[11px] transition-all duration-200 border ${filters[f.k as keyof typeof filters]
+                    ? `bg-${f.c}-500 text-white border-${f.c}-500 shadow-md`
+                    : 'bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'
+                    }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <f.i size={12} />
+                    <span>{filters[f.k as keyof typeof filters] ? `✓ ${f.l}` : f.l}</span>
+                  </div>
+                </button>
+              ))}
             </div>
           </div>
 
-          <div className="overflow-x-auto flex-1" style={{ maxHeight: 'calc(100vh - 420px)', minHeight: '200px' }}>
+          <div className="overflow-x-auto flex-1">
             {filteredClients.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-[150px] py-12">
-                <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-4">
-                  <Users size={32} className="text-slate-400" />
+              <div className="flex flex-col items-center justify-center py-20 animate-in fade-in zoom-in duration-700">
+                <div className="w-24 h-24 bg-blue-50 rounded-[32px] flex items-center justify-center mb-8 relative">
+                  <div className="absolute inset-0 bg-blue-400/20 rounded-[32px] animate-ping duration-[3000ms]"></div>
+                  <Users size={40} className="text-blue-600 relative z-10" />
                 </div>
-                <h3 className="text-lg font-semibold text-slate-900 mb-2">No clients found</h3>
-                <p className="text-sm text-slate-500 mb-4">
+
+                <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-3 font-open-sans">No Client Connections</h3>
+                <p className="text-slate-500 dark:text-slate-400 text-center max-w-sm mb-10 leading-relaxed font-medium font-open-sans text-sm">
                   {search || filters.pendingInvoices || filters.highRevenue || filters.active
-                    ? 'Try adjusting your search or filters'
-                    : 'Get started by adding your first client'}
+                    ? 'No clients matches your current filter criteria. Refine your search to explore other relations.'
+                    : 'Your client directory is currently empty. Start building your network by onboarding your first entry.'}
                 </p>
-                {(search || filters.pendingInvoices || filters.highRevenue || filters.active) && (
+
+                {search || filters.pendingInvoices || filters.highRevenue || filters.active ? (
                   <button
                     onClick={() => {
                       setSearch('');
                       setFilters({ pendingInvoices: false, highRevenue: false, active: false });
                     }}
-                    className="px-4 py-2 text-sm font-medium text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                    aria-label="Clear all filters"
+                    className="px-8 py-3.5 bg-slate-900 text-white rounded-2xl font-bold text-[13px] shadow-lg hover:bg-black transition-all active:scale-95 font-open-sans"
                   >
-                    Clear filters
+                    Clear Filter Criteria
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => setShowAdd(true)}
+                    className="px-10 py-5 bg-black text-white rounded-2xl font-bold text-sm shadow-xl hover:shadow-2xl hover:bg-slate-900 transition-all active:scale-95 flex items-center gap-3 font-open-sans"
+                  >
+                    <Plus size={20} />
+                    Onboard First Client
                   </button>
                 )}
               </div>
             ) : (
-              <table className="w-full relative text-center">
-                <thead className="bg-slate-50 sticky top-0 z-20">
+              <table className="w-full relative text-center min-w-[1000px] border-collapse">
+                <thead className="bg-slate-50 dark:bg-slate-800 sticky top-0 z-20">
                   <tr>
-                    <th className="px-5 py-4 text-left w-12 ">
+                    <th className="px-5 py-4 text-left w-12 border-b border-slate-200 dark:border-slate-700">
                       <input
                         type="checkbox"
                         checked={paginatedClients.length > 0 && paginatedClients.every(c => selectedClients.has(c.id))}
                         onChange={(e) => handleSelectAll(e.target.checked)}
                         aria-label="Select all clients on this page"
-                        className="w-4 h-4 rounded border-slate-300"
+                        className="w-4 h-4 rounded border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800"
                       />
                     </th>
-                    <th className="px-4 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-wider">Client</th>
-                    <th className="px-4 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-wider">Contact</th>
-                    <th className="px-4 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-wider">Phone</th>
-                    <th className="px-4 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-wider">Total Billed</th>
-                    <th className="px-4 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-wider">Outstanding</th>
-                    <th className="px-4 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-wider">Status</th>
-                    <th className="px-4 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-wider w-28">Actions</th>
+                    <th className="px-5 py-4 text-center text-sm font-bold text-slate-700 dark:text-slate-300 font-open-sans tracking-tight border-b border-slate-200 dark:border-slate-700">Client</th>
+                    <th className="px-5 py-4 text-center text-sm font-bold text-slate-700 dark:text-slate-300 font-open-sans tracking-tight border-b border-slate-200 dark:border-slate-700">Contact</th>
+                    <th className="px-5 py-4 text-center text-sm font-bold text-slate-700 dark:text-slate-300 font-open-sans tracking-tight border-b border-slate-200 dark:border-slate-700">Phone</th>
+                    <th className="px-5 py-4 text-center text-sm font-bold text-slate-700 dark:text-slate-300 font-open-sans tracking-tight border-b border-slate-200 dark:border-slate-700">Total Billed</th>
+                    <th className="px-5 py-4 text-center text-sm font-bold text-slate-700 dark:text-slate-300 font-open-sans tracking-tight border-b border-slate-200 dark:border-slate-700">Outstanding</th>
+                    <th className="px-5 py-4 text-center text-sm font-bold text-slate-700 dark:text-slate-300 font-open-sans tracking-tight border-b border-slate-200 dark:border-slate-700">Status</th>
+                    <th className="px-5 py-4 text-center text-sm font-bold text-slate-700 dark:text-slate-300 font-open-sans tracking-tight w-32 border-b border-slate-200 dark:border-slate-700">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-300">
+                <tbody className="divide-y divide-slate-300 dark:divide-slate-800">
                   {paginatedClients.map((client) => {
                     const stats = getClientStats(client.id);
                     const statusInfo = getStatusColor(client.status || 'new');
@@ -697,7 +739,7 @@ const Clients: React.FC<{ state: AppState, setState: any }> = ({ state, setState
                     return (
                       <tr
                         key={client.id}
-                        className="hover:bg-blue-50 transition-all duration-200 cursor-pointer group"
+                        className="hover:bg-blue-50 dark:hover:bg-blue-900/10 transition-all duration-200 cursor-pointer group"
                         style={{ height: '50px' }}
                         onClick={() => navigate(`/clients/${client.id}`)}
                       >
@@ -708,25 +750,25 @@ const Clients: React.FC<{ state: AppState, setState: any }> = ({ state, setState
                             onChange={(e) => handleSelectClient(client.id, e.target.checked)}
                             onClick={(e) => e.stopPropagation()}
                             aria-label={`Select ${client.name}`}
-                            className="w-4 h-4 rounded border-slate-300 cursor-pointer"
+                            className="w-4 h-4 rounded border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 cursor-pointer"
                           />
                         </td>
                         <td className="px-4 py-2 ">
                           <div className="flex items-center justify-center gap-3  ">
 
                             <div className="text-center">
-                              <div className="text-sm font-semibold text-slate-900  ">{client.name}</div>
+                              <div className="text-sm font-semibold text-slate-900 dark:text-white">{client.name}</div>
                             </div>
                           </div>
                         </td>
                         <td className="px-4 py-2 text-center">
-                          <div className="text-xs font-medium text-slate-600">{client.email}</div>
+                          <div className="text-xs font-medium text-slate-600 dark:text-slate-400">{client.email}</div>
                         </td>
                         <td className="px-4 py-2 text-center">
-                          <div className="text-xs font-medium text-slate-600">{client.countryCode || ''} {client.phone}</div>
+                          <div className="text-xs font-medium text-slate-600 dark:text-slate-400">{client.countryCode || ''} {client.phone}</div>
                         </td>
-                        <td className="px-4 py-2 text-center font-semibold text-slate-900">{formatCurrency(stats.totalRevenue)}</td>
-                        <td className="px-4 py-2 text-center font-semibold text-amber-600">{formatCurrency(stats.pendingAmount)}</td>
+                        <td className="px-4 py-2 text-center font-semibold text-slate-900 dark:text-slate-300">{formatCurrency(stats.totalRevenue)}</td>
+                        <td className="px-4 py-2 text-center font-semibold text-amber-600 dark:text-amber-500">{formatCurrency(stats.pendingAmount)}</td>
                         <td className="px-4 py-2 text-center">
                           <div className={`relative status-dropdown-overlay ${isDropdownOpen ? 'z-50' : 'z-10'}`}>
                             <button
@@ -748,11 +790,11 @@ const Clients: React.FC<{ state: AppState, setState: any }> = ({ state, setState
 
                             {isDropdownOpen && (
                               <div
-                                className="absolute left-0 mt-2 w-48 bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden animate-in fade-in zoom-in-95 duration-100 origin-top-left"
+                                className="absolute left-0 mt-2 w-48 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-700 overflow-hidden animate-in fade-in zoom-in-95 duration-100 origin-top-left"
                                 role="menu"
                                 aria-orientation="vertical"
                               >
-                                <div className="p-1.5 bg-slate-50/50">
+                                <div className="p-1.5 bg-slate-50/50 dark:bg-slate-900/50">
                                   {statusOptions.map((option, index) => (
                                     <button
                                       key={option.value}
@@ -776,8 +818,8 @@ const Clients: React.FC<{ state: AppState, setState: any }> = ({ state, setState
                                       }}
                                       role="menuitem"
                                       tabIndex={0}
-                                      className="w-full text-left px-4 py-2.5 text-xs font-bold uppercase tracking-wider rounded-xl hover:bg-white hover:shadow-sm transition-all flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                      style={{ color: option.value === (client.status || 'new') ? option.color : '#64748b' }}
+                                      className="w-full text-left px-4 py-2.5 text-xs font-bold uppercase tracking-wider rounded-xl hover:bg-white dark:hover:bg-slate-700 hover:shadow-sm transition-all flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                      style={{ color: option.value === (client.status || 'new') ? option.color : (document.documentElement.classList.contains('dark') ? '#94a3b8' : '#64748b') }}
                                     >
                                       <div className="w-2 h-2 rounded-full" style={{ backgroundColor: option.color }} aria-hidden="true"></div>
                                       {option.label}
@@ -822,9 +864,9 @@ const Clients: React.FC<{ state: AppState, setState: any }> = ({ state, setState
           </div>
         </div>
 
-        <div className="bg-white border-t  px-6 py-4 sticky bottom-0 z-20 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]" style={{ height: '64px' }}>
-          <div className="flex justify-between items-center h-full">
-            <div className="text-xs font-bold text-slate-400 uppercase  ">
+        <div className="bg-white dark:bg-slate-950 border-t dark:border-slate-800 px-6 py-4 sticky bottom-0 z-20 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] dark:shadow-none">
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div className="text-sm font-bold text-slate-400 dark:text-slate-500 font-open-sans">
               Showing {filteredClients.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0}–{Math.min(currentPage * itemsPerPage, filteredClients.length)} of {filteredClients.length}
             </div>
             <div className="flex items-center gap-2">
@@ -832,18 +874,18 @@ const Clients: React.FC<{ state: AppState, setState: any }> = ({ state, setState
                 onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                 disabled={currentPage === 1}
                 aria-label="Previous page"
-                className="p-2 rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-30 transition-colors"
+                className="p-2 rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900 disabled:opacity-30 transition-colors text-slate-600 dark:text-slate-400"
               >
                 <ChevronLeft size={16} aria-hidden="true" />
               </button>
-              <span className="text-xs font-bold text-slate-400 uppercase   px-2">
+              <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase px-2">
                 {currentPage} / {totalPages || 1}
               </span>
               <button
                 onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
                 disabled={currentPage === totalPages || totalPages === 0}
                 aria-label="Next page"
-                className="p-2 rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-30 transition-colors"
+                className="p-2 rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900 disabled:opacity-30 transition-colors text-slate-600 dark:text-slate-400"
               >
                 <ChevronRight size={16} aria-hidden="true" />
               </button>
@@ -856,128 +898,128 @@ const Clients: React.FC<{ state: AppState, setState: any }> = ({ state, setState
 
       {/* Edit Client Modal */}
       {editingClient && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-slate-200 flex items-center justify-between">
-              <h2 className="text-xl font-bold text-slate-900">Edit Client</h2>
-              <button onClick={() => setEditingClient(null)} className="p-2 hover:bg-slate-100 rounded-lg transition-colors">
-                <X size={20} className="text-slate-500" />
+        <div className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-[28px] w-full max-w-lg shadow-2xl border border-slate-200/60 dark:border-slate-800 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="px-8 py-7 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-white/50 dark:bg-slate-900/50 backdrop-blur-md sticky top-0 z-10">
+              <div>
+                <h2 className="text-xl font-bold text-black dark:text-white">Edit Client</h2>
+                <p className="text-xs font-medium text-slate-400 dark:text-slate-500 mt-1">Modify existing client information</p>
+              </div>
+              <button
+                onClick={() => setEditingClient(null)}
+                className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-all text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-white hover:rotate-90"
+              >
+                <X size={20} />
               </button>
             </div>
 
-            <div className="p-6 space-y-4">
-              <div>
-                <label className="block text-sm font-bold text-slate-700 mb-1">Name *</label>
+            <div className="p-8 space-y-6 max-h-[70vh] overflow-y-auto custom-scrollbar bg-white dark:bg-slate-900">
+              <div className="space-y-1.5">
+                <label className="block text-[15px] font-bold text-black dark:text-slate-300 font-open-sans ml-1">Full Name </label>
                 <input
                   type="text"
                   value={newClient.name}
                   onChange={e => setNewClient({ ...newClient, name: e.target.value })}
-                  className={`w-full px-4 py-3 border rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20 ${errors.name ? 'border-red-300' : 'border-slate-300'}`}
-                  placeholder="Enter client name"
+                  className={`w-full px-5 py-3.5 bg-slate-50 dark:bg-slate-800/50 border-2 rounded-2xl outline-none transition-all text-sm font-semibold font-open-sans placeholder-slate-400 dark:placeholder-slate-600 text-slate-900 dark:text-white ${errors.name ? 'border-rose-100 dark:border-rose-900/50 bg-rose-50/30' : 'border-transparent focus:border-blue-500/20 dark:focus:border-blue-500/30 focus:bg-white dark:focus:bg-slate-800 focus:ring-4 focus:ring-blue-500/5 dark:focus:ring-blue-500/10'}`}
+                  placeholder="e.g. John Doe"
                 />
-                {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
+                {errors.name && <p className="text-rose-500 text-[15px] font-bold mt-1.5 ml-1">{errors.name}</p>}
               </div>
 
-              <div>
-                <label className="block text-sm font-bold text-slate-700 mb-1">Email</label>
-                <input
-                  type="email"
-                  value={newClient.email}
-                  onChange={e => setNewClient({ ...newClient, email: e.target.value })}
-                  className={`w-full px-4 py-3 border rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20 ${errors.email ? 'border-red-300' : 'border-slate-300'}`}
-                  placeholder="Enter email address"
-                />
-                {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
-              </div>
-
-              <div className="grid grid-cols-4 gap-3">
-                <div className="col-span-1">
-                  <label className="block text-sm font-bold text-slate-700 mb-1">Code</label>
+              <div className="grid grid-cols-2 gap-5">
+                <div className="space-y-1.5">
+                  <label className="block text-[15px] font-bold text-black dark:text-slate-300 font-open-sans ml-1">Email Address</label>
+                  <input
+                    type="email"
+                    value={newClient.email}
+                    onChange={e => setNewClient({ ...newClient, email: e.target.value })}
+                    className={`w-full px-5 py-3.5 bg-slate-50 dark:bg-slate-800/50 border-2 rounded-2xl outline-none transition-all text-sm font-semibold font-open-sans placeholder-slate-400 dark:placeholder-slate-600 text-slate-900 dark:text-white ${errors.email ? 'border-rose-100 dark:border-rose-900/50 bg-rose-50/30' : 'border-transparent focus:border-blue-500/20 dark:focus:border-blue-500/30 focus:bg-white dark:focus:bg-slate-800 focus:ring-4 focus:ring-blue-500/5 dark:focus:ring-blue-500/10'}`}
+                    placeholder="john@example.com"
+                  />
+                  {errors.email && <p className="text-rose-500 text-[15px] font-bold mt-1.5 ml-1">{errors.email}</p>}
+                </div>
+                <div className="space-y-1.5">
+                  <label className="block text-[15px] font-bold text-black dark:text-slate-300 font-open-sans ml-1">Organization</label>
                   <input
                     type="text"
-                    value={newClient.countryCode}
-                    onChange={e => setNewClient({ ...newClient, countryCode: e.target.value })}
-                    className="w-full px-4 py-3 border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20"
-                    placeholder="+1"
-                  />
-                </div>
-                <div className="col-span-3">
-                  <label className="block text-sm font-bold text-slate-700 mb-1">Phone</label>
-                  <input
-                    type="tel"
-                    value={newClient.phone}
-                    onChange={e => setNewClient({ ...newClient, phone: e.target.value })}
-                    className="w-full px-4 py-3 border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20"
-                    placeholder="Phone number"
+                    value={newClient.company}
+                    onChange={e => setNewClient({ ...newClient, company: e.target.value })}
+                    className="w-full px-5 py-3.5 bg-slate-50 dark:bg-slate-800/50 border-2 border-transparent rounded-2xl outline-none transition-all focus:border-blue-500/20 dark:focus:border-blue-500/30 focus:bg-white dark:focus:bg-slate-800 focus:ring-4 focus:ring-blue-500/5 dark:focus:ring-blue-500/10 text-sm font-semibold font-open-sans placeholder-slate-400 dark:placeholder-slate-600 text-slate-900 dark:text-white"
+                    placeholder="Company name"
                   />
                 </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-bold text-slate-700 mb-1">Company</label>
+              <div className="space-y-1.5">
+                <label className="block text-[15px] font-bold text-black dark:text-slate-300 font-open-sans ml-1">Phone Number</label>
                 <input
-                  type="text"
-                  value={newClient.company}
-                  onChange={e => setNewClient({ ...newClient, company: e.target.value })}
-                  className="w-full px-4 py-3 border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20"
-                  placeholder="Company name"
+                  type="tel"
+                  value={newClient.phone}
+                  onChange={e => setNewClient({ ...newClient, phone: e.target.value })}
+                  className="w-full px-5 py-3.5 bg-slate-50 dark:bg-slate-800/50 border-2 border-transparent rounded-2xl outline-none transition-all focus:border-blue-500/20 dark:focus:border-blue-500/30 focus:bg-white dark:focus:bg-slate-800 focus:ring-4 focus:ring-blue-500/5 dark:focus:ring-blue-500/10 text-sm font-semibold font-open-sans placeholder-slate-400 dark:placeholder-slate-600 text-slate-900 dark:text-white"
+                  placeholder="+1 (555) 000-0000"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-1">Country</label>
-                  <select
-                    value={newClient.country}
-                    onChange={e => setNewClient({ ...newClient, country: e.target.value })}
-                    className="w-full px-4 py-3 border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20"
-                  >
-                    <option value="">Select country</option>
-                    {countries.map(c => (
-                      <option key={c} value={c}>{c}</option>
-                    ))}
-                  </select>
+              <div className="grid grid-cols-2 gap-5">
+                <div className="space-y-1.5">
+                  <label className="block text-[15px] font-bold text-black dark:text-slate-300 font-open-sans ml-1">Territory</label>
+                  <div className="relative">
+                    <select
+                      value={newClient.country}
+                      onChange={e => setNewClient({ ...newClient, country: e.target.value })}
+                      className="w-full px-5 py-3.5 bg-slate-50 dark:bg-slate-800/50 border-2 border-transparent rounded-2xl outline-none transition-all focus:border-blue-500/20 dark:focus:border-blue-500/30 focus:bg-white dark:focus:bg-slate-800 focus:ring-4 focus:ring-blue-500/5 dark:focus:ring-blue-500/10 text-sm font-semibold font-open-sans appearance-none cursor-pointer text-slate-900 dark:text-white"
+                    >
+                      <option value="" className="dark:bg-slate-900">Select territory</option>
+                      {countries.map(c => (
+                        <option key={c} value={c} className="dark:bg-slate-900">{c}</option>
+                      ))}
+                    </select>
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                      <ChevronDown size={16} />
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-1">Status</label>
-                  <select
-                    value={newClient.status || 'new'}
-                    onChange={e => setNewClient({ ...newClient, status: e.target.value })}
-                    className="w-full px-4 py-3 border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20"
-                  >
-                    <option value="new">New</option>
-                    <option value="active">Active</option>
-                    <option value="on_hold">On Hold</option>
-                    <option value="completed">Completed</option>
-                    <option value="inactive">Inactive</option>
-                    <option value="archived">Archived</option>
-                    <option value="vip">VIP</option>
-                  </select>
+                <div className="space-y-1.5">
+                  <label className="block text-[15px] font-bold text-black dark:text-slate-300 font-open-sans ml-1">Status</label>
+                  <div className="relative">
+                    <select
+                      value={newClient.status || 'new'}
+                      onChange={e => setNewClient({ ...newClient, status: e.target.value })}
+                      className="w-full px-5 py-3.5 bg-slate-50 dark:bg-slate-800/50 border-2 border-transparent rounded-2xl outline-none transition-all focus:border-blue-500/20 dark:focus:border-blue-500/30 focus:bg-white dark:focus:bg-slate-800 focus:ring-4 focus:ring-blue-500/5 dark:focus:ring-blue-500/10 text-sm font-semibold font-open-sans appearance-none cursor-pointer text-slate-900 dark:text-white"
+                    >
+                      {statusOptions.map(opt => (
+                        <option key={opt.value} value={opt.value} className="dark:bg-slate-900">{opt.label}</option>
+                      ))}
+                    </select>
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                      <ChevronDown size={16} />
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-bold text-slate-700 mb-1">Notes</label>
+              <div className="space-y-1.5">
+                <label className="block text-[15px] font-bold text-black dark:text-slate-300 font-open-sans ml-1">Internal Notes</label>
                 <textarea
                   value={newClient.notes}
                   onChange={e => setNewClient({ ...newClient, notes: e.target.value })}
-                  className="w-full px-4 py-3 border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20"
-                  rows={3}
-                  placeholder="Add notes about this client"
+                  className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800/50 border-2 border-transparent rounded-2xl outline-none transition-all focus:border-blue-500/20 dark:focus:border-blue-500/30 focus:bg-white dark:focus:bg-slate-800 focus:ring-4 focus:ring-blue-500/5 dark:focus:ring-blue-500/10 text-sm font-semibold font-open-sans h-32 resize-none placeholder-slate-400 dark:placeholder-slate-600 text-slate-900 dark:text-white"
+                  placeholder="Record observations or project history..."
                 />
               </div>
             </div>
 
-            <div className="p-6 border-t border-slate-200 flex justify-end gap-3">
+            <div className="p-8 border-t border-slate-100 dark:border-slate-800 flex justify-end items-center gap-4 bg-slate-50/30 dark:bg-slate-800/30">
               <button
                 onClick={() => setEditingClient(null)}
-                className="px-6 py-2.5 border border-slate-300 text-slate-700 rounded-xl font-bold hover:bg-slate-50 transition-colors"
+                className="px-6 py-3.5 text-slate-500 dark:text-slate-400 font-bold font-open-sans text-[13px] hover:text-slate-800 dark:hover:text-white transition-colors rounded-xl"
               >
                 Cancel
               </button>
               <button
                 onClick={handleUpdate}
-                className="px-6 py-2.5 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-colors"
+                className="px-10 py-3.5 bg-blue-600 text-white rounded-2xl font-bold font-open-sans text-[13px] shadow-lg hover:shadow-blue-500/10 hover:bg-blue-700 transition-all active:scale-95 flex items-center gap-2"
               >
                 Save Changes
               </button>
@@ -988,130 +1030,133 @@ const Clients: React.FC<{ state: AppState, setState: any }> = ({ state, setState
 
       {/* Add Client Modal */}
       {showAdd && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-slate-200 flex items-center justify-between">
-              <h2 className="text-xl font-bold text-slate-900">Add New Client</h2>
-              <button onClick={() => setShowAdd(false)} className="p-2 hover:bg-slate-100 rounded-lg transition-colors">
-                <X size={20} className="text-slate-500" />
+        <div className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-[28px] w-full max-w-lg shadow-2xl border border-slate-200/60 dark:border-slate-800 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="px-8 py-7 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-white/50 dark:bg-slate-900/50 backdrop-blur-md sticky top-0 z-10">
+              <div>
+                <h2 className="text-xl font-bold text-black dark:text-white">Add New Client</h2>
+                <p className="text-xs font-medium text-slate-400 dark:text-slate-500 mt-1">Onboard a new client to your directory</p>
+              </div>
+              <button
+                onClick={() => setShowAdd(false)}
+                className="p-2 hover:bg-slate-100 rounded-full transition-all text-slate-400 hover:text-slate-600 hover:rotate-90"
+              >
+                <X size={20} />
               </button>
             </div>
 
-            <div className="p-6 space-y-4">
-              <div>
-                <label className="block text-sm font-bold text-slate-700 mb-1">Name *</label>
+            <div className="p-8 space-y-6 max-h-[70vh] overflow-y-auto custom-scrollbar bg-white dark:bg-slate-900">
+              <div className="space-y-1.5">
+                <label className="block text-[15px] font-bold text-black dark:text-slate-300 font-open-sans ml-1">Full Name </label>
                 <input
                   type="text"
                   value={newClient.name}
                   onChange={e => setNewClient({ ...newClient, name: e.target.value })}
-                  className={`w-full px-4 py-3 border rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20 ${errors.name ? 'border-red-300' : 'border-slate-300'}`}
-                  placeholder="Enter client name"
+                  className={`w-full px-5 py-3.5 bg-slate-50 dark:bg-slate-800/50 border-2 rounded-2xl outline-none transition-all text-sm font-semibold font-open-sans placeholder-slate-400 dark:placeholder-slate-600 text-slate-900 dark:text-white ${errors.name ? 'border-rose-100 dark:border-rose-900/50 bg-rose-50/30' : 'border-transparent focus:border-blue-500/20 dark:focus:border-blue-500/30 focus:bg-white dark:focus:bg-slate-800 focus:ring-4 focus:ring-blue-500/5 dark:focus:ring-blue-500/10'}`}
+                  placeholder="e.g. John Doe"
                 />
-                {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
+                {errors.name && <p className="text-rose-500 text-[15px] font-bold mt-1.5 ml-1 animate-in slide-in-from-top-1">{errors.name}</p>}
               </div>
 
-              <div>
-                <label className="block text-sm font-bold text-slate-700 mb-1">Email</label>
-                <input
-                  type="email"
-                  value={newClient.email}
-                  onChange={e => setNewClient({ ...newClient, email: e.target.value })}
-                  className={`w-full px-4 py-3 border rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20 ${errors.email ? 'border-red-300' : 'border-slate-300'}`}
-                  placeholder="Enter email address"
-                />
-                {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
-              </div>
-
-              <div className="grid grid-cols-4 gap-3">
-                <div className="col-span-1">
-                  <label className="block text-sm font-bold text-slate-700 mb-1">Code</label>
+              <div className="grid grid-cols-2 gap-5">
+                <div className="space-y-1.5">
+                  <label className="block text-[15px] font-bold text-black dark:text-slate-300 font-open-sans ml-1">Email Address</label>
+                  <input
+                    type="email"
+                    value={newClient.email}
+                    onChange={e => setNewClient({ ...newClient, email: e.target.value })}
+                    className={`w-full px-5 py-3.5 bg-slate-50 dark:bg-slate-800/50 border-2 rounded-2xl outline-none transition-all text-sm font-semibold font-open-sans placeholder-slate-400 dark:placeholder-slate-600 text-slate-900 dark:text-white ${errors.email ? 'border-rose-100 dark:border-rose-900/50 bg-rose-50/30' : 'border-transparent focus:border-blue-500/20 dark:focus:border-blue-500/30 focus:bg-white dark:focus:bg-slate-800 focus:ring-4 focus:ring-blue-500/5 dark:focus:ring-blue-500/10'}`}
+                    placeholder="john@example.com"
+                  />
+                  {errors.email && <p className="text-rose-500 text-[15px] font-bold mt-1.5 ml-1 animate-in slide-in-from-top-1">{errors.email}</p>}
+                </div>
+                <div className="space-y-1.5">
+                  <label className="block text-[15px] font-bold text-black dark:text-slate-300 font-open-sans ml-1">Organization</label>
                   <input
                     type="text"
-                    value={newClient.countryCode}
-                    onChange={e => setNewClient({ ...newClient, countryCode: e.target.value })}
-                    className="w-full px-4 py-3 border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20"
-                    placeholder="+1"
+                    value={newClient.company}
+                    onChange={e => setNewClient({ ...newClient, company: e.target.value })}
+                    className="w-full px-5 py-3.5 bg-slate-50 dark:bg-slate-800/50 border-2 border-transparent rounded-2xl outline-none transition-all focus:border-blue-500/20 dark:focus:border-blue-500/30 focus:bg-white dark:focus:bg-slate-800 focus:ring-4 focus:ring-blue-500/5 dark:focus:ring-blue-500/10 text-sm font-semibold font-open-sans placeholder-slate-400 dark:placeholder-slate-600 text-slate-900 dark:text-white"
+                    placeholder="Company name"
                   />
                 </div>
-                <div className="col-span-3">
-                  <label className="block text-sm font-bold text-slate-700 mb-1">Phone</label>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="block text-[15px] font-bold text-black dark:text-slate-300 font-open-sans ml-1">Phone Number</label>
+                <div className="relative">
                   <input
                     type="tel"
                     value={newClient.phone}
                     onChange={e => setNewClient({ ...newClient, phone: e.target.value })}
-                    className="w-full px-4 py-3 border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20"
-                    placeholder="Phone number"
+                    className="w-full px-5 py-3.5 bg-slate-50 dark:bg-slate-800/50 border-2 border-transparent rounded-2xl outline-none transition-all focus:border-blue-500/20 dark:focus:border-blue-500/30 focus:bg-white dark:focus:bg-slate-800 focus:ring-4 focus:ring-blue-500/5 dark:focus:ring-blue-500/10 text-sm font-semibold font-open-sans placeholder-slate-400 dark:placeholder-slate-600 text-slate-900 dark:text-white"
+                    placeholder="+1 (555) 000-0000"
                   />
                 </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-bold text-slate-700 mb-1">Company</label>
-                <input
-                  type="text"
-                  value={newClient.company}
-                  onChange={e => setNewClient({ ...newClient, company: e.target.value })}
-                  className="w-full px-4 py-3 border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20"
-                  placeholder="Company name"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-1">Country</label>
-                  <select
-                    value={newClient.country}
-                    onChange={e => setNewClient({ ...newClient, country: e.target.value })}
-                    className="w-full px-4 py-3 border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20"
-                  >
-                    <option value="">Select country</option>
-                    {countries.map(c => (
-                      <option key={c} value={c}>{c}</option>
-                    ))}
-                  </select>
+              <div className="grid grid-cols-2 gap-5">
+                <div className="space-y-1.5">
+                  <label className="block text-[15px] font-bold text-black dark:text-slate-300 font-open-sans ml-1">Country</label>
+                  <div className="relative">
+                    <select
+                      value={newClient.country}
+                      onChange={e => setNewClient({ ...newClient, country: e.target.value })}
+                      className="w-full px-5 py-3.5 bg-slate-50 dark:bg-slate-800/50 border-2 border-transparent rounded-2xl outline-none transition-all focus:border-blue-500/20 dark:focus:border-blue-500/30 focus:bg-white dark:focus:bg-slate-800 focus:ring-4 focus:ring-blue-500/5 dark:focus:ring-blue-500/10 text-sm font-semibold font-open-sans appearance-none cursor-pointer text-slate-900 dark:text-white"
+                    >
+                      <option value="" className="dark:bg-slate-900">Select territory</option>
+                      {countries.map(c => (
+                        <option key={c} value={c} className="dark:bg-slate-900">{c}</option>
+                      ))}
+                    </select>
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                      <ChevronDown size={16} />
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-1">Status</label>
-                  <select
-                    value={newClient.status || 'new'}
-                    onChange={e => setNewClient({ ...newClient, status: e.target.value })}
-                    className="w-full px-4 py-3 border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20"
-                  >
-                    <option value="new">New</option>
-                    <option value="active">Active</option>
-                    <option value="on_hold">On Hold</option>
-                    <option value="completed">Completed</option>
-                    <option value="inactive">Inactive</option>
-                    <option value="archived">Archived</option>
-                    <option value="vip">VIP</option>
-                  </select>
+                <div className="space-y-1.5">
+                  <label className="block text-[15px] font-bold text-black dark:text-slate-300 font-open-sans ml-1">Initial Status</label>
+                  <div className="relative">
+                    <select
+                      value={newClient.status || 'new'}
+                      onChange={e => setNewClient({ ...newClient, status: e.target.value })}
+                      className="w-full px-5 py-3.5 bg-slate-50 dark:bg-slate-800/50 border-2 border-transparent rounded-2xl outline-none transition-all focus:border-blue-500/20 dark:focus:border-blue-500/30 focus:bg-white dark:focus:bg-slate-800 focus:ring-4 focus:ring-blue-500/5 dark:focus:ring-blue-500/10 text-sm font-semibold font-open-sans appearance-none cursor-pointer text-slate-900 dark:text-white"
+                    >
+                      {statusOptions.map(opt => (
+                        <option key={opt.value} value={opt.value} className="dark:bg-slate-900">{opt.label}</option>
+                      ))}
+                    </select>
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                      <ChevronDown size={16} />
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-bold text-slate-700 mb-1">Notes</label>
+              <div className="space-y-1.5">
+                <label className="block text-[15px] font-bold text-black dark:text-slate-300 font-open-sans ml-1">Internal Notes</label>
                 <textarea
                   value={newClient.notes}
                   onChange={e => setNewClient({ ...newClient, notes: e.target.value })}
-                  className="w-full px-4 py-3 border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20"
-                  rows={3}
-                  placeholder="Add notes about this client"
+                  className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800/50 border-2 border-transparent rounded-2xl outline-none transition-all focus:border-blue-500/20 dark:focus:border-blue-500/30 focus:bg-white dark:focus:bg-slate-800 focus:ring-4 focus:ring-blue-500/5 dark:focus:ring-blue-500/10 text-sm font-semibold font-open-sans h-32 resize-none placeholder-slate-400 dark:placeholder-slate-600 text-slate-900 dark:text-white"
+                  placeholder="Record observations or project history..."
                 />
               </div>
             </div>
 
-            <div className="p-6 border-t border-slate-200 flex justify-end gap-3">
+            <div className="p-8 border-t border-slate-100 dark:border-slate-800 flex justify-end items-center gap-4 bg-slate-50/30 dark:bg-slate-800/30">
               <button
                 onClick={() => setShowAdd(false)}
-                className="px-6 py-2.5 border border-slate-300 text-slate-700 rounded-xl font-bold hover:bg-slate-50 transition-colors"
+                className="px-6 py-3.5 text-slate-500 dark:text-slate-400 font-bold font-open-sans text-[13px] hover:text-slate-800 dark:hover:text-white transition-colors rounded-xl"
               >
-                Cancel
+                Discard
               </button>
               <button
                 onClick={handleAdd}
-                className="px-6 py-2.5 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-colors"
+                className="px-10 py-3.5 bg-slate-900 dark:bg-blue-600 text-white rounded-2xl font-bold font-open-sans text-[13px] shadow-lg hover:shadow-blue-500/10 hover:bg-black dark:hover:bg-blue-700 transition-all active:scale-95 flex items-center gap-2"
               >
-                Add Client
+                <Plus size={16} />
+                Create Client
               </button>
             </div>
           </div>
@@ -1119,26 +1164,26 @@ const Clients: React.FC<{ state: AppState, setState: any }> = ({ state, setState
       )}
       {/* Custom Confirmation Modal */}
       {showDeleteConfirm && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center z-[200] p-4 animate-in fade-in duration-300">
-          <div className="bg-white rounded-[40px] w-full max-w-md p-10 shadow-2xl animate-in zoom-in-95 duration-300 text-center">
-            <div className="w-20 h-20 rounded-3xl bg-rose-50 text-rose-500 flex items-center justify-center mx-auto mb-8 animate-bounce">
+        <div className="fixed inset-0 bg-slate-900/60 dark:bg-slate-950/80 backdrop-blur-md flex items-center justify-center z-[200] p-4 animate-in fade-in duration-300">
+          <div className="bg-white dark:bg-slate-900 rounded-[40px] w-full max-w-md p-10 shadow-2xl border border-transparent dark:border-slate-800 animate-in zoom-in-95 duration-300 text-center">
+            <div className="w-20 h-20 rounded-3xl bg-rose-50 dark:bg-rose-900/20 text-rose-500 dark:text-rose-400 flex items-center justify-center mx-auto mb-8 animate-bounce">
               <Trash2 size={32} />
             </div>
-            <h2 className="text-2xl font-black text-slate-900 tracking-tight mb-4">Delete Client?</h2>
-            <p className="text-slate-500 text-sm leading-relaxed mb-10">
-              This will permanently delete <span className="font-bold text-slate-900">"{showDeleteConfirm.name}"</span> and all associated
+            <h2 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight mb-4">Delete Client?</h2>
+            <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed mb-10">
+              This will permanently delete <span className="font-bold text-slate-900 dark:text-white">"{showDeleteConfirm.name}"</span> and all associated
               projects and invoices. This action cannot be undone.
             </p>
             <div className="flex flex-col gap-3">
               <button
                 onClick={confirmDelete}
-                className="w-full py-4 bg-rose-600 text-white rounded-2xl font-black text-xs uppercase   hover:bg-rose-700 transition-all hover:shadow-xl active:scale-95"
+                className="w-full py-4 bg-rose-600 text-white rounded-2xl font-bold font-open-sans text-sm hover:bg-rose-700 transition-all hover:shadow-xl active:scale-95"
               >
                 Permanently Delete
               </button>
               <button
                 onClick={() => setShowDeleteConfirm(null)}
-                className="w-full py-4 bg-slate-100 text-slate-500 rounded-2xl font-black text-xs uppercase   hover:bg-slate-200 transition-all"
+                className="w-full py-4 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 rounded-2xl font-bold font-open-sans text-sm hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
               >
                 Keep Client
               </button>
@@ -1150,18 +1195,21 @@ const Clients: React.FC<{ state: AppState, setState: any }> = ({ state, setState
       {/* Toast Notification */}
       {toast && (
         <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[300] animate-in slide-in-from-bottom-10 fade-in duration-500">
-          <div className={`px-8 py-4 rounded-2xl shadow-2xl flex items-center gap-4 border backdrop-blur-xl ${toast.type === 'success' ? 'bg-emerald-900/95 border-emerald-800/50 text-emerald-50' :
-            toast.type === 'error' ? 'bg-rose-900/95 border-rose-800/50 text-rose-50' :
-              'bg-slate-900/95 border-white/10 text-slate-50'
+          <div className={`px-10 py-5 rounded-[24px] shadow-2xl flex items-center gap-5 border backdrop-blur-2xl ${toast.type === 'success' ? 'bg-emerald-900/95 border-emerald-400/20 text-white' :
+            toast.type === 'error' ? 'bg-rose-900/95 border-rose-400/20 text-white' :
+              'bg-slate-900/95 border-white/10 text-white'
             }`}>
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${toast.type === 'success' ? 'bg-emerald-500/20' :
-              toast.type === 'error' ? 'bg-rose-500/20' : 'bg-white/10'
+            <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 ${toast.type === 'success' ? 'bg-emerald-500/20 shadow-[0_0_20px_rgba(16,185,129,0.2)]' :
+              toast.type === 'error' ? 'bg-rose-500/20 shadow-[0_0_20px_rgba(244,63,94,0.2)]' :
+                'bg-white/10'
               }`}>
-              {toast.type === 'success' ? <CheckCircle size={18} className="text-emerald-400" /> :
-                toast.type === 'info' ? <Zap size={18} className="text-blue-400" /> :
-                  <AlertCircle size={18} className="text-rose-400" />}
+              {toast.type === 'success' ? <CheckCircle size={22} className="text-emerald-400" /> :
+                toast.type === 'info' ? <Zap size={22} className="text-blue-400" /> :
+                  <AlertCircle size={22} className="text-rose-400" />}
             </div>
-            <p className="text-[11px] font-black uppercase tracking-[0.2em]">{toast.message}</p>
+            <p className="text-sm font-bold font-open-sans tracking-tight leading-none whitespace-nowrap">
+              {toast.message}
+            </p>
           </div>
         </div>
       )}

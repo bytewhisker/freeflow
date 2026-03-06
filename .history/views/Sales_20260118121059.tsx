@@ -155,7 +155,7 @@ const Billing: React.FC<{ state: AppState, setState: any }> = ({ state, setState
           />
         </div>
         <select
-          className="px-4 py-2.5 bg-white border border-slate-200 rounded-lg outline-none cursor-pointer font-semibold text-slate-600"
+          className="px-4 py-2.5 bg-white border border-slate-200 rounded-lg outline-none cursor-pointer font-semibold text-black"
           value={filterType}
           onChange={(e) => setFilterType(e.target.value as any)}
         >
@@ -163,7 +163,7 @@ const Billing: React.FC<{ state: AppState, setState: any }> = ({ state, setState
           <option value="INVOICE">Invoices Only</option>
         </select>
         <select
-          className="px-4 py-2.5 bg-white border border-slate-200 rounded-lg outline-none cursor-pointer font-semibold text-slate-600"
+          className="px-4 py-2.5 bg-white border border-slate-200 rounded-lg outline-none cursor-pointer font-semibold text-black"
           value={filterStatus}
           onChange={(e) => setFilterStatus(e.target.value as any)}
         >
@@ -188,7 +188,7 @@ const Billing: React.FC<{ state: AppState, setState: any }> = ({ state, setState
             onClick={() => setFilterTime(key as TimeFilter)}
             className={`px-4 py-2 rounded-full text-sm font-semibold transition-all ${filterTime === key
               ? 'bg-blue-600 text-white shadow-md'
-              : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+              : 'bg-slate-100 text-black hover:bg-slate-200'
               }`}
           >
             {label} ({count})
@@ -292,7 +292,7 @@ const Billing: React.FC<{ state: AppState, setState: any }> = ({ state, setState
                       <Link to={`/billing/view/${doc.id}`} className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg">
                         <Eye size={18} />
                       </Link>
-                      <Link to={`/billing/edit/${doc.id}`} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg">
+                      <Link to={`/billing/edit/${doc.id}`} className="p-2 text-slate-400 hover:text-black hover:bg-slate-100 rounded-lg">
                         <Edit3 size={18} />
                       </Link>
                       <button

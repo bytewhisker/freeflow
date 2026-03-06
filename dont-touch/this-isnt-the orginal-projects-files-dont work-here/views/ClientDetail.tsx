@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { AppState, Project, SalesDocument } from '../types';
 import { formatDate, formatCurrency, formatRelativeTime } from '../utils';
-import { 
+import {
   X, Mail, Phone, Building2, MapPin, Plus, FileText,
   DollarSign, Calendar, Briefcase, Clock, CheckCircle, ChevronRight,
   MoreHorizontal, Send, Upload, Download, Search, Filter,
@@ -24,12 +24,12 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ state, setState, clientId, 
   const [activeTab, setActiveTab] = useState('overview');
   const [isHovered, setIsHovered] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
-  
+
   // Get real data for this client
   const client = state.clients.find(c => c.id === clientId);
   const clientProjects: Project[] = state.projects.filter(p => p.clientId === clientId);
   const clientDocs: SalesDocument[] = state.salesDocuments.filter(d => d.clientId === clientId);
-  
+
   // Animated counter for stats
   const [animatedStats, setAnimatedStats] = useState({
     totalRevenue: 0,
@@ -43,24 +43,24 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ state, setState, clientId, 
       const targetStats = calculateStats();
       let frame = 0;
       const totalFrames = 20;
-      
+
       const animate = () => {
         frame++;
         const progress = frame / totalFrames;
         const easeOut = 1 - Math.pow(1 - progress, 3);
-        
+
         setAnimatedStats({
           totalRevenue: Math.round(targetStats.totalRevenue * easeOut),
           pendingAmount: Math.round(targetStats.pendingAmount * easeOut),
           activeProjects: Math.round(targetStats.activeProjects * easeOut),
           avgInvoice: Math.round(targetStats.avgInvoice * easeOut)
         });
-        
+
         if (frame < totalFrames) {
           requestAnimationFrame(animate);
         }
       };
-      
+
       animate();
     }
   }, [client]);
@@ -69,11 +69,11 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ state, setState, clientId, 
     const paidInvoices = clientDocs.filter(d => d.type === 'INVOICE' && d.status === 'paid');
     const pendingInvoices = clientDocs.filter(d => d.type === 'INVOICE' && (d.status === 'sent' || d.status === 'overdue'));
     const activeProjects = clientProjects.filter(p => p.status === 'active');
-    
+
     const totalRevenue = paidInvoices.reduce((sum, d) => sum + d.total, 0);
     const pendingAmount = pendingInvoices.reduce((sum, d) => sum + d.total, 0);
     const avgInvoice = paidInvoices.length > 0 ? totalRevenue / paidInvoices.length : 0;
-    
+
     return {
       totalRevenue,
       pendingAmount,
@@ -87,12 +87,12 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ state, setState, clientId, 
     const pendingInvoices = clientDocs.filter(d => d.type === 'INVOICE' && (d.status === 'sent' || d.status === 'overdue'));
     const overdueInvoices = clientDocs.filter(d => d.type === 'INVOICE' && d.status === 'overdue');
     const activeProjects = clientProjects.filter(p => p.status === 'active');
-    
+
     const totalRevenue = paidInvoices.reduce((sum, d) => sum + d.total, 0);
     const pendingAmount = pendingInvoices.reduce((sum, d) => sum + d.total, 0);
     const avgInvoice = paidInvoices.length > 0 ? totalRevenue / paidInvoices.length : 0;
     const healthScore = Math.min(100, Math.round((totalRevenue / 10000) * 50 + (activeProjects.length * 10) + (paidInvoices.length * 5)));
-    
+
     return {
       totalRevenue,
       pendingAmount,
@@ -148,7 +148,7 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ state, setState, clientId, 
   // Generate activity from real data
   const activityTimeline = useMemo(() => {
     const activities = [];
-    
+
     // Add invoice activities
     clientDocs.forEach(doc => {
       activities.push({
@@ -161,7 +161,7 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ state, setState, clientId, 
         timestamp: doc.createdAt
       });
     });
-    
+
     // Add project activities
     clientProjects.forEach(project => {
       activities.push({
@@ -174,7 +174,7 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ state, setState, clientId, 
         timestamp: project.createdAt || new Date().toISOString()
       });
     });
-    
+
     // Sort by date descending
     return activities.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()).slice(0, 10);
   }, [clientProjects, clientDocs]);
@@ -196,27 +196,27 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ state, setState, clientId, 
   return (
     <>
       {/* Backdrop */}
-      <div 
+      <div
         className={`fixed inset-0 bg-black/50 z-40 transition-opacity duration-300 ${isClosing ? 'opacity-0' : 'opacity-100'}`}
         onClick={handleClose}
       />
-      
+
       {/* Slide-in Panel */}
-      <div 
+      <div
         className={`fixed top-0 right-0 h-full w-full max-w-xl bg-white shadow-2xl z-50 flex flex-col transition-transform duration-300 ease-out ${isClosing ? 'translate-x-full' : 'translate-x-0'}`}
         style={{ maxWidth: '50vw' }}
       >
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-slate-200">
           <div className="flex items-center gap-4">
-            <button 
+            <button
               onClick={handleClose}
               className="w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition-colors"
             >
-              <ChevronLeft size={20} className="text-slate-600" />
+              <ChevronLeft size={20} className="text-black" />
             </button>
             <div className="flex items-center gap-3">
-              <div 
+              <div
                 className="w-12 h-12 rounded-xl flex items-center justify-center text-lg font-bold text-white"
                 style={{ background: 'linear-gradient(135deg, #0EA5E9, #8B5CF6)' }}
               >
@@ -229,14 +229,14 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ state, setState, clientId, 
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <span 
+            <span
               className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider"
               style={{ backgroundColor: clientStatusColor.bg, color: clientStatusColor.text }}
             >
               {client.status || 'New'}
             </span>
             <button className="w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition-colors">
-              <MoreHorizontal size={20} className="text-slate-600" />
+              <MoreHorizontal size={20} className="text-black" />
             </button>
           </div>
         </div>
@@ -263,7 +263,7 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ state, setState, clientId, 
             <div className="w-px h-10 bg-slate-300" />
             <div className="text-center">
               <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Invoices</p>
-              <p className="text-lg font-black text-slate-600">{stats.totalInvoices}</p>
+              <p className="text-lg font-black text-black">{stats.totalInvoices}</p>
             </div>
           </div>
         </div>
@@ -277,11 +277,10 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ state, setState, clientId, 
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`px-4 py-3 font-bold text-sm transition-all flex items-center gap-2 border-b-2 ${
-                  isActive 
-                    ? 'text-blue-600 border-blue-600' 
+                className={`px-4 py-3 font-bold text-sm transition-all flex items-center gap-2 border-b-2 ${isActive
+                    ? 'text-blue-600 border-blue-600'
                     : 'text-slate-500 border-transparent hover:text-slate-700'
-                }`}
+                  }`}
               >
                 <Icon size={16} />
                 <span>{tab.label}</span>
@@ -352,9 +351,9 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ state, setState, clientId, 
                           <p className="font-bold text-slate-900">{project.title}</p>
                           <p className="text-sm text-slate-500">{formatCurrency(project.totalBudget)}</p>
                         </div>
-                        <span 
+                        <span
                           className="px-2 py-1 rounded-full text-xs font-bold uppercase"
-                          style={{ 
+                          style={{
                             backgroundColor: project.status === 'active' ? '#ECFDF5' : '#FEF3C7',
                             color: project.status === 'active' ? '#166534' : '#92400E'
                           }}
@@ -383,9 +382,9 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ state, setState, clientId, 
                         </div>
                         <div className="text-right">
                           <p className="font-bold text-slate-900">{formatCurrency(doc.total)}</p>
-                          <span 
+                          <span
                             className="px-2 py-1 rounded-full text-xs font-bold uppercase"
-                            style={{ 
+                            style={{
                               backgroundColor: doc.status === 'paid' ? '#ECFDF5' : doc.status === 'overdue' ? '#FEF2F2' : '#EFF6FF',
                               color: doc.status === 'paid' ? '#166534' : doc.status === 'overdue' ? '#DC2626' : '#1E40AF'
                             }}
@@ -403,7 +402,7 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ state, setState, clientId, 
               {client.notes && (
                 <div className="bg-white rounded-2xl p-6 border border-slate-200">
                   <h3 className="text-lg font-bold text-slate-900 mb-3">Notes</h3>
-                  <p className="text-slate-600 leading-relaxed">{client.notes}</p>
+                  <p className="text-black leading-relaxed">{client.notes}</p>
                 </div>
               )}
             </div>
@@ -426,7 +425,7 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ state, setState, clientId, 
                   New Project
                 </button>
               </div>
-              
+
               {clientProjects.length === 0 ? (
                 <div className="bg-white rounded-2xl p-8 text-center border border-slate-200">
                   <Briefcase size={48} className="text-slate-300 mx-auto mb-4" />
@@ -442,9 +441,9 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ state, setState, clientId, 
                     <div key={project.id} className="bg-white rounded-2xl p-5 border border-slate-200 hover:border-blue-300 transition-colors cursor-pointer">
                       <div className="flex items-center justify-between mb-3">
                         <h4 className="font-bold text-slate-900">{project.title}</h4>
-                        <span 
+                        <span
                           className="px-2 py-1 rounded-full text-xs font-bold uppercase"
-                          style={{ 
+                          style={{
                             backgroundColor: project.status === 'active' ? '#ECFDF5' : project.status === 'completed' ? '#E0F2FE' : '#FEF3C7',
                             color: project.status === 'active' ? '#166534' : project.status === 'completed' ? '#0E7490' : '#92400E'
                           }}
@@ -490,12 +489,12 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ state, setState, clientId, 
                   <p className="text-xs text-red-500">invoices</p>
                 </div>
               </div>
-              
+
               <button className="w-full py-3 bg-blue-600 text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-blue-700 transition-colors">
                 <Plus size={18} />
                 Create Invoice
               </button>
-              
+
               {clientDocs.length === 0 ? (
                 <div className="bg-white rounded-2xl p-8 text-center border border-slate-200">
                   <FileTextIcon size={48} className="text-slate-300 mx-auto mb-4" />
@@ -507,22 +506,22 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ state, setState, clientId, 
                   <table className="w-full">
                     <thead className="bg-slate-50">
                       <tr>
-                        <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase">Invoice</th>
-                        <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase">Date</th>
-                        <th className="px-4 py-3 text-right text-xs font-bold text-slate-600 uppercase">Amount</th>
-                        <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase">Status</th>
+                        <th className="px-4 py-3 text-left text-xs font-bold text-black uppercase">Invoice</th>
+                        <th className="px-4 py-3 text-left text-xs font-bold text-black uppercase">Date</th>
+                        <th className="px-4 py-3 text-right text-xs font-bold text-black uppercase">Amount</th>
+                        <th className="px-4 py-3 text-left text-xs font-bold text-black uppercase">Status</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
                       {clientDocs.map(doc => (
                         <tr key={doc.id} className="hover:bg-slate-50 cursor-pointer">
                           <td className="px-4 py-3 font-bold text-slate-900">{doc.docNumber}</td>
-                          <td className="px-4 py-3 text-slate-600">{formatDate(doc.createdAt)}</td>
+                          <td className="px-4 py-3 text-black">{formatDate(doc.createdAt)}</td>
                           <td className="px-4 py-3 text-right font-bold text-slate-900">{formatCurrency(doc.total)}</td>
                           <td className="px-4 py-3">
-                            <span 
+                            <span
                               className="px-2 py-1 rounded-full text-xs font-bold uppercase"
-                              style={{ 
+                              style={{
                                 backgroundColor: doc.status === 'paid' ? '#ECFDF5' : doc.status === 'overdue' ? '#FEF2F2' : '#EFF6FF',
                                 color: doc.status === 'paid' ? '#166534' : doc.status === 'overdue' ? '#DC2626' : '#1E40AF'
                               }}
@@ -554,7 +553,7 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ state, setState, clientId, 
                     const Icon = activity.icon;
                     return (
                       <div key={activity.id} className="bg-white rounded-2xl p-4 border border-slate-200 flex items-start gap-4">
-                        <div 
+                        <div
                           className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
                           style={{ backgroundColor: `${activity.color}20` }}
                         >
@@ -565,7 +564,7 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ state, setState, clientId, 
                             <h4 className="font-bold text-slate-900">{activity.title}</h4>
                             <span className="text-xs text-slate-500">{formatRelativeTime(activity.timestamp)}</span>
                           </div>
-                          <p className="text-sm text-slate-600 truncate">{activity.description}</p>
+                          <p className="text-sm text-black truncate">{activity.description}</p>
                         </div>
                       </div>
                     );
@@ -578,7 +577,7 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ state, setState, clientId, 
 
         {/* Footer Actions */}
         <div className="flex items-center justify-between p-4 border-t border-slate-200 bg-white">
-          <button 
+          <button
             onClick={handleDelete}
             className="px-4 py-2 text-red-600 hover:bg-red-50 rounded-xl font-bold text-sm flex items-center gap-2 transition-colors"
           >
@@ -586,7 +585,7 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ state, setState, clientId, 
             Delete
           </button>
           <div className="flex items-center gap-3">
-            
+
             <button className="px-4 py-2 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 transition-colors flex items-center gap-2">
               <Plus size={16} />
               New Invoice

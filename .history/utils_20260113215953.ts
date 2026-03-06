@@ -41,7 +41,7 @@ export const formatRelativeTime = (date: string) => {
   if (diffInHours < 24) return `${diffInHours}h ago`;
   const diffInDays = Math.floor(diffInHours / 24);
   if (diffInDays < 30) return `${diffInDays}d ago`;
-  
+
   return formatDate(date);
 };
 
@@ -60,12 +60,12 @@ export const getStatusColor = (status: string) => {
     case 'on_hold':
     case 'on hold':
     case 'draft':
-      return 'bg-slate-100 text-slate-600';
+      return 'bg-slate-100 text-black';
     case 'overdue':
     case 'rejected':
       return 'bg-rose-100 text-rose-700';
     default:
-      return 'bg-slate-100 text-slate-600';
+      return 'bg-slate-100 text-black';
   }
 };
 

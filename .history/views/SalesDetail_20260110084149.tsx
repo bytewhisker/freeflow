@@ -202,20 +202,20 @@ const SalesDetail: React.FC<{ state: AppState, setState: any }> = ({ state, setS
         <div className="flex flex-wrap items-center gap-3">
           <button
             onClick={handleViewPdf}
-            className="px-5 py-2.5 bg-white border border-slate-200 text-slate-600 rounded-xl hover:bg-slate-50 flex items-center gap-2 font-black text-xs uppercase   shadow-sm transition-all"
+            className="px-5 py-2.5 bg-white border border-slate-200 text-black rounded-xl hover:bg-slate-50 flex items-center gap-2 font-black text-xs uppercase   shadow-sm transition-all"
           >
             <Eye size={18} /> View PDF
           </button>
           <button
             onClick={handlePrint}
-            className="px-5 py-2.5 bg-white border border-slate-200 text-slate-600 rounded-xl hover:bg-slate-50 flex items-center gap-2 font-black text-xs uppercase   shadow-sm transition-all"
+            className="px-5 py-2.5 bg-white border border-slate-200 text-black rounded-xl hover:bg-slate-50 flex items-center gap-2 font-black text-xs uppercase   shadow-sm transition-all"
           >
             <Printer size={18} /> Print
           </button>
           <button
             onClick={handleDownloadPdf}
             disabled={isDownloading}
-            className="px-5 py-2.5 bg-white border border-slate-200 text-slate-600 rounded-xl hover:bg-slate-50 flex items-center gap-2 font-black text-xs uppercase   shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-5 py-2.5 bg-white border border-slate-200 text-black rounded-xl hover:bg-slate-50 flex items-center gap-2 font-black text-xs uppercase   shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isDownloading ? (
               <div className="animate-spin rounded-full h-4 w-4 border-2 border-slate-400 border-t-transparent" />
@@ -226,7 +226,7 @@ const SalesDetail: React.FC<{ state: AppState, setState: any }> = ({ state, setS
           </button>
           <Link
             to={`/billing/edit/${doc.id}`}
-            className="px-5 py-2.5 bg-white border border-slate-200 text-slate-600 rounded-xl hover:bg-slate-50 flex items-center gap-2 font-black text-xs uppercase   shadow-sm transition-all"
+            className="px-5 py-2.5 bg-white border border-slate-200 text-black rounded-xl hover:bg-slate-50 flex items-center gap-2 font-black text-xs uppercase   shadow-sm transition-all"
           >
             <Edit3 size={18} /> Edit
           </Link>
@@ -288,14 +288,14 @@ const SalesDetail: React.FC<{ state: AppState, setState: any }> = ({ state, setS
                   <h4 className="text-[10px] font-black text-slate-400 uppercase   mb-3">Bill To</h4>
                   <div className="text-sm space-y-0.5">
                     <p className="font-black text-slate-900 text-xl">{client?.name}</p>
-                    <p className="text-slate-600 font-bold">{client?.company}</p>
+                    <p className="text-black font-bold">{client?.company}</p>
                     <p className="text-slate-500 font-medium">{client?.email}</p>
                     <p className="text-slate-500 font-medium">{client?.phone}</p>
                   </div>
                   {doc.shipTo && (
                     <div className="mt-4">
                       <h4 className="text-[10px] font-black text-slate-400 uppercase   mb-1">Ship To</h4>
-                      <p className="text-sm text-slate-600 max-w-[200px]">{doc.shipTo}</p>
+                      <p className="text-sm text-black max-w-[200px]">{doc.shipTo}</p>
                     </div>
                   )}
                 </div>

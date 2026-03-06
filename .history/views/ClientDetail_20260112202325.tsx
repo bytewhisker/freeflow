@@ -211,7 +211,7 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ state, setState, clientId: 
                 onClick={handleClose}
                 className="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition-colors"
               >
-                <ChevronLeft size={16} className="text-slate-600" />
+                <ChevronLeft size={16} className="text-black" />
               </button>
               <div className="flex items-center gap-2">
                 <div
@@ -231,7 +231,7 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ state, setState, clientId: 
                 </span>
               </div>
               <button className="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition-colors">
-                <MoreHorizontal size={16} className="text-slate-600" />
+                <MoreHorizontal size={16} className="text-black" />
               </button>
             </div>
           </div>
@@ -254,7 +254,7 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ state, setState, clientId: 
               </div>
               <div>
                 <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Invoices</p>
-                <p className="text-lg font-black text-slate-600">{stats.totalInvoices}</p>
+                <p className="text-lg font-black text-black">{stats.totalInvoices}</p>
               </div>
             </div>
           </div>
@@ -375,7 +375,7 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ state, setState, clientId: 
                 {client.notes && (
                   <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
                     <h3 className="text-sm font-bold text-slate-900 mb-2">Notes</h3>
-                    <p className="text-xs text-slate-600 leading-relaxed">{client.notes}</p>
+                    <p className="text-xs text-black leading-relaxed">{client.notes}</p>
                   </div>
                 )}
               </>
@@ -475,17 +475,17 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ state, setState, clientId: 
                     <table className="w-full text-xs">
                       <thead className="bg-slate-50">
                         <tr>
-                          <th className="px-3 py-2 text-left font-bold text-slate-600 uppercase">Invoice</th>
-                          <th className="px-3 py-2 text-left font-bold text-slate-600 uppercase">Date</th>
-                          <th className="px-3 py-2 text-right font-bold text-slate-600 uppercase">Amount</th>
-                          <th className="px-3 py-2 text-left font-bold text-slate-600 uppercase">Status</th>
+                          <th className="px-3 py-2 text-left font-bold text-black uppercase">Invoice</th>
+                          <th className="px-3 py-2 text-left font-bold text-black uppercase">Date</th>
+                          <th className="px-3 py-2 text-right font-bold text-black uppercase">Amount</th>
+                          <th className="px-3 py-2 text-left font-bold text-black uppercase">Status</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100">
                         {clientDocs.map(doc => (
                           <tr key={doc.id} className="hover:bg-slate-50 cursor-pointer">
                             <td className="px-3 py-2 font-bold text-slate-900">{doc.docNumber}</td>
-                            <td className="px-3 py-2 text-slate-600">{formatDate(doc.createdAt)}</td>
+                            <td className="px-3 py-2 text-black">{formatDate(doc.createdAt)}</td>
                             <td className="px-3 py-2 text-right font-bold text-slate-900">{formatCurrency(doc.total)}</td>
                             <td className="px-3 py-2">
                               <span
@@ -532,7 +532,7 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ state, setState, clientId: 
                               <h4 className="font-bold text-xs text-slate-900">{activity.title}</h4>
                               <span className="text-xs text-slate-500">{formatRelativeTime(activity.timestamp)}</span>
                             </div>
-                            <p className="text-xs text-slate-600 truncate">{activity.description}</p>
+                            <p className="text-xs text-black truncate">{activity.description}</p>
                           </div>
                         </div>
                       );

@@ -8,18 +8,22 @@ import {
   ArrowRight,
   AlertCircle,
   CheckCircle2,
-  ShieldCheck,
-  Zap,
-  Globe,
-  Stars,
-  Sparkles,
   KeyRound,
-  ShieldCheck as ShieldIcon
+  ShieldCheck as ShieldIcon,
+  Sun,
+  Moon,
+  ArrowLeft,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 
 type AuthMode = 'signin' | 'signup' | 'forgot' | 'reset';
 
-const Auth: React.FC = () => {
+const Auth: React.FC<{ isDarkMode: boolean; toggleDarkMode: () => void; onBack?: () => void }> = ({
+  isDarkMode,
+  toggleDarkMode,
+  onBack
+}) => {
   const [loading, setLoading] = useState(false);
   const [mode, setMode] = useState<AuthMode>('signin');
   const [email, setEmail] = useState('');
@@ -28,18 +32,17 @@ const Auth: React.FC = () => {
   const [otpToken, setOtpToken] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<boolean>(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  // Listen for recovery link redirect
   useEffect(() => {
     if (!supabase) return;
-
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'PASSWORD_RECOVERY') {
         setMode('reset');
         if (session?.user?.email) setEmail(session.user.email);
       }
     });
-
     return () => subscription.unsubscribe();
   }, []);
 
@@ -56,9 +59,7 @@ const Auth: React.FC = () => {
         const { error } = await supabase.auth.signUp({
           email,
           password,
-          options: {
-            emailRedirectTo: window.location.origin,
-          }
+          options: { emailRedirectTo: window.location.origin }
         });
         if (error) throw error;
         setSuccess(true);
@@ -72,25 +73,15 @@ const Auth: React.FC = () => {
         if (error) throw error;
         setSuccess(true);
       } else if (mode === 'reset') {
-        if (password !== confirmPassword) {
-          throw new Error('Passwords do not match');
-        }
-
-        // Verify the OTP first
+        if (password !== confirmPassword) throw new Error('Passwords do not match');
         const { error: verifyError } = await supabase.auth.verifyOtp({
           email,
           token: otpToken,
           type: 'recovery'
         });
         if (verifyError) throw verifyError;
-
-        // Update the password
-        const { error: updateError } = await supabase.auth.updateUser({
-          password: password
-        });
+        const { error: updateError } = await supabase.auth.updateUser({ password });
         if (updateError) throw updateError;
-
-        // Successfully reset, go to sign in or just let them stay signed in
         setSuccess(true);
       }
     } catch (err: any) {
@@ -100,39 +91,32 @@ const Auth: React.FC = () => {
     }
   };
 
+  const switchMode = (newMode: AuthMode) => {
+    setMode(newMode);
+    setError(null);
+    setSuccess(false);
+  };
+
   if (success) {
     return (
-      <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center p-6 relative overflow-hidden">
-        {/* Background blobs */}
-        <div className="absolute top-[-20%] right-[-10%] w-[600px] h-[600px] bg-blue-200/30 rounded-full blur-[100px] pointer-events-none"></div>
-        <div className="absolute bottom-[-20%] left-[-10%] w-[500px] h-[500px] bg-emerald-100/40 rounded-full blur-[100px] pointer-events-none"></div>
-
-        <div className="w-full max-w-md bg-white/80 backdrop-blur-xl rounded-[32px] border border-white/50 p-10 shadow-2xl shadow-blue-900/5 text-center animate-in zoom-in-95 duration-500 relative z-10">
-          <div className="w-24 h-24 bg-gradient-to-tr from-emerald-100 to-emerald-50 text-emerald-600 rounded-[28px] flex items-center justify-center mx-auto mb-8 shadow-inner ring-8 ring-emerald-50/50">
-            <CheckCircle2 size={40} className="drop-shadow-sm" />
-          </div>
-          <h2 className="text-3xl font-black text-slate-900 mb-4 tracking-tight">
-            {mode === 'reset' ? 'Password Reset!' : 'Step 1 Complete'}
-          </h2>
-          <p className="text-slate-500 font-medium leading-relaxed mb-8 text-lg">
-            {mode === 'reset'
-              ? 'Your password has been successfully updated.'
-              : `Check your email for reset instructions.`
-            }
-          </p>
-          <div className="space-y-4">
-            <p className="text-sm text-slate-400 font-medium">
+      <div className="min-h-screen min-h-[100dvh] bg-slate-50 dark:bg-slate-950 flex items-center justify-center p-4 relative overflow-hidden transition-colors duration-300">
+        <AuthBackground />
+        <div className="relative z-10 w-full max-w-md">
+          <div className="bg-white dark:bg-slate-900 rounded-[32px] border border-slate-200/80 dark:border-slate-800 shadow-2xl shadow-slate-200/60 dark:shadow-black/40 p-10 text-center animate-in zoom-in-95 duration-300">
+            <div className="w-20 h-20 bg-gradient-to-br from-emerald-100 to-emerald-50 dark:from-emerald-900/40 dark:to-emerald-800/20 rounded-3xl flex items-center justify-center mx-auto mb-6 ring-8 ring-emerald-50/60 dark:ring-emerald-900/20">
+              <CheckCircle2 size={36} className="text-emerald-600 dark:text-emerald-400" />
+            </div>
+            <h2 className="text-2xl font-black text-slate-900 dark:text-white mb-3">
+              {mode === 'reset' ? 'Password Updated!' : 'Check Your Email'}
+            </h2>
+            <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed mb-8">
               {mode === 'reset'
-                ? 'You can now sign in with your new credentials.'
-                : `We've sent a code/link to reset your password.`
-              }
+                ? 'Your password has been successfully updated. You can now sign in.'
+                : 'We sent instructions to your email. Check your inbox and follow the link.'}
             </p>
             <button
-              onClick={() => {
-                setSuccess(false);
-                setMode('signin');
-              }}
-              className="text-xs font-black text-blue-600 uppercase   hover:text-blue-700 transition-colors py-2"
+              onClick={() => switchMode('signin')}
+              className="w-full py-3.5 bg-slate-900 dark:bg-blue-600 text-white rounded-2xl font-bold text-sm hover:bg-blue-600 dark:hover:bg-blue-700 transition-all hover:-translate-y-0.5 active:scale-95"
             >
               Back to Sign In
             </button>
@@ -143,279 +127,275 @@ const Auth: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white flex flex-col lg:flex-row relative">
+    <div className="min-h-screen min-h-[100dvh] bg-slate-50 dark:bg-slate-950 flex items-center justify-center p-4 relative overflow-hidden transition-colors duration-300">
+      <AuthBackground />
 
-      {/* Brand Side (Desktop Only) */}
-      <div className="hidden lg:flex lg:w-[55%] bg-slate-900 relative overflow-hidden flex-col justify-between p-20">
+      {/* Top bar controls */}
+      <div className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-4">
+        {/* Back to landing */}
+        {onBack && (
+          <button
+            onClick={onBack}
+            className="flex items-center gap-2 text-sm font-bold text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border border-slate-200/60 dark:border-slate-800 px-4 py-2 rounded-xl transition-all hover:-translate-x-0.5"
+          >
+            <ArrowLeft size={15} />
+            Back
+          </button>
+        )}
 
-        {/* Premium Background Effects */}
-        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2564&auto=format&fit=crop')] bg-cover bg-center opacity-20 mix-blend-overlay"></div>
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-600/90 via-slate-900/95 to-slate-900"></div>
-
-        {/* Animated Orbs */}
-        <div className="absolute top-[-10%] right-[-10%] w-[800px] h-[800px] bg-blue-500/30 rounded-full blur-[120px] animate-pulse duration-[10000ms]"></div>
-        <div className="absolute bottom-[-10%] left-[-10%] w-[600px] h-[600px] bg-indigo-500/20 rounded-full blur-[100px]"></div>
-
-        {/* Content */}
-        <div className="relative z-10 h-full flex flex-col justify-between">
-          <div className="flex items-center gap-3 text-white">
-            <div className="w-12 h-12 bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center border border-white/20 shadow-lg shadow-black/10">
-              <Wallet size={24} className="text-white" />
-            </div>
-            <span className="text-2xl font-black tracking-tighter">FreeFlow</span>
+        {/* Logo */}
+        <div className={`flex items-center gap-2 ${onBack ? '' : 'mx-auto'}`}>
+          <div className="w-8 h-8 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-600/30">
+            <Wallet size={16} className="text-white" />
           </div>
-
-          <div className="space-y-12 max-w-2xl">
-            <h1 className="text-7xl font-black text-white leading-[1.1] tracking-tighter">
-              Master Your <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-300 to-indigo-300">Freelance Chaos.</span>
-            </h1>
-
-            <p className="text-lg text-blue-100/80 font-medium leading-relaxed max-w-lg">
-              The all-in-one operating system designed for elite freelancers. Manage clients, projects, and invoices with military precision and premium aesthetics.
-            </p>
-
-            <div className="flex flex-wrap gap-4">
-              {[
-                { icon: ShieldCheck, text: "Bank-grade security" },
-                { icon: Zap, text: "Instant invoicing" },
-                { icon: Globe, text: "Client portals" },
-                { icon: Sparkles, text: "AI-powered insights" }
-              ].map((item, i) => (
-                <div key={i} className="flex items-center gap-3 px-5 py-3 rounded-full bg-white/5 border border-white/10 backdrop-blur-sm hover:bg-white/10 transition-colors cursor-default">
-                  <item.icon size={16} className="text-blue-300" />
-                  <span className="text-sm font-bold text-white/90">{item.text}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between text-blue-200/40 text-xs font-bold uppercase  ">
-            <span>© 2025 FreeFlow Inc.</span>
-            <div className="flex gap-8">
-              <span className="hover:text-white transition-colors cursor-pointer">Privacy</span>
-              <span className="hover:text-white transition-colors cursor-pointer">Terms</span>
-              <span className="hover:text-white transition-colors cursor-pointer">Help</span>
-            </div>
-          </div>
+          <span className="text-base font-black tracking-tight text-slate-900 dark:text-white">FreeFlow</span>
         </div>
+
+        {/* Dark mode toggle */}
+        <button
+          onClick={toggleDarkMode}
+          className="p-2.5 rounded-xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border border-slate-200/60 dark:border-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all"
+        >
+          {isDarkMode ? <Sun size={16} /> : <Moon size={16} />}
+        </button>
       </div>
 
-      {/* Form Side */}
-      <div className="flex-1 flex items-center justify-center p-6 lg:p-20 relative bg-[#F8FAFC]">
-        {/* Mobile Background Elements */}
-        <div className="lg:hidden absolute top-0 left-0 right-0 h-64 bg-slate-900 overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-600/90 to-slate-900"></div>
-        </div>
+      {/* Auth Card */}
+      <div className="relative z-10 w-full max-w-[440px] animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="bg-white dark:bg-slate-900 rounded-[32px] border border-slate-200/80 dark:border-slate-800 shadow-2xl shadow-slate-200/60 dark:shadow-black/40 overflow-hidden">
 
-        <div className="w-full max-w-[440px] relative z-10">
-
-          {/* Mobile Logo */}
-          <div className="lg:hidden flex justify-center mb-8">
-            <div className="flex items-center gap-3 text-white">
-              <div className="w-10 h-10 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center border border-white/30">
-                <Wallet size={20} className="text-white" />
+          {/* Card Header */}
+          <div className="px-8 pt-8 pb-6">
+            {/* Tab Selector (Sign In / Sign Up) */}
+            {(mode === 'signin' || mode === 'signup') && (
+              <div className="bg-slate-100 dark:bg-slate-800/80 p-1 rounded-2xl flex mb-6">
+                {(['signin', 'signup'] as AuthMode[]).map((m) => (
+                  <button
+                    key={m}
+                    onClick={() => switchMode(m)}
+                    className={`flex-1 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-200 ${mode === m
+                        ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm border border-slate-200/60 dark:border-slate-600'
+                        : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'
+                      }`}
+                  >
+                    {m === 'signin' ? 'Sign In' : 'Sign Up'}
+                  </button>
+                ))}
               </div>
-              <span className="text-xl font-black tracking-tighter">FreeFlow</span>
+            )}
+
+            {/* Title */}
+            <div className="mb-1">
+              <h1 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+                {mode === 'signup' && 'Create your account'}
+                {mode === 'signin' && 'Welcome back'}
+                {mode === 'forgot' && 'Reset your password'}
+                {mode === 'reset' && 'Set new password'}
+              </h1>
+              <p className="text-slate-400 dark:text-slate-500 text-sm mt-1.5 font-medium">
+                {mode === 'signup' && 'Start your freelance command center for free.'}
+                {mode === 'signin' && 'Sign in to your FreeFlow workspace.'}
+                {mode === 'forgot' && "Enter your email and we'll send a reset link."}
+                {mode === 'reset' && 'Enter your reset code and new password.'}
+              </p>
             </div>
           </div>
 
-          <div className="bg-white rounded-[32px] border border-slate-200/60 shadow-xl shadow-slate-200/40 overflow-hidden">
+          {/* Form */}
+          <div className="px-8 pb-8">
+            <form onSubmit={handleAuth} className="space-y-4">
 
-            {/* Header with Toggle */}
-            <div className="px-8 pt-8 pb-6">
-              <div className="flex items-center justify-between mb-8">
-                <div>
-                  <h2 className="text-2xl font-black text-slate-900 tracking-tight text-center lg:text-left">
-                    {mode === 'signup' && 'Get Started'}
-                    {mode === 'signin' && 'Welcome Back'}
-                    {mode === 'forgot' && 'Reset Password'}
-                    {mode === 'reset' && 'Create New Password'}
-                  </h2>
-                  <p className="text-slate-500 font-medium text-sm mt-1 text-center lg:text-left">
-                    {mode === 'signup' && 'Create your professional workspace.'}
-                    {mode === 'signin' && 'Enter your details to access account.'}
-                    {mode === 'forgot' && 'Enter your email to receive a reset code.'}
-                    {mode === 'reset' && 'Enter the reset code or set your new password.'}
-                  </p>
-                </div>
-                {/* Icon decoration */}
-                <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl hidden lg:flex items-center justify-center shrink-0">
-                  {mode === 'signup' && <Stars size={24} />}
-                  {mode === 'signin' && <Lock size={24} />}
-                  {(mode === 'forgot' || mode === 'reset') && <KeyRound size={24} />}
+              {/* Email */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                  Email Address
+                </label>
+                <div className="relative">
+                  <div className="absolute left-4 top-1/2 -translate-y-1/2">
+                    <Mail size={15} className="text-slate-300 dark:text-slate-600" />
+                  </div>
+                  <input
+                    type="email"
+                    required
+                    autoComplete="email"
+                    disabled={mode === 'reset'}
+                    className="w-full pl-10 pr-4 py-3.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 rounded-2xl text-sm font-medium text-slate-900 dark:text-white placeholder:text-slate-300 dark:placeholder:text-slate-600 outline-none focus:border-blue-500 dark:focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                    placeholder="name@company.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                  />
                 </div>
               </div>
 
-              {/* Custom Tab Toggle (Only for Sign In / Sign Up) */}
-              {(mode === 'signin' || mode === 'signup') && (
-                <div className="bg-slate-100/80 p-1.5 rounded-xl flex relative">
-                  <div
-                    className={`absolute top-1.5 bottom-1.5 w-[calc(50%-6px)] bg-white rounded-lg shadow-sm border border-slate-200/50 transition-all duration-300 ease-out ${mode === 'signup' ? 'translate-x-[calc(100%+6px)]' : 'translate-x-0'}`}
-                  ></div>
-                  <button
-                    onClick={() => setMode('signin')}
-                    className={`flex-1 relative z-10 text-xs font-black uppercase   py-2.5 text-center transition-colors ${mode === 'signin' ? 'text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
-                  >
-                    Sign In
-                  </button>
-                  <button
-                    onClick={() => setMode('signup')}
-                    className={`flex-1 relative z-10 text-xs font-black uppercase   py-2.5 text-center transition-colors ${mode === 'signup' ? 'text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
-                  >
-                    Sign Up
-                  </button>
-                </div>
-              )}
-            </div>
-
-            <div className="px-8 pb-8">
-              <form onSubmit={handleAuth} className="space-y-5">
-                {/* Email Field - Always shown unless in reset mode (though email is useful there too) */}
+              {/* OTP (reset mode) */}
+              {mode === 'reset' && (
                 <div className="space-y-1.5">
-                  <label className="label-work-email text-xs font-black text-slate-500 ml-1 uppercase tracking-wider">Email Address</label>
-                  <div className="relative group">
-                    <div className="absolute left-4 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-400 group-focus-within:text-blue-600 group-focus-within:bg-blue-50 transition-colors">
-                      <Mail size={16} />
+                  <label className="text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                    Reset Code <span className="text-[10px] normal-case font-medium opacity-50">(from email)</span>
+                  </label>
+                  <div className="relative">
+                    <div className="absolute left-4 top-1/2 -translate-y-1/2">
+                      <KeyRound size={15} className="text-slate-300 dark:text-slate-600" />
                     </div>
                     <input
-                      type="email"
-                      required
-                      autoComplete="email"
-                      disabled={mode === 'reset'}
-                      className="w-full pl-14 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-[18px] outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-600 font-bold transition-all text-slate-900 placeholder:text-slate-300 text-sm disabled:opacity-50"
-                      placeholder="name@company.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
+                      type="text"
+                      className="w-full pl-10 pr-4 py-3.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 rounded-2xl text-sm font-medium text-slate-900 dark:text-white placeholder:text-slate-300 dark:placeholder:text-slate-600 outline-none focus:border-blue-500 dark:focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all tracking-widest"
+                      placeholder="6-digit code"
+                      value={otpToken}
+                      onChange={(e) => setOtpToken(e.target.value)}
                     />
                   </div>
                 </div>
+              )}
 
-                {/* Reset Code Field - Shown in reset mode (optional if they clicked link) */}
-                {mode === 'reset' && (
-                  <div className="space-y-1.5">
-                    <label className="label-work-email text-xs font-black text-slate-500 ml-1 uppercase tracking-wider">
-                      Reset Code <span className="text-[10px] lowercase font-medium opacity-50">(Optional if link was clicked)</span>
+              {/* Password */}
+              {mode !== 'forgot' && (
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                      {mode === 'reset' ? 'New Password' : 'Password'}
                     </label>
-                    <div className="relative group">
-                      <div className="absolute left-4 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-400 group-focus-within:text-blue-600 group-focus-within:bg-blue-50 transition-colors">
-                        <KeyRound size={16} />
-                      </div>
-                      <input
-                        type="text"
-                        className="w-full pl-14 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-[18px] outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-600 font-bold transition-all text-slate-900 placeholder:text-slate-300 text-sm tracking-widest"
-                        placeholder="Enter 6-digit code"
-                        value={otpToken}
-                        onChange={(e) => setOtpToken(e.target.value)}
-                      />
-                    </div>
+                    {mode === 'signin' && (
+                      <button
+                        type="button"
+                        onClick={() => switchMode('forgot')}
+                        className="text-[11px] font-black text-blue-600 dark:text-blue-400 hover:underline"
+                      >
+                        Forgot password?
+                      </button>
+                    )}
                   </div>
-                )}
-
-                {/* Password Field - Shown in signin, signup, and reset modes */}
-                {mode !== 'forgot' && (
-                  <div className="space-y-1.5">
-                    <div className="flex justify-between items-center px-1">
-                      <label className="label-work-email text-xs font-black text-slate-500 uppercase tracking-wider">
-                        {mode === 'reset' ? 'New Password' : 'Password'}
-                      </label>
-                      {mode === 'signin' && (
-                        <button
-                          type="button"
-                          onClick={() => setMode('forgot')}
-                          className="text-[10px] font-black text-blue-600 uppercase   hover:underline"
-                        >
-                          Forgot?
-                        </button>
-                      )}
+                  <div className="relative">
+                    <div className="absolute left-4 top-1/2 -translate-y-1/2">
+                      <Lock size={15} className="text-slate-300 dark:text-slate-600" />
                     </div>
-                    <div className="relative group">
-                      <div className="absolute left-4 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-400 group-focus-within:text-blue-600 group-focus-within:bg-blue-50 transition-colors">
-                        <Lock size={16} />
-                      </div>
-                      <input
-                        type="password"
-                        required
-                        autoComplete={mode === 'signup' ? "new-password" : "current-password"}
-                        className="w-full pl-14 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-[18px] outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-600 font-bold transition-all text-slate-900 placeholder:text-slate-300 text-sm"
-                        placeholder="••••••••"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                      />
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      required
+                      autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
+                      className="w-full pl-10 pr-12 py-3.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 rounded-2xl text-sm font-medium text-slate-900 dark:text-white placeholder:text-slate-300 dark:placeholder:text-slate-600 outline-none focus:border-blue-500 dark:focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all"
+                      placeholder="••••••••"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 dark:text-slate-600 hover:text-slate-500 dark:hover:text-slate-400 transition-colors"
+                    >
+                      {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Confirm Password (reset mode) */}
+              {mode === 'reset' && (
+                <div className="space-y-1.5">
+                  <label className="text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                    Confirm New Password
+                  </label>
+                  <div className="relative">
+                    <div className="absolute left-4 top-1/2 -translate-y-1/2">
+                      <ShieldIcon size={15} className="text-slate-300 dark:text-slate-600" />
                     </div>
+                    <input
+                      type={showConfirmPassword ? 'text' : 'password'}
+                      required
+                      className="w-full pl-10 pr-12 py-3.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 rounded-2xl text-sm font-medium text-slate-900 dark:text-white placeholder:text-slate-300 dark:placeholder:text-slate-600 outline-none focus:border-blue-500 dark:focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all"
+                      placeholder="••••••••"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 dark:text-slate-600 hover:text-slate-500 dark:hover:text-slate-400 transition-colors"
+                    >
+                      {showConfirmPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                    </button>
                   </div>
-                )}
+                </div>
+              )}
 
-                {/* Confirm Password Field - Only shown in reset mode */}
-                {mode === 'reset' && (
-                  <div className="space-y-1.5">
-                    <label className="label-work-email text-xs font-black text-slate-500 ml-1 uppercase tracking-wider">Confirm New Password</label>
-                    <div className="relative group">
-                      <div className="absolute left-4 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-400 group-focus-within:text-blue-600 group-focus-within:bg-blue-50 transition-colors">
-                        <ShieldIcon size={16} />
-                      </div>
-                      <input
-                        type="password"
-                        required
-                        className="w-full pl-14 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-[18px] outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-600 font-bold transition-all text-slate-900 placeholder:text-slate-300 text-sm"
-                        placeholder="••••••••"
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                      />
-                    </div>
-                  </div>
-                )}
+              {/* Error */}
+              {error && (
+                <div className="flex items-start gap-3 p-4 bg-rose-50 dark:bg-rose-900/20 border border-rose-100 dark:border-rose-800/40 text-rose-600 dark:text-rose-400 rounded-2xl text-xs font-medium animate-in fade-in slide-in-from-top-1 duration-200">
+                  <AlertCircle size={16} className="shrink-0 mt-0.5" />
+                  <p>{error}</p>
+                </div>
+              )}
 
-                {error && (
-                  <div className="flex items-center gap-3 p-4 bg-rose-50 border border-rose-100 text-rose-600 rounded-[18px] text-xs font-bold animate-in fade-in slide-in-from-top-2">
-                    <AlertCircle size={18} className="shrink-0" />
-                    <p className="leading-relaxed">{error}</p>
-                  </div>
+              {/* Submit Button */}
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full py-4 bg-slate-900 dark:bg-blue-600 hover:bg-blue-600 dark:hover:bg-blue-700 text-white rounded-2xl font-black text-sm flex items-center justify-center gap-2 shadow-lg shadow-slate-900/10 dark:shadow-blue-600/20 hover:shadow-blue-600/25 hover:-translate-y-0.5 active:scale-[0.98] transition-all group disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none mt-2"
+              >
+                {loading ? (
+                  <Loader2 className="animate-spin" size={18} />
+                ) : (
+                  <>
+                    {mode === 'signup' && 'Create Account'}
+                    {mode === 'signin' && 'Sign In'}
+                    {mode === 'forgot' && 'Send Reset Email'}
+                    {mode === 'reset' && 'Update Password'}
+                    <ArrowRight size={15} className="group-hover:translate-x-0.5 transition-transform" />
+                  </>
                 )}
+              </button>
 
+              {/* Back to Sign In (for forgot/reset) */}
+              {(mode === 'forgot' || mode === 'reset') && (
                 <button
-                  disabled={loading}
-                  className="w-full py-4 bg-slate-900 hover:bg-blue-600 text-white rounded-[18px] font-black text-xs uppercase   shadow-xl shadow-slate-200 hover:shadow-blue-500/20 hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2 active:scale-[0.98] mt-2 group"
+                  type="button"
+                  onClick={() => switchMode('signin')}
+                  className="w-full py-2.5 text-xs font-black text-slate-400 dark:text-slate-500 uppercase hover:text-slate-700 dark:hover:text-slate-300 transition-colors flex items-center justify-center gap-1.5"
                 >
-                  {loading ? <Loader2 className="animate-spin" size={18} /> : (
-                    <>
-                      {mode === 'signup' && 'Create Account'}
-                      {mode === 'signin' && 'Sign In'}
-                      {mode === 'forgot' && 'Send Reset Code'}
-                      {mode === 'reset' && 'Update Password'}
-                      <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
-                    </>
-                  )}
+                  <ArrowLeft size={12} />
+                  Back to Sign In
                 </button>
+              )}
+            </form>
+          </div>
 
-                {mode !== 'signin' && mode !== 'signup' && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setMode('signin');
-                      setError(null);
-                    }}
-                    className="w-full py-2 text-xs font-black text-slate-400 uppercase   hover:text-slate-600 transition-colors"
-                  >
-                    Back to Sign In
-                  </button>
-                )}
-              </form>
+          {/* Footer */}
+          <div className="bg-slate-50/70 dark:bg-slate-800/30 border-t border-slate-100 dark:border-slate-800 px-8 py-4 flex items-center justify-center gap-2">
+            <div className="w-4 h-4 bg-emerald-100 dark:bg-emerald-900/40 rounded-full flex items-center justify-center">
+              <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full" />
             </div>
-
-            {/* Footer Area */}
-            <div className="bg-slate-50 border-t border-slate-100 p-6 text-center">
-              <p className="text-slate-400 text-[10px] font-bold uppercase  ">
-                Secured by Supabase Auth
-              </p>
-            </div>
-
+            <p className="text-[11px] text-slate-400 dark:text-slate-500 font-semibold">
+              Secured by Supabase · End-to-end encrypted
+            </p>
           </div>
         </div>
+
+        {/* Terms */}
+        <p className="text-center text-[11px] text-slate-400 dark:text-slate-600 mt-6 font-medium">
+          By continuing, you agree to our{' '}
+          <a href="#" className="hover:text-slate-600 dark:hover:text-slate-400 underline">Terms of Service</a>{' '}
+          and{' '}
+          <a href="#" className="hover:text-slate-600 dark:hover:text-slate-400 underline">Privacy Policy</a>
+        </p>
       </div>
     </div>
   );
 };
 
-export default Auth;
+// Animated background blobs
+const AuthBackground: React.FC = () => (
+  <div className="absolute inset-0 -z-0 overflow-hidden pointer-events-none">
+    <div className="absolute -top-40 -left-40 w-[600px] h-[600px] bg-blue-500/6 dark:bg-blue-500/4 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '6s' }} />
+    <div className="absolute -bottom-40 -right-40 w-[500px] h-[500px] bg-violet-500/6 dark:bg-violet-500/4 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '8s', animationDelay: '1s' }} />
+    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] bg-emerald-500/4 dark:bg-emerald-500/3 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '10s', animationDelay: '2s' }} />
+    {/* Grid pattern */}
+    <div className="absolute inset-0 opacity-[0.015] dark:opacity-[0.025]"
+      style={{
+        backgroundImage: 'linear-gradient(#000 1px, transparent 1px), linear-gradient(90deg, #000 1px, transparent 1px)',
+        backgroundSize: '40px 40px'
+      }}
+    />
+  </div>
+);
 
+export default Auth;

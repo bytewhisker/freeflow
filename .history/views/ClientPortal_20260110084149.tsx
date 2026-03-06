@@ -47,7 +47,7 @@ const ClientPortal: React.FC<{ state: AppState }> = ({ state }) => {
             </div>
             <div className="flex gap-2">
               <button onClick={() => window.print()} className="p-2 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors">
-                <Printer size={20} className="text-slate-600" />
+                <Printer size={20} className="text-black" />
               </button>
               <button className="p-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors">
                 <Download size={20} className="text-white" />
@@ -99,7 +99,7 @@ const ClientPortal: React.FC<{ state: AppState }> = ({ state }) => {
                 <h4 className="text-[10px] font-bold text-slate-400 uppercase   mb-2">Bill To</h4>
                 <div className="text-sm space-y-0.5">
                   <p className="font-bold text-slate-800 text-lg">{client?.name}</p>
-                  <p className="text-slate-600 font-medium">{client?.company}</p>
+                  <p className="text-black font-medium">{client?.company}</p>
                 </div>
                 {doc.shipTo && (
                   <div className="mt-4">
@@ -134,7 +134,7 @@ const ClientPortal: React.FC<{ state: AppState }> = ({ state }) => {
                       <p className="font-bold text-slate-800 leading-snug">{item.description}</p>
                       <p className="text-[11px] text-slate-400 font-medium">Unit: {formatCurrency(item.rate, state.settings.currency.code)}</p>
                     </td>
-                    <td className="py-3 text-center text-slate-600">{item.quantity}</td>
+                    <td className="py-3 text-center text-black">{item.quantity}</td>
                     <td className="py-3 text-right font-bold text-slate-800">{formatCurrency(item.quantity * item.rate, state.settings.currency.code)}</td>
                   </tr>
                 ))}

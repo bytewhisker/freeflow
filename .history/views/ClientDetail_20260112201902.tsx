@@ -222,7 +222,7 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ state, setState, clientId: 
               onClick={handleClose}
               className="w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition-colors"
             >
-              <ChevronLeft size={20} className="text-slate-600" />
+              <ChevronLeft size={20} className="text-black" />
             </button>
             <div className="flex items-center gap-3">
               <div
@@ -245,7 +245,7 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ state, setState, clientId: 
               {client.status || 'New'}
             </span>
             <button className="w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition-colors">
-              <MoreHorizontal size={20} className="text-slate-600" />
+              <MoreHorizontal size={20} className="text-black" />
             </button>
           </div>
         </div>
@@ -272,7 +272,7 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ state, setState, clientId: 
             <div className="w-px h-10 bg-slate-300" />
             <div className="text-center">
               <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Invoices</p>
-              <p className="text-lg font-black text-slate-600">{stats.totalInvoices}</p>
+              <p className="text-lg font-black text-black">{stats.totalInvoices}</p>
             </div>
           </div>
         </div>
@@ -286,11 +286,10 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ state, setState, clientId: 
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`px-4 py-3 font-bold text-sm transition-all flex items-center gap-2 border-b-2 ${
-                  isActive
+                className={`px-4 py-3 font-bold text-sm transition-all flex items-center gap-2 border-b-2 ${isActive
                     ? 'text-blue-600 border-blue-600'
                     : 'text-slate-500 border-transparent hover:text-slate-700'
-                }`}
+                  }`}
               >
                 <Icon size={16} />
                 <span>{tab.label}</span>
@@ -412,7 +411,7 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ state, setState, clientId: 
               {client.notes && (
                 <div className="bg-white rounded-2xl p-6 border border-slate-200">
                   <h3 className="text-lg font-bold text-slate-900 mb-3">Notes</h3>
-                  <p className="text-slate-600 leading-relaxed">{client.notes}</p>
+                  <p className="text-black leading-relaxed">{client.notes}</p>
                 </div>
               )}
             </div>
@@ -516,17 +515,17 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ state, setState, clientId: 
                   <table className="w-full">
                     <thead className="bg-slate-50">
                       <tr>
-                        <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase">Invoice</th>
-                        <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase">Date</th>
-                        <th className="px-4 py-3 text-right text-xs font-bold text-slate-600 uppercase">Amount</th>
-                        <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase">Status</th>
+                        <th className="px-4 py-3 text-left text-xs font-bold text-black uppercase">Invoice</th>
+                        <th className="px-4 py-3 text-left text-xs font-bold text-black uppercase">Date</th>
+                        <th className="px-4 py-3 text-right text-xs font-bold text-black uppercase">Amount</th>
+                        <th className="px-4 py-3 text-left text-xs font-bold text-black uppercase">Status</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
                       {clientDocs.map(doc => (
                         <tr key={doc.id} className="hover:bg-slate-50 cursor-pointer">
                           <td className="px-4 py-3 font-bold text-slate-900">{doc.docNumber}</td>
-                          <td className="px-4 py-3 text-slate-600">{formatDate(doc.createdAt)}</td>
+                          <td className="px-4 py-3 text-black">{formatDate(doc.createdAt)}</td>
                           <td className="px-4 py-3 text-right font-bold text-slate-900">{formatCurrency(doc.total)}</td>
                           <td className="px-4 py-3">
                             <span
@@ -574,7 +573,7 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ state, setState, clientId: 
                             <h4 className="font-bold text-slate-900">{activity.title}</h4>
                             <span className="text-xs text-slate-500">{formatRelativeTime(activity.timestamp)}</span>
                           </div>
-                          <p className="text-sm text-slate-600 truncate">{activity.description}</p>
+                          <p className="text-sm text-black truncate">{activity.description}</p>
                         </div>
                       </div>
                     );

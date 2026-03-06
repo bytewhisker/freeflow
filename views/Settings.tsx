@@ -29,7 +29,7 @@ const Card: React.FC<{ children: React.ReactNode; className?: string }> = ({
   className = "",
 }) => (
   <div
-    className={`bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden ${className}`}
+    className={`bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/60 dark:border-slate-800 shadow-sm overflow-hidden ${className}`}
   >
     {children}
   </div>
@@ -39,13 +39,13 @@ const CardHeader: React.FC<{ children: React.ReactNode; className?: string }> = 
   children,
   className = "",
 }) => (
-  <div className={`px-6 py-5 border-b border-slate-100 ${className}`}>
+  <div className={`px-8 py-6 border-b border-slate-50 dark:border-slate-800 bg-white dark:bg-slate-900 ${className}`}>
     {children}
   </div>
 );
 
 const CardTitle: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <h3 className="text-lg font-semibold text-slate-900">{children}</h3>
+  <h3 className="text-xl font-bold text-slate-900 dark:text-white roboto-font">{children}</h3>
 );
 
 const CardContent: React.FC<{
@@ -61,7 +61,7 @@ const Label: React.FC<{
 }> = ({ htmlFor, children }) => (
   <label
     htmlFor={htmlFor}
-    className="block text-sm font-medium text-slate-700 mb-1.5"
+    className="block text-[13px] font-bold text-slate-400 dark:text-slate-500 mb-2 uppercase tracking-widest roboto-font"
   >
     {children}
   </label>
@@ -72,7 +72,7 @@ const Input: React.FC<React.InputHTMLAttributes<HTMLInputElement>> = (
 ) => (
   <input
     {...props}
-    className={`w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed ${props.className}`}
+    className={`w-full px-4 py-2.5 bg-slate-50/50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-[14px] font-medium text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-black outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed roboto-font ${props.className}`}
   />
 );
 
@@ -191,32 +191,34 @@ const Settings: React.FC<{ state: AppState; setState: any }> = ({
   return (
     <div className="max-w-full mx-auto px-4 md:px-6 lg:px-8 space-y-8">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-6">
         <div>
-          <h1 className="text-3xl font-roboto-bold text-slate-900 tracking-tight">
-            Settings
-          </h1>
-          <p className="text-slate-500 mt-2 font-medium font-open-sans">
-            Manage your personal profile, business details, and preferences.
-          </p>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white roboto-font">Settings</h1>
+          <p className="text-slate-500 dark:text-[12px] font-medium font-open-sans">Configure your workspace preferences and profiles.</p>
         </div>
       </div>
 
       {/* Layout: sidebar + content */}
-      <div className="flex gap-8">
+      <div className="flex flex-col lg:flex-row gap-8">
         {/* ----- Sidebar navigation (placeholder) ----- */}
-        <nav className="w-64 hidden lg:block">
-          <ul className="space-y-2">
+        <nav className="w-full lg:w-64">
+          <ul className="flex flex-row lg:flex-col overflow-x-auto lg:overflow-visible gap-1.5 pb-4 lg:pb-0 no-scrollbar">
             {[
-              "Personal Profile",
-              "Business Details",
-              "Payment Instructions",
-              "Regional & Currency",
-              "Brand Watermark",
+              { id: "Personal Profile", label: "Profile", icon: User },
+              { id: "Business Details", label: "Business", icon: Building },
+              { id: "Payment Instructions", label: "Payments", icon: CreditCard },
+              { id: "Regional & Currency", label: "Regional", icon: Globe },
             ].map((item) => (
-              <li key={item}>
-                <button className={`w-full text-left px-4 py-2 rounded-lg text-sm ${activeSection === item ? "bg-slate-100 text-slate-900" : "text-slate-700 hover:bg-slate-50"}`} onClick={() => setActiveSection(item)}>
-                  {item}
+              <li key={item.id} className="shrink-0 lg:w-full">
+                <button
+                  className={`flex items-center gap-3 whitespace-nowrap w-full text-left px-4 py-2.5 rounded-xl text-[13px] font-bold transition-all roboto-font ${activeSection === item.id
+                    ? "bg-black dark:bg-blue-600 text-white shadow-lg shadow-black/10 translate-x-1"
+                    : "text-slate-500 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-900 hover:text-slate-900 dark:hover:text-white hover:translate-x-1"
+                    }`}
+                  onClick={() => setActiveSection(item.id)}
+                >
+                  <item.icon size={16} strokeWidth={activeSection === item.id ? 2.5 : 2} />
+                  {item.label}
                 </button>
               </li>
             ))}
@@ -236,9 +238,9 @@ const Settings: React.FC<{ state: AppState; setState: any }> = ({
               </CardHeader>
               <CardContent>
                 {/* Avatar upload section */}
-                <div className="flex items-center gap-6 mb-8">
+                <div className="flex flex-col sm:flex-row items-center gap-6 mb-8 p-5 bg-slate-50/50 dark:bg-slate-800/50 rounded-2xl border border-slate-200/60 dark:border-slate-800">
                   <div className="relative group">
-                    <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-slate-100 shadow-sm relative bg-slate-50">
+                    <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-white dark:border-slate-900 shadow-lg relative bg-white dark:bg-slate-800">
                       {state.settings.profile?.avatarUrl ? (
                         <img
                           src={state.settings.profile.avatarUrl}
@@ -246,14 +248,14 @@ const Settings: React.FC<{ state: AppState; setState: any }> = ({
                           className="w-full h-full object-cover"
                         />
                       ) : (
-                        <div className="w-full h-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-3xl font-roboto-bold">
+                        <div className="w-full h-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-2xl font-bold roboto-font">
                           {state.settings.profile?.name?.[0] ?? "U"}
                         </div>
                       )}
 
                       {uploading && (
                         <div className="absolute inset-0 bg-black/50 flex items-center justify-center backdrop-blur-sm">
-                          <Loader2 className="animate-spin text-white" size={24} />
+                          <Loader2 className="animate-spin text-white" size={20} />
                         </div>
                       )}
                     </div>
@@ -261,10 +263,10 @@ const Settings: React.FC<{ state: AppState; setState: any }> = ({
                     <button
                       onClick={() => fileInputRef.current?.click()}
                       disabled={uploading}
-                      className="absolute bottom-0 right-0 p-2 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition-all hover:scale-105 disabled:opacity-70 disabled:cursor-not-allowed"
+                      className="absolute -bottom-1 -right-1 p-1.5 bg-blue-600 text-white rounded-lg shadow-xl hover:bg-blue-700 transition-all hover:scale-110 disabled:opacity-70 disabled:cursor-not-allowed"
                       title="Change avatar"
                     >
-                      <Camera size={16} />
+                      <Camera size={14} />
                     </button>
 
                     <input
@@ -276,24 +278,22 @@ const Settings: React.FC<{ state: AppState; setState: any }> = ({
                     />
                   </div>
 
-                  <div>
-                    <h3 className="text-sm font-semibold text-slate-900 mb-1">Profile Picture</h3>
-                    <p className="text-xs text-slate-500 mb-3 max-w-[250px]">
-                      Upload a professional photo to build trust with clients so they know who they're working with.
-                    </p>
-                    <div className="flex gap-2">
+                  <div className="text-center sm:text-left flex-1">
+
+
+                    <div className="flex flex-wrap justify-center sm:justify-start gap-2">
                       <button
                         onClick={() => fileInputRef.current?.click()}
                         disabled={uploading}
-                        className="text-xs font-semibold text-blue-600 hover:text-blue-700 hover:underline disabled:opacity-50"
+                        className="px-4 py-2 bg-blue-600 text-white rounded-lg text-xs font-bold hover:bg-blue-700 transition-all disabled:opacity-50"
                       >
-                        {uploading ? 'Uploading...' : 'Upload New Photo'}
+                        {uploading ? 'Wait...' : 'Edit Photo'}
                       </button>
                       {state.settings.profile?.avatarUrl && (
                         <button
                           onClick={() => updateProfile('avatarUrl', '')}
                           disabled={uploading}
-                          className="text-xs font-semibold text-rose-500 hover:text-rose-600 hover:underline disabled:opacity-50 ml-2"
+                          className="px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-rose-500 rounded-lg text-xs font-bold hover:bg-rose-50 transition-all"
                         >
                           Remove
                         </button>
@@ -302,69 +302,37 @@ const Settings: React.FC<{ state: AppState; setState: any }> = ({
                   </div>
                 </div>
 
-                {/* Full Name */}
-                <Label htmlFor="fullName">Full Name</Label>
-                <div className="relative mb-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                  <div className="col-span-1">
+                    <Label htmlFor="fullName">Full Name</Label>
+                    <Input
+                      id="fullName"
+                      type="text"
+                      value={state.settings.profile?.name ?? ""}
+                      onChange={(e) => updateProfile("name", e.target.value)}
+                    />
+                  </div>
 
-                  <Input
-                    id="fullName"
-                    type="text"
+                  <div className="col-span-1">
+                    <Label htmlFor="website">Personal Website</Label>
+                    <Input
+                      id="website"
+                      type="text"
+                      value={state.settings.profile?.website ?? ""}
+                      onChange={(e) => updateProfile("website", e.target.value)}
+                    />
+                  </div>
 
-                    value={state.settings.profile?.name ?? ""}
-                    onChange={(e) => updateProfile("name", e.target.value)}
-                  />
-                </div>
-
-                {/* Professional Title */}
-                <Label htmlFor="title">Professional Title</Label>
-                <div className="relative mb-4">
-
-                  <Input
-                    id="title"
-                    type="text"
-
-                    value={state.settings.profile?.title ?? ""}
-                    onChange={(e) => updateProfile("title", e.target.value)}
-                  />
-                </div>
-
-                {/* Personal Website */}
-                <Label htmlFor="website">Personal Website</Label>
-                <div className="relative mb-4">
-
-                  <Input
-                    id="website"
-                    type="text"
-
-                    value={state.settings.profile?.website ?? ""}
-                    onChange={(e) => updateProfile("website", e.target.value)}
-                  />
-                </div>
-
-                {/* Avatar URL (Hidden or optional manual override) */}
-                {/* <Label htmlFor="avatarUrl">Avatar URL</Label>
-                <div className="relative mb-4">
-                  <Input
-                    id="avatarUrl"
-                    type="text"
-                    value={state.settings.profile?.avatarUrl ?? ""}
-                    onChange={(e) => updateProfile("avatarUrl", e.target.value)}
-                    placeholder="https://..."
-                  />
-                </div> */}
-
-                {/* Short Bio */}
-                <Label htmlFor="bio">Short Bio</Label>
-                <div className="relative">
-
-                  <textarea
-                    id="bio"
-                    rows={4}
-                    className="w-full pl-11 pr-4 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all resize-none"
-
-                    value={state.settings.profile?.bio ?? ""}
-                    onChange={(e) => updateProfile("bio", e.target.value)}
-                  />
+                  <div className="col-span-2">
+                    <Label htmlFor="bio">Short Bio</Label>
+                    <textarea
+                      id="bio"
+                      rows={3}
+                      className="w-full px-4 py-2.5 bg-slate-50/50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-[14px] font-medium text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-black outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500/20 transition-all resize-none roboto-font"
+                      value={state.settings.profile?.bio ?? ""}
+                      onChange={(e) => updateProfile("bio", e.target.value)}
+                    />
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -380,54 +348,48 @@ const Settings: React.FC<{ state: AppState; setState: any }> = ({
                 </div>
               </CardHeader>
               <CardContent>
-                {/* Business Name */}
-                <Label htmlFor="businessName">Business Name</Label>
-                <div className="relative mb-4">
-                  <Building
-                    className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300"
-                    size={18}
-                  />
-                  <Input
-                    id="businessName"
-                    type="text"
-                    value={state.settings.business?.name ?? ""}
-                    onChange={(e) => updateBusinessInfo("name", e.target.value)}
-                  />
-                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                  <div className="col-span-1">
+                    <Label htmlFor="businessName">Business Name</Label>
+                    <Input
+                      id="businessName"
+                      type="text"
+                      value={state.settings.business?.name ?? ""}
+                      onChange={(e) => updateBusinessInfo("name", e.target.value)}
+                    />
+                  </div>
 
-                {/* Email Address */}
-                <Label htmlFor="businessEmail">Email Address</Label>
-                <div className="relative mb-4">
-                  
-                  <Input
-                    id="businessEmail"
-                    type="email"
-                    value={state.settings.business?.email ?? ""}
-                    onChange={(e) => updateBusinessInfo("email", e.target.value)}
-                  />
-                </div>
+                  <div className="col-span-1">
+                    <Label htmlFor="businessEmail">Email Address</Label>
+                    <Input
+                      id="businessEmail"
+                      type="email"
+                      value={state.settings.business?.email ?? ""}
+                      onChange={(e) => updateBusinessInfo("email", e.target.value)}
+                    />
+                  </div>
 
-                {/* Phone Number */}
-                <Label htmlFor="businessPhone">Phone Number</Label>
-                <div className="relative mb-4">
-                  
-                  <Input
-                    id="businessPhone"
-                    type="text"
-                    value={state.settings.business?.phone ?? ""}
-                    onChange={(e) => updateBusinessInfo("phone", e.target.value)}
-                  />
-                </div>
+                  <div className="col-span-1">
+                    <Label htmlFor="businessPhone">Phone Number</Label>
+                    <Input
+                      id="businessPhone"
+                      type="text"
+                      value={state.settings.business?.phone ?? ""}
+                      onChange={(e) => updateBusinessInfo("phone", e.target.value)}
+                    />
+                  </div>
 
-                {/* Physical Address */}
-                <Label htmlFor="businessAddress">Physical Address</Label>
-                <textarea
-                  id="businessAddress"
-                  rows={3}
-                  className="w-full pl-11 pr-4 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all resize-none"
-                  value={state.settings.business?.address ?? ""}
-                  onChange={(e) => updateBusinessInfo("address", e.target.value)}
-                />
+                  <div className="col-span-2">
+                    <Label htmlFor="businessAddress">Physical Address</Label>
+                    <textarea
+                      id="businessAddress"
+                      rows={2}
+                      className="w-full px-4 py-2.5 bg-slate-50/50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-[14px] font-medium text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-black outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500/20 transition-all resize-none roboto-font"
+                      value={state.settings.business?.address ?? ""}
+                      onChange={(e) => updateBusinessInfo("address", e.target.value)}
+                    />
+                  </div>
+                </div>
               </CardContent>
             </Card>
           )}
@@ -441,7 +403,7 @@ const Settings: React.FC<{ state: AppState; setState: any }> = ({
                   <CardTitle>Payment Instructions</CardTitle>
                 </div>
               </CardHeader>
-              <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
                 {/* Bank Name */}
                 <div>
                   <Label htmlFor="bankName">Bank Name</Label>
@@ -521,14 +483,15 @@ const Settings: React.FC<{ state: AppState; setState: any }> = ({
               </CardHeader>
               <CardContent>
                 {/* Search input */}
-                <div className="flex items-center gap-4 mb-4">
+                <div className="relative mb-8">
+                  <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" size={18} />
                   <Input
                     type="text"
-                    placeholder="Search currencies…"
+                    placeholder="Search global currencies by name or code…"
+                    className="pl-14"
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                   />
-                  <Search className="text-slate-400" size={20} />
                 </div>
 
                 {/* Currency list */}
@@ -537,20 +500,24 @@ const Settings: React.FC<{ state: AppState; setState: any }> = ({
                     <button
                       key={curr.code}
                       onClick={() => handleCurrencyChange(curr)}
-                      className={`flex items-center gap-3 w-full p-3 rounded-lg border ${state.settings.currency?.code === curr.code
-                        ? "border-blue-600 bg-blue-50"
-                        : "border-slate-200 hover:border-slate-300"
+                      className={`flex items-center gap-4 w-full p-4 rounded-2xl border transition-all duration-300 group/curr ${state.settings.currency?.code === curr.code
+                        ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20 shadow-lg shadow-blue-500/10 scale-[1.02]"
+                        : "border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:hover:border-slate-700 hover:bg-slate-50/50 dark:hover:bg-slate-800/30"
                         }`}
                     >
-                      <span className="text-xl font-roboto-bold">{curr.symbol}</span>
-                      <div className="text-left">
-                        <p className="text-sm font-medium text-slate-900">
+                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-xl font-bold transition-colors ${state.settings.currency?.code === curr.code ? 'bg-blue-600 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 group-hover/curr:bg-white dark:group-hover/curr:bg-slate-700'}`}>
+                        {curr.symbol}
+                      </div>
+                      <div className="text-left flex-1">
+                        <p className="text-[15px] font-bold text-slate-900 dark:text-white roboto-font">
                           {curr.code} – {curr.name}
                         </p>
-                        <p className="text-xs text-slate-500">{curr.country}</p>
+                        <p className="text-[12px] text-slate-500 dark:text-slate-400 roboto-font font-medium">{curr.country}</p>
                       </div>
                       {state.settings.currency?.code === curr.code && (
-                        <Check className="ml-auto text-blue-600" size={16} />
+                        <div className="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center">
+                          <Check className="text-white" size={14} strokeWidth={3} />
+                        </div>
                       )}
                     </button>
                   ))}
@@ -559,91 +526,8 @@ const Settings: React.FC<{ state: AppState; setState: any }> = ({
             </Card>
           )}
 
-          {activeSection === "Brand Watermark" && (
-            /* Brand Watermark */
-            <Card>
-              <CardHeader>
-                <div className="flex items-center gap-3">
-                  <Palette className="text-blue-600" size={20} />
-                  <CardTitle>Brand Watermark</CardTitle>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {/* Show watermark switch */}
-                <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    id="showWatermark"
-                    checked={state.settings.branding?.showWatermark ?? false}
-                    onChange={(e) => toggleWatermark(e.target.checked)}
-                    className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-2 focus:ring-blue-500/20"
-                  />
-                  <label
-                    htmlFor="showWatermark"
-                    className="text-sm font-medium text-slate-700"
-                  >
-                    Show Watermark on invoices
-                  </label>
-                </div>
 
-                {/* Opacity slider */}
-                <Label htmlFor="watermarkOpacity">Opacity Level</Label>
-                <input
-                  id="watermarkOpacity"
-                  type="range"
-                  min={0}
-                  max={100}
-                  value={Math.round(
-                    (state.settings.branding?.watermarkOpacity ?? 0) * 100
-                  )}
-                  onChange={(e) =>
-                    updateWatermarkOpacity(Number(e.target.value) / 100)
-                  }
-                  className="w-full"
-                />
-                <p className="text-sm text-slate-500">
-                  Current opacity:{" "}
-                  {Math.round(
-                    (state.settings.branding?.watermarkOpacity ?? 0) * 100
-                  )}
-                  %
-                </p>
 
-                {/* Preview box */}
-                <div
-                  className="border border-slate-200 rounded-lg p-4 flex items-center justify-center h-32 bg-white"
-                  style={{
-                    opacity: state.settings.branding?.watermarkOpacity ?? 0,
-                  }}
-                >
-                  <span className="text-slate-400 text-sm">Watermark preview</span>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Sign Out */}
-          <Card className="mt-8">
-            <CardContent className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <LogOut className="text-rose-600" size={24} />
-                <div>
-                  <h3 className="text-lg font-roboto-bold text-rose-950">
-                    Sign Out
-                  </h3>
-                  <p className="text-rose-600/80 text-xs font-medium mt-1">
-                    End your current session securely on this device.
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={() => supabase?.auth.signOut()}
-                className="px-8 py-4 bg-white border border-rose-200 text-rose-600 rounded-2xl font-roboto-bold text-xs hover:bg-rose-600 hover:text-white hover:border-transparent transition-all shadow-sm hover:shadow-lg hover:shadow-rose-600/20 active:scale-95 whitespace-nowrap"
-              >
-                Sign Out Now
-              </button>
-            </CardContent>
-          </Card>
         </div>
       </div>
     </div>

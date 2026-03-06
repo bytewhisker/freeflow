@@ -4,15 +4,59 @@ import { supabase } from './lib/supabase';
 
 const INITIAL_STATE: AppState = {
   clients: [],
-  projects: [],
+  projects: [
+    {
+      id: '550e8400-e29b-41d4-a716-446655440000', // Valid UUID for seed project
+      teamId: 'ff-core',
+      title: 'FreeFlow System Redesign',
+      description: 'The core project for updating the entire UI/UX to modern SaaS standards.',
+      status: 'active',
+      category: 'development',
+      totalBudget: 15000,
+      deadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+      createdAt: new Date().toISOString(),
+      assignedMembers: ['current-user']
+    }
+  ],
   salesDocuments: [],
+  notifications: [],
+  timeEntries: [],
+  recurringInvoices: [],
   settings: {
     currency: { code: 'USD', symbol: '$', name: 'US Dollar' },
-    branding: { watermarkOpacity: 0.15, showWatermark: true },
+    branding: { watermarkOpacity: 0.1, showWatermark: true },
     business: { name: 'New Freelancer', address: 'Add your address', email: 'hello@yourbrand.com', phone: '+1 555-0123' },
     paymentDetails: { bankName: '', accountNumber: '', routingNumber: '', swiftCode: '', payPal: '' },
     profile: { name: '', title: 'Freelancer', bio: '', website: '', avatarUrl: '' }
-  }
+  },
+  teams: [
+    {
+      id: 'ff-core',
+      name: 'FreeFlow Core',
+      icon: '',
+      createdAt: new Date().toISOString(),
+      members: [
+        { userId: 'current-user', name: 'You', email: 'owner@freeflow.com', role: 'owner', status: 'online' }
+      ],
+      channels: [
+        { id: 'ch-general', teamId: 'ff-core', name: 'general', description: 'Company-wide announcements and talk', type: 'public' },
+        { id: 'ch-dev', teamId: 'ff-core', name: 'development', description: 'Product and engineering discussions', type: 'public' }
+      ]
+    }
+  ],
+  messages: {
+    'ch-general': [
+      { id: 'msg-1', channelId: 'ch-general', senderId: 'ff-bot', senderName: 'FreeFlow Bot', content: 'Welcome to the new collaboration workspace! Start chatting or manage your team projects here.', timestamp: new Date().toISOString() }
+    ]
+  },
+  tasks: [
+    { id: 't-1', projectId: 'p-seed', title: 'Design System Update', description: 'Refresh primary buttons and typography.', assignedTo: 'current-user', dueDate: new Date().toISOString(), status: 'done' },
+    { id: 't-2', projectId: 'p-seed', title: 'Collaboration UI', description: 'Build the Slack-style interface with portals.', assignedTo: 'current-user', dueDate: new Date().toISOString(), status: 'in_progress' },
+    { id: 't-3', projectId: 'p-seed', title: 'Real-time Syncing', description: 'Enable Supabase real-time subscriptions for chat.', assignedTo: 'current-user', dueDate: new Date().toISOString(), status: 'todo' }
+  ],
+  activeTeamId: 'ff-core',
+  activeChannelId: 'ch-general',
+  activeProjectTabId: null
 };
 
 const mapClient = (c: any): Client => ({
@@ -25,8 +69,10 @@ const mapClient = (c: any): Client => ({
 const mapProject = (p: any): Project => ({
   ...p,
   clientId: p.client_id,
+  teamId: p.team_id,
   totalBudget: Number(p.total_budget || 0),
-  createdAt: p.created_at
+  createdAt: p.created_at,
+  assignedMembers: p.assigned_members || []
 });
 
 const mapDoc = (d: any): SalesDocument => ({
@@ -75,6 +121,15 @@ export const db = {
         clients: (cRes.data || []).map(mapClient),
         projects: (prRes.data || []).map(mapProject),
         salesDocuments: (dRes.data || []).map(mapDoc),
+        notifications: [],
+        timeEntries: [],
+        recurringInvoices: [],
+        teams: remoteSettings.teams || [],
+        messages: remoteSettings.messages || {},
+        tasks: remoteSettings.tasks || [],
+        activeTeamId: remoteSettings.activeTeamId || null,
+        activeChannelId: remoteSettings.activeChannelId || null,
+        activeProjectTabId: remoteSettings.activeProjectTabId || null,
         settings: {
           ...INITIAL_STATE.settings,
           ...remoteSettings,
@@ -110,8 +165,16 @@ export const db = {
       const projectIds = state.projects.map(p => p.id);
       const docIds = state.salesDocuments.map(d => d.id);
 
-      // 1. Sync Settings
-      await db.saveSettings(state.settings, userId);
+      // 1. Sync Settings & Collaboration
+      await db.saveSettings({
+        ...state.settings,
+        teams: state.teams,
+        messages: state.messages,
+        tasks: state.tasks,
+        activeTeamId: state.activeTeamId,
+        activeChannelId: state.activeChannelId,
+        activeProjectTabId: state.activeProjectTabId
+      }, userId);
 
       // 2. Sync Clients
       if (state.clients.length > 0) {
@@ -143,7 +206,9 @@ export const db = {
         const payload = state.projects.map(p => ({
           id: p.id,
           user_id: userId,
-          client_id: p.clientId,
+          client_id: p.clientId || null,
+          team_id: p.teamId || null,
+          assigned_members: p.assignedMembers || [],
           title: p.title,
           description: p.description,
           status: p.status || 'active',
@@ -157,7 +222,7 @@ export const db = {
       }
 
       const { error: pDelErr } = projectIds.length > 0
-        ? await supabase.from('projects').delete().eq('user_id', userId).not('id', 'in', `(${projectIds.join(',')})`)
+        ? await supabase.from('projects').delete().eq('user_id', userId).not('id', 'in', `(${projectIds.map(id => `'${id}'`).join(',')})`)
         : await supabase.from('projects').delete().eq('user_id', userId);
       if (pDelErr) console.error('[Sync Error] Projects Deletion:', pDelErr.message);
 

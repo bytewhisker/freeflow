@@ -56,7 +56,7 @@ const EarningsChart: React.FC<EarningsChartProps> = ({ data, onRangeChange, tota
         <div className="relative">
           <button
             onClick={() => setIsOpen(!isOpen)}
-            className="flex items-center gap-2 px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-50 transition-all"
+            className="flex items-center gap-2 px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-sm font-bold text-black hover:bg-slate-50 transition-all"
           >
             <span>{currentRangeLabel}</span>
             <ChevronDown size={14} className={`transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
@@ -68,11 +68,10 @@ const EarningsChart: React.FC<EarningsChartProps> = ({ data, onRangeChange, tota
                 <button
                   key={range.value}
                   onClick={() => handleRangeSelect(range.value)}
-                  className={`w-full px-4 py-2.5 text-left text-xs font-bold transition-colors ${
-                    selectedRange === range.value
+                  className={`w-full px-4 py-2.5 text-left text-xs font-bold transition-colors ${selectedRange === range.value
                       ? 'bg-slate-50 text-slate-900'
                       : 'text-slate-500 hover:bg-slate-50'
-                  }`}
+                    }`}
                 >
                   {range.label}
                 </button>
@@ -100,8 +99,8 @@ const EarningsChart: React.FC<EarningsChartProps> = ({ data, onRangeChange, tota
               tickFormatter={(val) => val.slice(0, 3)}
               dy={15}
             />
-            <YAxis 
-              hide={true} 
+            <YAxis
+              hide={true}
               domain={['dataMin - 1000', 'dataMax + 1000']}
             />
             <Tooltip

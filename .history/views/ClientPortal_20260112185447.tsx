@@ -32,7 +32,7 @@ const ClientPortal: React.FC<{ state: AppState }> = ({ state }) => {
             </div>
             <div className="flex gap-2">
               <button onClick={() => window.print()} className="p-2 bg-slate-100 hover:bg-slate-200 rounded-lg">
-                <Printer size={18} className="text-slate-600" />
+                <Printer size={18} className="text-black" />
               </button>
               <button onClick={() => window.print()} className="p-2 bg-blue-600 hover:bg-blue-700 rounded-lg">
                 <Download size={18} className="text-white" />

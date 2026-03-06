@@ -48,23 +48,23 @@ const SidebarLink: React.FC<{
       to={to}
       className={`
         group relative flex items-center gap-3 px-4 py-2.5 transition-all duration-200
-        ${active 
-          ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 font-semibold border-l-4 border-blue-600 dark:border-blue-400' 
-          : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:border-l-4 hover:border-slate-300 dark:hover:border-slate-600'
+        ${active
+          ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 font-semibold border-l-4 border-blue-600 dark:border-blue-400'
+          : 'text-black dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:border-l-4 hover:border-slate-300 dark:hover:border-slate-600'
         }
       `}
       aria-current={active ? 'page' : undefined}
     >
-      <Icon 
-        size={20} 
+      <Icon
+        size={20}
         className={`
           transition-colors duration-200
           ${active ? 'text-blue-600 dark:text-blue-400' : 'text-slate-500 dark:text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-300'}
-        `} 
+        `}
       />
       <span className="text-base font-medium">{label}</span>
       {badge && (
-        <span className="ml-auto text-xs bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-2 py-0.5 rounded-full">
+        <span className="ml-auto text-xs bg-slate-100 dark:bg-slate-700 text-black dark:text-slate-300 px-2 py-0.5 rounded-full">
           {badge}
         </span>
       )}
@@ -119,8 +119,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {/* Mobile sidebar overlay */}
         {isMobileMenuOpen && (
           <div className="md:hidden fixed inset-0 z-40 flex">
-            <div 
-              className="fixed inset-0 bg-black/50" 
+            <div
+              className="fixed inset-0 bg-black/50"
               onClick={() => setIsMobileMenuOpen(false)}
             />
             <div className="relative w-72 bg-white dark:bg-slate-900 shadow-xl">
@@ -132,7 +132,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   <span className="text-lg font-bold text-slate-900 dark:text-white">FreeFlow</span>
                 </div>
               </div>
-              
+
               <nav className="flex-1 p-4 space-y-1">
                 {sidebarItems.map((item) => (
                   <SidebarLink
@@ -146,12 +146,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <div className="p-4 border-t border-slate-200 dark:border-slate-700 space-y-3">
                 <Link
                   to="/settings"
-                  className="flex items-center gap-3 px-4 py-2.5 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-lg transition-all"
+                  className="flex items-center gap-3 px-4 py-2.5 text-black dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-lg transition-all"
                 >
                   <Settings size={20} />
                   <span className="text-base font-medium">Settings</span>
                 </Link>
-                
+
                 <div className="flex items-center gap-3 px-4 py-2">
                   <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-semibold">
                     {userAvatar ? (
@@ -225,20 +225,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
             group relative flex items-center gap-3 px-4 py-2.5 transition-all duration-200 rounded-lg
             ${location.pathname === '/settings'
               ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 font-semibold border-l-4 border-blue-600 dark:border-blue-400'
-              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/50'
+              : 'text-black dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/50'
             }
           `}
           aria-current={location.pathname === '/settings' ? 'page' : undefined}
         >
-          <Settings 
-            size={20} 
+          <Settings
+            size={20}
             className={`
               transition-colors duration-200
-              ${location.pathname === '/settings' 
-                ? 'text-blue-600 dark:text-blue-400' 
+              ${location.pathname === '/settings'
+                ? 'text-blue-600 dark:text-blue-400'
                 : 'text-slate-500 dark:text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-300'
               }
-            `} 
+            `}
           />
           {!collapsed && <span className="text-base font-medium">Settings</span>}
         </Link>

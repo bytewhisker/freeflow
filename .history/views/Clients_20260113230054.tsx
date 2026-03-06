@@ -446,7 +446,7 @@ const Clients: React.FC<{ state: AppState, setState: any }> = ({ state, setState
             </div> */}
             <div>
               <h1 className="text-2xl font-bold text-slate-900">Client Management</h1>
-              {/* <p className="text-slate-600">Premium client relationship dashboard</p> */}
+              {/* <p className="text-black">Premium client relationship dashboard</p> */}
             </div>
           </div>
 
@@ -598,7 +598,7 @@ const Clients: React.FC<{ state: AppState, setState: any }> = ({ state, setState
                     onClick={() => setFilters(prev => ({ ...prev, [f.k]: !prev[f.k] }))}
                     aria-pressed={filters[f.k as keyof typeof filters]}
                     aria-label={f.label}
-                    className={`px-4 py-2 rounded-lg font-bold text-sm transition-all duration-200 ${filters[f.k as keyof typeof filters] ? `bg-${f.c}-500 text-white shadow-lg` : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    className={`px-4 py-2 rounded-lg font-bold text-sm transition-all duration-200 ${filters[f.k as keyof typeof filters] ? `bg-${f.c}-500 text-white shadow-lg` : 'bg-slate-100 text-black hover:bg-slate-200'
                       }`}
                   >
                     <div className="flex items-center gap-2">
@@ -649,13 +649,13 @@ const Clients: React.FC<{ state: AppState, setState: any }> = ({ state, setState
                         className="w-4 h-4 rounded border-slate-300"
                       />
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">Client</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">Contact</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">Phone</th>
-                    <th className="px-4 py-3 text-right text-xs font-bold text-slate-600 uppercase tracking-wider">Total Billed</th>
-                    <th className="px-4 py-3 text-right text-xs font-bold text-slate-600 uppercase tracking-wider">Outstanding</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">Status</th>
-                    <th className="px-4 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-wider w-28">Actions</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-black uppercase tracking-wider">Client</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-black uppercase tracking-wider">Contact</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-black uppercase tracking-wider">Phone</th>
+                    <th className="px-4 py-3 text-right text-xs font-bold text-black uppercase tracking-wider">Total Billed</th>
+                    <th className="px-4 py-3 text-right text-xs font-bold text-black uppercase tracking-wider">Outstanding</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-black uppercase tracking-wider">Status</th>
+                    <th className="px-4 py-3 text-center text-xs font-bold text-black uppercase tracking-wider w-28">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -690,10 +690,10 @@ const Clients: React.FC<{ state: AppState, setState: any }> = ({ state, setState
                           </div>
                         </td>
                         <td className="px-4 py-2">
-                          <div className="text-xs font-medium text-slate-600">{client.email}</div>
+                          <div className="text-xs font-medium text-black">{client.email}</div>
                         </td>
                         <td className="px-4 py-2">
-                          <div className="text-xs font-medium text-slate-600">{client.countryCode || ''} {client.phone}</div>
+                          <div className="text-xs font-medium text-black">{client.countryCode || ''} {client.phone}</div>
                         </td>
                         <td className="px-4 py-2 text-right font-semibold text-slate-900">{formatCurrency(stats.totalRevenue)}</td>
                         <td className="px-4 py-2 text-right font-semibold text-amber-600">{formatCurrency(stats.pendingAmount)}</td>

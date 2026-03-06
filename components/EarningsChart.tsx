@@ -11,9 +11,9 @@ interface EarningsChartProps {
 const CustomTooltip = ({ active, payload }: any) => {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-slate-900 text-white px-3 py-1.5 rounded-lg shadow-xl relative mb-2">
+      <div className="bg-slate-900 dark:bg-slate-800 text-white px-3 py-1.5 rounded-lg shadow-xl relative mb-2 border border-slate-700">
         <p className="text-xs font-bold tracking-tight">${payload[0].value.toLocaleString()}</p>
-        <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-slate-900 rotate-45" />
+        <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-slate-900 dark:bg-slate-800 rotate-45" />
       </div>
     );
   }
@@ -28,11 +28,11 @@ const formatYAxis = (value: number) => {
 
 const EarningsChart: React.FC<EarningsChartProps> = ({ data, totalRevenue, onRangeChange }) => {
   return (
-    <div className="bg-white rounded-3xl border border-slate-300 shadow-sm overflow-hidden w-full p-8">
+    <div className="bg-white dark:bg-slate-900 rounded-3xl  dark:border-slate-800 shadow-md overflow-hidden w-full p-4 sm:p-8">
       <div className="flex justify-between items-start mb-6">
         <div>
-          <h2 className="text-[10px] font-bold mb-1 uppercase">Total Revenue</h2>
-          <p className="text-4xl font-bold text-slate-900 tracking-tight">
+          <h2 className="text-[10px] font-bold mb-1 uppercase text-slate-400 dark:text-slate-500">Total Revenue</h2>
+          <p className="text-4xl font-bold text-slate-900 dark:text-white tracking-tight">
             ${totalRevenue.toLocaleString()}
           </p>
         </div>
@@ -40,7 +40,7 @@ const EarningsChart: React.FC<EarningsChartProps> = ({ data, totalRevenue, onRan
         <div className="no-print">
           <select
             onChange={(e) => onRangeChange(e.target.value)}
-            className="px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold uppercase   text-slate-600 outline-none hover:bg-slate-100 transition-colors"
+            className="px-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold uppercase   text-black dark:text-slate-300 outline-none hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
           >
             <option value="12months">Last 12 Months</option>
             <option value="90days">Last 90 Days</option>
@@ -63,7 +63,7 @@ const EarningsChart: React.FC<EarningsChartProps> = ({ data, totalRevenue, onRan
                 <stop offset="95%" stopColor="#2563eb" stopOpacity={0} />
               </linearGradient>
             </defs>
-            <CartesianGrid vertical={false} stroke="#f1f5f9" strokeDasharray="3 3" />
+            <CartesianGrid vertical={false} stroke="currentColor" className="text-slate-200 dark:text-slate-800" strokeDasharray="3 3" />
             <XAxis
               dataKey="month"
               tickLine={false}

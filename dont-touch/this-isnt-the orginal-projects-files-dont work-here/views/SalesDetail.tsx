@@ -204,7 +204,7 @@ const SalesDetail: React.FC<{ state: AppState, setState: any }> = ({ state, setS
           <button
             onClick={handleDownloadPdf}
             disabled={isDownloading}
-            className="px-5 py-2.5 bg-white border border-slate-200 text-slate-600 rounded-xl hover:bg-slate-50 flex items-center gap-2 font-black text-xs uppercase   shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-5 py-2.5 bg-white border border-slate-200 text-black rounded-xl hover:bg-slate-50 flex items-center gap-2 font-black text-xs uppercase   shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isDownloading ? (
               <div className="animate-spin rounded-full h-4 w-4 border-2 border-slate-400 border-t-transparent" />
@@ -215,7 +215,7 @@ const SalesDetail: React.FC<{ state: AppState, setState: any }> = ({ state, setS
           </button>
           <Link
             to={`/billing/edit/${doc.id}`}
-            className="px-5 py-2.5 bg-white border border-slate-200 text-slate-600 rounded-xl hover:bg-slate-50 flex items-center gap-2 font-black text-xs uppercase   shadow-sm transition-all"
+            className="px-5 py-2.5 bg-white border border-slate-200 text-black rounded-xl hover:bg-slate-50 flex items-center gap-2 font-black text-xs uppercase   shadow-sm transition-all"
           >
             <Edit3 size={18} /> Edit
           </Link>

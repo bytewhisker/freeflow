@@ -20,41 +20,52 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 
-const EmailModal = ({ isOpen, onClose, recipient, docNumber, docType, businessName, setToast }: any) => {
+const EmailModal = ({ isOpen, onClose, recipient, docNumber, docType, businessName, setToast, doc, state, onDownloadPdf }: any) => {
   const [email, setEmail] = useState(recipient || '');
   const [subject, setSubject] = useState(`${docType} ${docNumber}`);
   const [message, setMessage] = useState(`Dear Client,\n\nPlease find attached ${docType.toLowerCase()} ${docNumber}.\n\nBest regards,\n${businessName}`);
-  const [isSending, setIsSending] = useState(false);
 
   if (!isOpen) return null;
 
-  const handleSend = () => {
-    setIsSending(true);
+  const handleSend = async () => {
+    onClose();
+
+    // Trigger PDF download first
+    if (onDownloadPdf) {
+      setToast({ message: 'Generating PDF...', type: 'info' });
+      await onDownloadPdf();
+    }
+
+    const recipientEmail = email || '';
+    const subjectText = encodeURIComponent(subject);
+    const bodyText = encodeURIComponent(message);
+    const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${recipientEmail}&su=${subjectText}&body=${bodyText}`;
+
+    // Short delay to ensure PDF download has started/completed
     setTimeout(() => {
-      setIsSending(false);
-      setToast({ message: 'Invoice emailed successfully', type: 'success' });
-      onClose();
-    }, 1500);
+      window.open(gmailUrl, '_blank');
+      setToast({ message: 'PDF Downloaded. Please drag it into the email.', type: 'info' });
+    }, 1000);
   };
 
   return (
-    <div className="fixed inset-0 z-[200]  flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300 font-open-sans font-bold">
-      <div className="bg-white w-full max-w-lg rounded-[32px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
-        <div className="px-8 py-6 border-b border-slate-100 flex justify-between items-center bg-white">
+    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/60 dark:bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-300 font-open-sans font-bold">
+      <div className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-[32px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 border border-transparent dark:border-slate-800">
+        <div className="px-8 py-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-white dark:bg-slate-900">
           <div>
-            <h3 className="font-black text-slate-900 uppercase   text-xs">Send Document</h3>
-            <p className="text-[11px] text-slate-400 font-bold uppercase   mt-1">E-mailing {docNumber}</p>
+            <h3 className="font-black text-slate-900 dark:text-white uppercase text-xs">Send Document</h3>
+            <p className="text-[11px] text-slate-400 dark:text-slate-500 font-bold uppercase mt-1">E-mailing {docNumber}</p>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-slate-100 text-slate-400 hover:text-slate-900 rounded-full transition-colors"><X size={20} /></button>
+          <button onClick={onClose} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white rounded-full transition-colors"><X size={20} /></button>
         </div>
         <div className="p-8 space-y-5">
           <div className="space-y-2">
-            <label className="block text-[10px] font-black font-open-sans ">Recipient Address</label>
+            <label className="block text-[10px] font-black font-open-sans text-slate-900 dark:text-slate-400">Recipient Address</label>
             <div className="relative group">
               <input
                 type="email"
                 placeholder="client@example.com"
-                className="w-full pl-4 pr-12 py-4 bg-slate-50 border border-slate-200 text-slate-900 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500/20 text-sm font-bold transition-all group-hover:border-slate-300"
+                className="w-full pl-4 pr-12 py-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-2xl outline-none focus:ring-2 focus:ring-blue-500/20 text-sm font-bold transition-all group-hover:border-slate-300 dark:group-hover:border-slate-600"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
               />
@@ -64,52 +75,45 @@ const EmailModal = ({ isOpen, onClose, recipient, docNumber, docType, businessNa
             </div>
           </div>
           <div className="space-y-2">
-            <label className="block text-[10px] font-black font-open-sans ">Subject Line</label>
+            <label className="block text-[10px] font-black font-open-sans text-slate-900 dark:text-slate-400">Subject Line</label>
             <input
               type="text"
-              className="w-full px-4 py-4 bg-slate-50 border border-slate-200 text-slate-900 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500/20 text-sm font-bold transition-all"
+              className="w-full px-4 py-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-2xl outline-none focus:ring-2 focus:ring-blue-500/20 text-sm font-bold transition-all"
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
             />
           </div>
           <div className="space-y-2">
-            <label className="block text-[10px] font-black font-open-sans ">Message Body</label>
+            <label className="block text-[10px] font-black font-open-sans text-slate-900 dark:text-slate-400">Message Body</label>
             <textarea
-              className="w-full px-4 py-4 bg-slate-50 border border-slate-200 text-slate-900 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500/20 text-sm font-bold h-40 resize-none transition-all"
+              className="w-full px-4 py-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-2xl outline-none focus:ring-2 focus:ring-blue-500/20 text-sm font-bold h-40 resize-none transition-all"
               value={message}
               onChange={(e) => setMessage(e.target.value)}
             />
           </div>
-          <div className="bg-blue-50/50 p-4 rounded-2xl border border-blue-100/50 flex items-center gap-3">
-            <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center text-blue-600">
+
+          <div className="bg-blue-50/50 dark:bg-blue-900/10 p-4 rounded-2xl border border-blue-100/50 dark:border-blue-900/30 flex items-center gap-3">
+            <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/50 rounded-xl flex items-center justify-center text-blue-600 dark:text-blue-400">
               <FileText size={20} />
             </div>
             <div>
-              <p className="text-[11px] font-black text-blue-900 uppercase   leading-none mb-1">Attachment</p>
-              <p className="text-[12px] font-bold text-blue-600">{docNumber}.pdf</p>
+              <p className="text-[11px] font-black text-blue-900 dark:text-blue-200 uppercase leading-none mb-1">Attachment</p>
+              <p className="text-[12px] font-bold text-blue-600 dark:text-blue-400">{docNumber}.pdf</p>
             </div>
           </div>
         </div>
-        <div className="px-8 py-6 bg-slate-50/50 border-t border-slate-100 flex justify-end gap-3">
+        <div className="px-8 py-6 bg-slate-50/50 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-3">
           <button
             onClick={onClose}
-            className="px-6 py-4 bg-white border border-slate-200 text-slate-500 rounded-2xl font-black text-xs uppercase   hover:bg-slate-100 transition-all"
+            className="px-6 py-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 rounded-2xl font-black text-xs uppercase hover:bg-slate-100 dark:hover:bg-slate-700 transition-all"
           >
             Cancel
           </button>
           <button
             onClick={handleSend}
-            disabled={isSending}
-            className="px-10 py-4 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase   flex items-center gap-3 hover:bg-slate-800 disabled:opacity-50 transition-all shadow-xl shadow-slate-200"
+            className="px-10 py-4 bg-slate-900 dark:bg-blue-600 text-white rounded-2xl font-black text-xs uppercase flex items-center gap-3 hover:bg-slate-800 dark:hover:bg-blue-700 transition-all shadow-xl shadow-slate-200 dark:shadow-black/20"
           >
-            {isSending ? (
-              <>
-                <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-                Sending...
-              </>
-            ) : (
-              <><Send size={16} /> Send Email</>
-            )}
+            <Send size={16} /> Send Email
           </button>
         </div>
       </div>
@@ -124,7 +128,7 @@ const ProInvoiceTemplate = ({ doc, state }: { doc: any, state: AppState }) => {
   const project = state.projects.find(p => p.id === doc.projectId);
 
   return (
-    <div className="invoice-paper bg-white relative" style={{ width: '210mm', height: '297mm', margin: '0 auto', fontSize: '13.5px', fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif', color: '#111', lineHeight: '1.5' }}>
+    <div className="invoice-paper bg-white relative shrink-0" style={{ width: '210mm', minHeight: '297mm', margin: '0 auto', fontSize: '13.5px', fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif', color: '#111', lineHeight: '1.5' }}>
       <style>{`
         .pro-container {
           width: 180mm;
@@ -227,19 +231,28 @@ const ProInvoiceTemplate = ({ doc, state }: { doc: any, state: AppState }) => {
 
         <div className="pro-section pro-details">
           <div className="pro-section-title">From</div>
-          <p>
-            <strong>{business.name}</strong><br />
-            <span className="whitespace-pre-line">{doc.companyInfo || `${business.address || ''}\n${business.email || ''}`}</span>
-          </p>
+          <div className="whitespace-pre-line">
+            {doc.companyInfo || (
+              <>
+                <strong>{business.name}</strong><br />
+                {business.address && <>{business.address}<br /></>}
+                {business.email || ''}
+              </>
+            )}
+          </div>
         </div>
 
         <div className="pro-section pro-details">
           <div className="pro-section-title">Bill To</div>
-          <p>
-            <strong>{client?.name || 'Client'}</strong><br />
-            {client?.company && <>{client.company}<br /></>}
-            <span className="whitespace-pre-line">{doc.billTo || client?.email || ''}</span>
-          </p>
+          <div className="whitespace-pre-line">
+            {doc.billTo ? doc.billTo : (
+              <>
+                <strong>{client?.name || 'Client'}</strong><br />
+                {client?.company && <>{client.company}<br /></>}
+                {client?.email || ''}
+              </>
+            )}
+          </div>
         </div>
 
         <div className="pro-section pro-details">
@@ -253,19 +266,19 @@ const ProInvoiceTemplate = ({ doc, state }: { doc: any, state: AppState }) => {
         <table className="pro-table">
           <thead>
             <tr>
-              <th>Description</th>
-              <th className="text-center">Qty</th>
-              <th className="text-right">Rate</th>
-              <th className="pro-amount">Amount</th>
+              <th style={{ textAlign: 'left' }}>Description</th>
+              <th style={{ textAlign: 'right' }}>Qty</th>
+              <th style={{ textAlign: 'right' }}>Rate</th>
+              <th style={{ textAlign: 'right' }}>Amount</th>
             </tr>
           </thead>
           <tbody>
             {doc.items.map((item: any, i: number) => (
               <tr key={i}>
-                <td>{item.description}</td>
-                <td className="text-center">{item.quantity}</td>
-                <td className="text-right">{formatCurrency(item.rate, currencyCode)}</td>
-                <td className="pro-amount">{formatCurrency(item.quantity * item.rate, currencyCode)}</td>
+                <td style={{ textAlign: 'left' }}>{item.description}</td>
+                <td style={{ textAlign: 'right' }}>{item.quantity}</td>
+                <td style={{ textAlign: 'right' }}>{formatCurrency(item.rate, currencyCode)}</td>
+                <td style={{ textAlign: 'right' }}>{formatCurrency(item.quantity * item.rate, currencyCode)}</td>
               </tr>
             ))}
           </tbody>
@@ -428,20 +441,20 @@ const SalesDetail: React.FC<{ state: AppState, setState: any }> = ({ state, setS
   };
 
   return (
-    <div className="animate-in fade-in duration-500 space-y-8 no-print pb-20">
+    <div className="px-4 sm:px-6 lg:px-8 space-y-8 no-print pb-20 pt-4">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          <Link to="/billing" className="p-2 hover:bg-slate-100 rounded-lg transition-colors">
+          <Link to="/billing" className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors">
             <ChevronLeft size={28} className="text-slate-400" />
           </Link>
           <div>
             <div className="flex items-center gap-3">
-              <h1 className="text-3xl font-black text-slate-900">{doc.docNumber}</h1>
-              <span className={`text-xs uppercase font-black px-4 py-1.5 rounded-full ${getStatusColor(doc.status)}`}>
+              <h1 className="text-3xl font-black text-slate-900 dark:text-white">{doc.docNumber}</h1>
+              <span className={`text-xs uppercase font-black px-4 py-1.5 rounded-full ${getStatusColor(doc.status)} dark:opacity-80`}>
                 {doc.status}
               </span>
             </div>
-            <p className="text-slate-400 text-sm font-bold uppercase   mt-1">Generated {formatDate(doc.createdAt)}</p>
+            <p className="text-slate-400 dark:text-slate-500 text-sm font-bold uppercase mt-1">Generated {formatDate(doc.createdAt)}</p>
           </div>
         </div>
 
@@ -451,7 +464,7 @@ const SalesDetail: React.FC<{ state: AppState, setState: any }> = ({ state, setS
           <button
             onClick={handleDownloadPdf}
             disabled={isDownloading}
-            className="px-5 py-2.5 bg-white border border-slate-200 text-slate-600 rounded-xl hover:bg-slate-50 flex items-center gap-2 font-black text-xs uppercase   shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-5 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-black dark:text-slate-400 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-2 font-black text-xs uppercase shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isDownloading ? (
               <div className="animate-spin rounded-full h-4 w-4 border-2 border-slate-400 border-t-transparent" />
@@ -462,13 +475,13 @@ const SalesDetail: React.FC<{ state: AppState, setState: any }> = ({ state, setS
           </button>
           <Link
             to={`/billing/edit/${doc.id}`}
-            className="px-5 py-2.5 bg-white border border-slate-200 text-slate-600 rounded-xl hover:bg-slate-50 flex items-center gap-2 font-black text-xs uppercase   shadow-sm transition-all"
+            className="px-5 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-black dark:text-slate-400 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-2 font-black text-xs uppercase shadow-sm transition-all"
           >
             <Edit3 size={18} /> Edit
           </Link>
           <button
             onClick={() => setIsEmailModalOpen(true)}
-            className="px-6 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 flex items-center gap-2 font-black text-xs uppercase   shadow-xl shadow-blue-100 transition-all"
+            className="px-6 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 flex items-center gap-2 font-black text-xs uppercase shadow-xl shadow-blue-100 dark:shadow-black/20 transition-all"
           >
             <Mail size={18} /> Email
           </button>
@@ -476,21 +489,20 @@ const SalesDetail: React.FC<{ state: AppState, setState: any }> = ({ state, setS
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-        <div className="lg:col-span-3">
+        <div className="lg:col-span-3 overflow-x-auto pb-4 bg-slate-50 dark:bg-slate-800/20 p-4 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-inner">
           {doc.useProTemplate ? (
             <ProInvoiceTemplate doc={doc} state={state} />
           ) : (
-            <div className="invoice-paper bg-white border border-slate-200 relative overflow-hidden" style={{ width: '210mm', height: '297mm', padding: '20mm', boxSizing: 'border-box', margin: '0 auto' }}>
+            <div className="invoice-paper bg-white border border-slate-200 relative overflow-hidden shrink-0" style={{ width: '210mm', minHeight: '297mm', padding: '20mm', boxSizing: 'border-box', margin: '0 auto' }}>
               {/* Watermark Logo */}
               {branding.showWatermark && (
                 <div
                   className="absolute inset-0 flex items-center justify-center pointer-events-none select-none z-0 overflow-hidden"
-                  style={{ opacity: branding.watermarkOpacity }}
+                  style={{ opacity: branding.watermarkOpacity || 0.15 }}
                 >
-                  <div className="flex flex-col items-center opacity-70 scale-[2.5] transform rotate-[-15deg]">
-                    <FileText size={400} className="text-slate-300" strokeWidth={0.5} />
-                    <span className="text-8xl font-black text-slate-300 tracking-tighter uppercase mt-[-100px]">FreeFlow</span>
-                  </div>
+                  <p className="text-[200px] font-black text-slate-500 dark:text-slate-800 transform -rotate-45 whitespace-nowrap opacity-80">
+                    FREEFLOW
+                  </p>
                 </div>
               )}
 
@@ -551,13 +563,15 @@ const SalesDetail: React.FC<{ state: AppState, setState: any }> = ({ state, setS
                 <div className="grid grid-cols-12 gap-8 mb-12 py-8 border-y border-slate-100">
                   <div className="col-span-12 md:col-span-5">
                     <h4 className="text-[10px] font-open-sans font-bold uppercase mb-4">Client / Bill To</h4>
-                    <div className="space-y-1">
-                      <p className="text-lg font-black text-slate-900 leading-tight">
-                        {doc.billTo ? doc.billTo.split('\n')[0] : (client?.name || 'Private Client')}
-                      </p>
-                      <div className="text-[13px] text-slate-500 leading-relaxed font-medium whitespace-pre-line">
-                        {doc.billTo ? doc.billTo.split('\n').slice(1).join('\n') : (client?.email || '')}
-                      </div>
+                    <div className="text-[13px] text-slate-500 leading-relaxed font-medium whitespace-pre-line">
+                      {doc.billTo || (
+                        <>
+                          <p className="text-lg font-black text-slate-900 leading-tight">
+                            {client?.name || 'Private Client'}
+                          </p>
+                          <p>{client?.email || ''}</p>
+                        </>
+                      )}
                     </div>
                   </div>
                   {(doc.shipTo || doc.poNumber) && (
@@ -579,10 +593,8 @@ const SalesDetail: React.FC<{ state: AppState, setState: any }> = ({ state, setS
                     </div>
                   )}
                   <div className="col-span-12 md:col-span-3 text-right ml-auto">
-                    <h4 className="text-[10px] font-bold .font-open-sans mb-4">Project Workspace</h4>
-                    <p className="text-lg font-black text-slate-900 leading-tight">
-                      {state.projects.find(p => p.id === doc.projectId)?.title || 'General Services'}
-                    </p>
+
+
                     {doc.paymentTerms && (
                       <div className="mt-6">
                         <h4 className="text-[10px] font-black font-open-sans  mb-1">Terms</h4>
@@ -714,50 +726,27 @@ const SalesDetail: React.FC<{ state: AppState, setState: any }> = ({ state, setS
         </div>
 
         <div className="space-y-6 no-print">
-          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-6">
-            <h3 className="font-black text-slate-900 uppercase text-xs   flex items-center gap-2">
-              <Sliders size={16} /> Watermark
-            </h3>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-bold text-slate-500">Opacity</span>
-                <span className="text-sm font-black text-slate-900">{Math.round(branding.watermarkOpacity * 100)}%</span>
-              </div>
-              <input
-                type="range"
-                min="0.1"
-                max="0.3"
-                step="0.01"
-                value={branding.watermarkOpacity}
-                onChange={(e) => updateWatermarkOpacity(parseFloat(e.target.value))}
-                className="w-full h-2 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-blue-600"
-              />
-              <div className="flex items-center justify-between pt-2">
-                <span className="text-xs font-bold text-slate-400">10%</span>
-                <span className="text-xs font-bold text-slate-400">30%</span>
-              </div>
-            </div>
-          </div>
 
-          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-6">
-            <h3 className="font-black text-slate-900 uppercase text-xs  ">Status</h3>
+
+          <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-6">
+            <h3 className="font-black text-slate-900 dark:text-white uppercase text-xs">Status</h3>
             {doc.status === 'paid' ? (
-              <div className="flex flex-col items-center justify-center py-8 text-center bg-emerald-50 rounded-2xl">
-                <div className="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mb-4 shadow-inner">
+              <div className="flex flex-col items-center justify-center py-8 text-center bg-emerald-50 dark:bg-emerald-900/20 rounded-2xl">
+                <div className="w-20 h-20 bg-emerald-100 dark:bg-emerald-900/50 text-emerald-600 dark:text-emerald-400 rounded-full flex items-center justify-center mb-4 shadow-inner">
                   <CheckCircle size={40} />
                 </div>
-                <p className="font-black text-emerald-600 text-xl uppercase   leading-none">Paid</p>
-                <p className="text-xs font-bold text-emerald-400 mt-3">{formatDate(new Date().toISOString())}</p>
+                <p className="font-black text-emerald-600 dark:text-emerald-400 text-xl uppercase leading-none">Paid</p>
+                <p className="text-xs font-bold text-emerald-400 dark:text-emerald-500 mt-3">{formatDate(new Date().toISOString())}</p>
               </div>
             ) : (
               <div className="space-y-4">
-                <div className="flex items-center gap-3 p-5 bg-slate-50 rounded-xl text-slate-500">
+                <div className="flex items-center gap-3 p-5 bg-slate-50 dark:bg-slate-800/50 rounded-xl text-slate-500 dark:text-slate-400">
                   <Clock size={24} />
                   <span className="text-base font-bold">Awaiting Remittance</span>
                 </div>
                 <button
                   onClick={() => handleUpdateStatus('paid')}
-                  className="w-full bg-emerald-600 text-white py-4 rounded-xl font-black text-sm uppercase   hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-100"
+                  className="w-full bg-emerald-600 text-white py-4 rounded-xl font-black text-sm uppercase hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-100 dark:shadow-black/20"
                 >
                   Confirm Payment
                 </button>
@@ -775,6 +764,9 @@ const SalesDetail: React.FC<{ state: AppState, setState: any }> = ({ state, setS
         docType={doc.type}
         businessName={business.name}
         setToast={setToast}
+        doc={doc}
+        state={state}
+        onDownloadPdf={handleDownloadPdf}
       />
 
       {toast && (

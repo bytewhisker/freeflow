@@ -1,7 +1,7 @@
 import React from 'react';
 import { AppState } from '../types';
 import { formatDate, formatCurrency, getStatusColor } from '../utils';
-import { 
+import {
   ArrowLeft,
   Briefcase,
   Users,
@@ -45,8 +45,8 @@ const ProjectDetail: React.FC<{ state: AppState }> = ({ state }) => {
     daysLeft !== null && daysLeft <= 1
       ? 'bg-red-50 border-red-200 text-red-700'
       : daysLeft !== null && daysLeft <= 3
-      ? 'bg-yellow-50 border-yellow-200 text-yellow-700'
-      : 'bg-emerald-50 border-emerald-200 text-emerald-700';
+        ? 'bg-yellow-50 border-yellow-200 text-yellow-700'
+        : 'bg-emerald-50 border-emerald-200 text-emerald-700';
 
   return (
     <div className="space-y-6 pb-10">
@@ -118,7 +118,7 @@ const ProjectDetail: React.FC<{ state: AppState }> = ({ state }) => {
             <div className="p-5 border-b flex items-center gap-2 font-bold">
               <FileText size={18} /> Project Description
             </div>
-            <div className="p-5 text-slate-600 min-h-[120px]">
+            <div className="p-5 text-black min-h-[120px]">
               {project.description || (
                 <p className="italic text-slate-400 text-center">
                   No description provided.

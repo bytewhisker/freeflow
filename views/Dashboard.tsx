@@ -18,22 +18,16 @@ import { Link } from 'react-router-dom';
 import DateRangePicker, { DateRange } from '../components/DateRangePicker';
 
 const StatCard = ({ title, value, icon: Icon, sub, trend, color, className = '' }: any) => (
-  <div className={`bg-white  p-6 rounded-xl border border-slate-200 shadow-lg hover:shadow-md transition-all duration-300 hover:-translate-y-1 ${className}`}>
+  <div className={`bg-white dark:bg-slate-900 p-6 rounded-xl  dark:border-slate-800 shadow-lg hover:shadow-md transition-all duration-300 hover:-translate-y-1 ${className}`}>
     <div className="flex justify-between items-start mb-3">
       <div className={`p-2 rounded-lg ${color} shadow-sm`}>
         <Icon size={20} className="drop-shadow-sm" />
       </div>
-      {trend && (
-        <div className={`flex items-center gap-2 px-2 py-1 rounded-full text-xs font-bold ${trend > 0 ? '' : ''
-          }`}>
-
-
-        </div>
-      )}
+      {/* Trend indicator omitted for brevity as it was empty */}
     </div>
-    <h3 className="text-black text-[15px] font-bold mb-1">{title}</h3>
-    <p className="text-2xl font-bold text-slate-900 mb-1">{value}</p>
-    {sub && <p className="text-[10px] text-slate-500 font-medium tracking-wide">{sub}</p>}
+    <h3 className="text-black dark:text-slate-300 text-[15px] font-bold mb-1">{title}</h3>
+    <p className="text-2xl font-bold text-slate-900 dark:text-white mb-1">{value}</p>
+    {sub && <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium tracking-wide">{sub}</p>}
   </div>
 );
 
@@ -53,15 +47,28 @@ const Dashboard: React.FC<{ state: AppState }> = ({ state }) => {
     const filteredInvoices = invoices.filter(i => {
       if (!dateRange.start || !dateRange.end) return true;
       const invoiceDate = new Date(i.createdAt);
-      return invoiceDate >= dateRange.start && invoiceDate <= dateRange.end;
+      const start = new Date(dateRange.start);
+      start.setHours(0, 0, 0, 0);
+      const end = new Date(dateRange.end);
+      end.setHours(23, 59, 59, 999);
+      return invoiceDate >= start && invoiceDate <= end;
     });
 
-    const totalEarned = filteredInvoices.filter(i => i.status === 'paid').reduce((acc, i) => acc + i.total, 0);
+    // Total Revenue: All issued invoices (excluding drafts and rejected)
+    const totalRevenue = filteredInvoices
+      .filter(i => i.status !== 'draft' && i.status !== 'rejected')
+      .reduce((acc, i) => acc + i.total, 0);
+
+    // Total Earned: Only paid invoices
+    const totalEarned = filteredInvoices
+      .filter(i => i.status === 'paid')
+      .reduce((acc, i) => acc + i.total, 0);
+
     const activeCount = state.projects.filter(p => p.status === 'active').length;
     const completedCount = state.projects.filter(p => p.status === 'completed').length;
     const pendingCount = state.projects.filter(p => p.status === 'on_hold').length;
 
-    return { totalEarned, activeCount, completedCount, pendingCount };
+    return { totalRevenue, totalEarned, activeCount, completedCount, pendingCount };
   }, [state, dateRange]);
 
   const [earningsFilter, setEarningsFilter] = useState('12months');
@@ -99,17 +106,23 @@ const Dashboard: React.FC<{ state: AppState }> = ({ state }) => {
 
     const chartData = months.map(data => ({ month: data.month, year: data.year, monthIndex: data.monthIndex, earnings: 0 }));
 
-    state.salesDocuments.filter(doc => doc.status === 'paid').forEach(doc => {
-      const docDate = new Date(doc.createdAt);
-      const chartIndex = chartData.findIndex(data => data.monthIndex === docDate.getMonth() && data.year === docDate.getFullYear());
-      if (chartIndex !== -1) chartData[chartIndex].earnings += doc.total;
-    });
+    state.salesDocuments
+      .filter(doc => doc.type === 'INVOICE' && doc.status !== 'draft' && doc.status !== 'rejected')
+      .forEach(doc => {
+        const docDate = new Date(doc.createdAt);
+        const chartIndex = chartData.findIndex(data => data.monthIndex === docDate.getMonth() && data.year === docDate.getFullYear());
+        if (chartIndex !== -1) chartData[chartIndex].earnings += doc.total;
+      });
 
     return chartData.map(({ month, earnings }) => ({ month, earnings }));
   }, [state.salesDocuments, earningsFilter]);
 
+  const chartTotalRevenue = useMemo(() => {
+    return earningsData.reduce((acc, curr) => acc + curr.earnings, 0);
+  }, [earningsData]);
+
   const projectSummary = useMemo(() => {
-    return [...state.projects].sort((a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime()).slice(0, 5);
+    return [...state.projects].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 5);
   }, [state]);
 
   const recentDocs = useMemo(() => {
@@ -117,9 +130,9 @@ const Dashboard: React.FC<{ state: AppState }> = ({ state }) => {
   }, [state]);
 
   const getProjectDisplayStatus = (project: Project) => {
-    if (project.status === 'completed') return { label: 'Completed', color: 'bg-emerald-50 text-emerald-600' };
-    if (project.status === 'on_hold') return { label: 'At Risk', color: 'bg-rose-50 text-rose-600' };
-    return { label: 'In Progress', color: 'bg-blue-50 text-blue-600' };
+    if (project.status === 'completed') return { label: 'Completed', color: 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400' };
+    if (project.status === 'on_hold') return { label: 'At Risk', color: 'bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400' };
+    return { label: 'In Progress', color: 'bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400' };
   };
 
 
@@ -128,11 +141,11 @@ const Dashboard: React.FC<{ state: AppState }> = ({ state }) => {
 
 
   return (
-    <div className="min-h-screen m-0 p-8 pt-4 bg-gradient-to-br from-blue-100 to-white bg-blur-lg animate-in fade-in duration-500">
-      <div className="space-y-8">
+    <div className="min-h-screen m-0 p-4 sm:p-6 pt-4 bg-slate-50 dark:bg-slate-950">
+      <div className="space-y-3">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 ">
           <div>
-            <h1 className="text-2xl font-bold text-slate-900">Dashboard</h1>
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Dashboard</h1>
           </div>
           <div className="no-print">
             <DateRangePicker currentRange={dateRange} onRangeChange={setDateRange} />
@@ -159,45 +172,45 @@ const Dashboard: React.FC<{ state: AppState }> = ({ state }) => {
 
 
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 ">
-          <StatCard title="Total Earnings" value={formatCurrency(stats.totalEarned, currencyCode)} icon={TrendingUp} color="   bg-gradient-to-br from-emerald-500 to-emerald-600 text-white" sub="" trend={12} className="h-[160px]" />
-          <StatCard title="Active Projects" value={stats.activeCount} icon={Clock} color="bg-gradient-to-br from-blue-500 to-blue-600 text-white" sub="" trend={5} className="h-[160px]" />
-          <StatCard title="Completed Projects" value={stats.completedCount} icon={CheckCircle2} color="bg-gradient-to-br from-emerald-500 to-emerald-600 text-white" sub="" className="h-[160px]" />
-          <StatCard title="Pending Projects" value={stats.pendingCount} icon={AlertCircle} color="bg-gradient-to-br from-amber-500 to-amber-600 text-white" sub="" className="h-[160px]" />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+          <StatCard title="Total Revenue" value={formatCurrency(stats.totalRevenue, currencyCode)} icon={TrendingUp} color="bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400" sub={`In ${dateRange.label}`} trend={12} className="h-[160px]" />
+          <StatCard title="Active Projects" value={stats.activeCount} icon={Clock} color="bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400" sub="" trend={5} className="h-[160px]" />
+          <StatCard title="Completed Projects" value={stats.completedCount} icon={CheckCircle2} color="bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400" sub="" className="h-[160px]" />
+          <StatCard title="Pending Projects" value={stats.pendingCount} icon={AlertCircle} color="bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400" sub="" className="h-[160px]" />
         </div>
 
-        <EarningsChart data={earningsData} onRangeChange={setEarningsFilter} totalRevenue={stats.totalEarned} />
+        <EarningsChart data={earningsData} onRangeChange={setEarningsFilter} totalRevenue={chartTotalRevenue} />
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2">
-            <div className="bg-white rounded-3xl border border-slate-300 shadow-sm overflow-hidden h-[500px] flex flex-col">
-              <div className="p-8 border-b border-slate-300 flex justify-between items-center bg-slate-50/30">
-                <h2 className="text-lg font-bold text-slate-900">Project Health</h2>
-                <Briefcase size={18} className="text-slate-300" />
+            <div className="bg-white dark:bg-slate-900 rounded-2xl  dark:border-slate-800 shadow-sm overflow-hidden h-[450px] flex flex-col">
+              <div className="p-6 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center bg-white dark:bg-slate-900">
+                <h2 className="text-[18px] font-bold text-slate-900 dark:text-white font-open-sans">Project Health</h2>
+                <Briefcase size={18} className="text-slate-300 dark:text-black" />
               </div>
-              <div className="flex-1 overflow-auto">
-                <table className="w-full text-left">
-                  <thead className="sticky top-0 bg-white/80 backdrop-blur-md">
-                    <tr className="text-slate-400 text-[10px] font-opensans border-b border-slate-300">
-                      <th className="px-8 py-4">Client Project</th>
-                      <th className="px-8 py-4 text-center">Deadline</th>
-                      <th className="px-8 py-4 text-right">Status</th>
+              <div className="flex-1 overflow-x-auto">
+                <table className="w-full text-left min-w-[500px]">
+                  <thead className="sticky top-0 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md">
+                    <tr className="text-slate-500 dark:text-slate-400 text-xs font-bold font-open-sans border-b border-slate-200 dark:border-slate-800">
+                      <th className="px-6 py-4">Client Project</th>
+                      <th className="px-6 py-4 text-center">Deadline</th>
+                      <th className="px-6 py-4 text-right">Status</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-50">
+                  <tbody className="divide-y divide-slate-50 dark:divide-slate-800">
                     {projectSummary.map((project) => {
                       const status = getProjectDisplayStatus(project);
                       return (
-                        <tr key={project.id} className="hover:bg-blue-50 transition-all duration-200">
-                          <td className="px-8 py-6">
-                            <p className="font-bold text-sm text-slate-900">{project.title || 'Untitled Project'}</p>
-                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wide">
+                        <tr key={project.id} className="hover:bg-blue-50 dark:hover:bg-blue-900/10 transition-all duration-200">
+                          <td className="px-6 py-4">
+                            <p className="font-bold text-sm text-slate-900 dark:text-white font-open-sans leading-tight">{project.title || 'Untitled Project'}</p>
+                            <p className="text-[10px] text-slate-400 dark:text-slate-500 font-semibold tracking-normal mt-0.5">
                               {state.clients.find(c => c.id === project.clientId)?.company || 'Independent'}
                             </p>
                           </td>
-                          <td className="py-6 text-sm text-slate-500 font-bold text-center">{formatDate(project.deadline)}</td>
-                          <td className="py-6 text-right px-8">
-                            <span className={`inline-flex px-3 py-1 rounded-full text-[10px] font-bold uppercase   ${status.color}`}>
+                          <td className="py-4 text-sm text-black dark:text-slate-400 font-bold text-center font-open-sans">{formatDate(project.deadline)}</td>
+                          <td className="py-4 text-right px-6">
+                            <span className={`inline-flex px-2.5 py-1 rounded-full text-[10px] font-bold font-open-sans ${status.color}`}>
                               {status.label}
                             </span>
                           </td>
@@ -211,28 +224,28 @@ const Dashboard: React.FC<{ state: AppState }> = ({ state }) => {
           </div>
 
           <div>
-            <div className="bg-white rounded-3xl border border-slate-300 shadow-sm overflow-hidden h-[500px] flex flex-col">
-              <div className="p-8 border-b border-slate-300 flex justify-between items-center bg-slate-50/30">
-                <h2 className="text-lg font-bold text-slate-900">Activity</h2>
-                <FileText size={18} className="text-slate-300" />
+            <div className="bg-white dark:bg-slate-900 rounded-2xl   dark:border-slate-800 shadow-sm overflow-hidden h-auto lg:h-[450px] flex flex-col">
+              <div className="p-6 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center bg-white dark:bg-slate-900">
+                <h2 className="text-[18px] font-bold text-slate-900 dark:text-white font-open-sans">Activity</h2>
+                <FileText size={18} className="text-slate-300 dark:text-black" />
               </div>
-              <div className="flex-1 p-4 space-y-2 overflow-auto">
+              <div className="flex-1 p-3 space-y-1 overflow-auto">
                 {recentDocs.map((doc) => {
                   const client = state.clients.find(c => c.id === doc.clientId);
                   return (
-                    <Link key={doc.id} to={`/billing/view/${doc.id}`} className="flex items-center justify-between p-4 hover:bg-slate-50 rounded-2xl transition-all group">
+                    <Link key={doc.id} to={`/billing/view/${doc.id}`} className="flex items-center justify-between p-4 hover:bg-white dark:hover:bg-slate-800 rounded-2xl transition-all group">
                       <div className="flex items-center gap-4">
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-xs ${doc.type === 'QUOTATION' ? 'bg-orange-50 text-orange-600' : 'bg-blue-50 text-blue-600'}`}>
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-xs ${doc.type === 'QUOTATION' ? 'bg-orange-50 dark:bg-orange-950/20 text-orange-600' : 'bg-blue-50 dark:bg-blue-950/20 text-blue-600'}`}>
                           {doc.type[0]}
                         </div>
                         <div>
-                          <p className="font-bold text-xs text-slate-900">{client?.name || doc.billTo?.split('\n')[0] || 'Private Client'}</p>
-                          <p className="text-[10px] text-slate-400 font-bold uppercase  ">{doc.docNumber}</p>
+                          <p className="font-bold text-sm text-slate-900 dark:text-white font-open-sans">{client?.name || doc.billTo?.split('\n')[0] || 'Private Client'}</p>
+                          <p className="text-xs text-slate-400 dark:text-slate-500 font-semibold mt-0.5">{doc.docNumber}</p>
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="font-bold text-sm text-slate-900">{formatCurrency(doc.total, currencyCode)}</p>
-                        <span className={`text-[8px] font-bold uppercase   px-2 py-0.5 rounded-full ${getStatusColor(doc.status)}`}>
+                        <p className="font-bold text-base text-slate-900 dark:text-white font-open-sans">{formatCurrency(doc.total, currencyCode)}</p>
+                        <span className={`text-[10px] font-bold font-open-sans px-2.5 py-1 rounded-full ${getStatusColor(doc.status)}`}>
                           {doc.status}
                         </span>
                       </div>

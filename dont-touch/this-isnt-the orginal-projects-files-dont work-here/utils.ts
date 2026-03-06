@@ -18,7 +18,7 @@ export const formatDate = (date: string) => {
 
 export const formatRelativeTime = (date: string) => {
   if (!date) return 'N/A';
-  
+
   const now = new Date();
   const dateObj = new Date(date);
   const diffMs = now.getTime() - dateObj.getTime();
@@ -29,13 +29,13 @@ export const formatRelativeTime = (date: string) => {
   const diffWeeks = Math.floor(diffDays / 7);
   const diffMonths = Math.floor(diffDays / 30);
   const diffYears = Math.floor(diffDays / 365);
-  
+
   // Future dates
   if (diffMs < 0) {
     const absDiffMinutes = Math.abs(diffMinutes);
     const absDiffHours = Math.abs(diffHours);
     const absDiffDays = Math.abs(diffDays);
-    
+
     if (absDiffMinutes < 60) {
       return `in ${absDiffMinutes} minute${absDiffMinutes !== 1 ? 's' : ''}`;
     } else if (absDiffHours < 24) {
@@ -46,7 +46,7 @@ export const formatRelativeTime = (date: string) => {
       return formatDate(date);
     }
   }
-  
+
   // Past dates
   if (diffSeconds < 60) {
     return 'Just now';
@@ -80,104 +80,104 @@ export const formatDateTime = (date: string) => {
 
 export const getTimeUrgency = (deadline: string) => {
   if (!deadline) return { text: 'No deadline', color: 'text-gray-400', urgency: 'none' };
-  
+
   const now = new Date();
   const deadlineDate = new Date(deadline);
   const diffMs = deadlineDate.getTime() - now.getTime();
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
   const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
   const diffMinutes = Math.floor(diffMs / (1000 * 60));
-  
+
   // Overdue
   if (diffMs < 0) {
     const overdueDays = Math.floor(Math.abs(diffMs) / (1000 * 60 * 60 * 24));
     const overdueHours = Math.floor(Math.abs(diffMs) / (1000 * 60 * 60));
-    
+
     if (overdueDays > 0) {
-      return { 
-        text: `Overdue by ${overdueDays} day${overdueDays > 1 ? 's' : ''}`, 
-        color: 'text-red-600', 
-        urgency: 'overdue' 
+      return {
+        text: `Overdue by ${overdueDays} day${overdueDays > 1 ? 's' : ''}`,
+        color: 'text-red-600',
+        urgency: 'overdue'
       };
     } else if (overdueHours > 0) {
-      return { 
-        text: `Overdue by ${overdueHours} hour${overdueHours > 1 ? 's' : ''}`, 
-        color: 'text-red-600', 
-        urgency: 'overdue' 
+      return {
+        text: `Overdue by ${overdueHours} hour${overdueHours > 1 ? 's' : ''}`,
+        color: 'text-red-600',
+        urgency: 'overdue'
       };
     } else {
-      return { 
-        text: 'Overdue by minutes', 
-        color: 'text-red-600', 
-        urgency: 'overdue' 
+      return {
+        text: 'Overdue by minutes',
+        color: 'text-red-600',
+        urgency: 'overdue'
       };
     }
   }
-  
+
   // Due today
   if (diffDays === 0) {
     if (diffHours > 0) {
-      return { 
-        text: `Due in ${diffHours} hour${diffHours > 1 ? 's' : ''}`, 
-        color: 'text-orange-600', 
-        urgency: 'urgent' 
+      return {
+        text: `Due in ${diffHours} hour${diffHours > 1 ? 's' : ''}`,
+        color: 'text-orange-600',
+        urgency: 'urgent'
       };
     } else if (diffMinutes > 0) {
-      return { 
-        text: `Due in ${diffMinutes} minute${diffMinutes > 1 ? 's' : ''}`, 
-        color: 'text-red-600', 
-        urgency: 'urgent' 
+      return {
+        text: `Due in ${diffMinutes} minute${diffMinutes > 1 ? 's' : ''}`,
+        color: 'text-red-600',
+        urgency: 'urgent'
       };
     } else {
-      return { 
-        text: 'Due now', 
-        color: 'text-red-600', 
-        urgency: 'urgent' 
+      return {
+        text: 'Due now',
+        color: 'text-red-600',
+        urgency: 'urgent'
       };
     }
   }
-  
+
   // Due tomorrow
   if (diffDays === 1) {
-    return { 
-      text: 'Due tomorrow', 
-      color: 'text-yellow-600', 
-      urgency: 'soon' 
+    return {
+      text: 'Due tomorrow',
+      color: 'text-yellow-600',
+      urgency: 'soon'
     };
   }
-  
+
   // Due this week
   if (diffDays <= 7) {
-    return { 
-      text: `${diffDays} days left`, 
-      color: 'text-yellow-600', 
-      urgency: 'soon' 
+    return {
+      text: `${diffDays} days left`,
+      color: 'text-yellow-600',
+      urgency: 'soon'
     };
   }
-  
+
   // Due this month
   if (diffDays <= 30) {
-    return { 
-      text: `${diffDays} days left`, 
-      color: 'text-green-600', 
-      urgency: 'normal' 
+    return {
+      text: `${diffDays} days left`,
+      color: 'text-green-600',
+      urgency: 'normal'
     };
   }
-  
+
   // Far future
   const weeks = Math.floor(diffDays / 7);
   if (weeks <= 4) {
-    return { 
-      text: `${weeks} week${weeks > 1 ? 's' : ''} left`, 
-      color: 'text-green-600', 
-      urgency: 'normal' 
+    return {
+      text: `${weeks} week${weeks > 1 ? 's' : ''} left`,
+      color: 'text-green-600',
+      urgency: 'normal'
     };
   } else {
     const months = Math.floor(diffDays / 30);
-    return { 
-      text: `${months} month${months > 1 ? 's' : ''} left`, 
-      color: 'text-green-600', 
-      urgency: 'normal' 
+    return {
+      text: `${months} month${months > 1 ? 's' : ''} left`,
+      color: 'text-green-600',
+      urgency: 'normal'
     };
   }
 };
@@ -197,12 +197,12 @@ export const getStatusColor = (status: string) => {
     case 'on_hold':
     case 'on hold':
     case 'draft':
-      return 'bg-slate-100 text-slate-600';
+      return 'bg-slate-100 text-black';
     case 'overdue':
     case 'rejected':
       return 'bg-rose-100 text-rose-700';
     default:
-      return 'bg-slate-100 text-slate-600';
+      return 'bg-slate-100 text-black';
   }
 };
 
@@ -227,10 +227,10 @@ export const getProjectStats = (project: any) => {
   const totalCollected = project.sales?.reduce((sum: number, sale: any) => {
     return sum + ((sale.status === 'paid' || sale.status === 'accepted') ? (sale.amount || 0) : 0);
   }, 0) || 0;
-  
+
   const collectionRate = totalCost > 0 ? (totalCollected / totalCost) * 100 : 0;
   const remainingAmount = totalCost - totalCollected;
-  
+
   return {
     totalCost,
     totalCollected,
