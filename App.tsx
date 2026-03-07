@@ -34,7 +34,6 @@ import Settings from './views/Settings';
 import Auth from './views/Auth';
 import Pricing from './views/Pricing';
 import LandingPage from './views/LandingPage';
-import Collaboration from './views/Collaboration';
 
 // SidebarLink component removed as it is now part of Sidebar.tsx
 
@@ -218,7 +217,6 @@ const App: React.FC = () => {
                     <Route path="/clients" element={<Clients state={state} setState={updateStateAndSync} />} />
                     <Route path="/clients/:id" element={<ClientDetail state={state} setState={updateStateAndSync} />} />
                     <Route path="/projects" element={<Projects state={state} setState={updateStateAndSync} />} />
-                    <Route path="/collaboration" element={<Collaboration state={state} setState={updateStateAndSync} />} />
                     <Route path="/billing" element={<Billing state={state} setState={updateStateAndSync} />} />
                     <Route path="/billing/new" element={<BillingForm state={state} setState={updateStateAndSync} />} />
                     <Route path="/billing/edit/:id" element={<BillingForm state={state} setState={updateStateAndSync} />} />

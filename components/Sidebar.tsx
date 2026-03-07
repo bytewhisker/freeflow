@@ -12,8 +12,7 @@ import {
   Sun,
   Moon,
   ChevronUp,
-  UserCircle2,
-  MessageSquare
+  UserCircle2
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
@@ -86,7 +85,6 @@ const Sidebar = ({ session, state, mobileOpen, setMobileOpen, isDarkMode, toggle
     { to: '/', icon: LayoutGrid, label: 'Dashboard' },
     { to: '/clients', icon: Users, label: 'Clients' },
     { to: '/projects', icon: Briefcase, label: 'Projects' },
-    { to: '/collaboration', icon: MessageSquare, label: 'Collaboration' },
     { to: '/billing', icon: Receipt, label: 'Invoice' },
   ];
 

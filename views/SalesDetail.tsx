@@ -231,28 +231,19 @@ const ProInvoiceTemplate = ({ doc, state }: { doc: any, state: AppState }) => {
 
         <div className="pro-section pro-details">
           <div className="pro-section-title">From</div>
-          <div className="whitespace-pre-line">
-            {doc.companyInfo || (
-              <>
-                <strong>{business.name}</strong><br />
-                {business.address && <>{business.address}<br /></>}
-                {business.email || ''}
-              </>
-            )}
-          </div>
+          <p>
+            <strong>{business.name}</strong><br />
+            <span className="whitespace-pre-line">{doc.companyInfo || `${business.address || ''}\n${business.email || ''}`}</span>
+          </p>
         </div>
 
         <div className="pro-section pro-details">
           <div className="pro-section-title">Bill To</div>
-          <div className="whitespace-pre-line">
-            {doc.billTo ? doc.billTo : (
-              <>
-                <strong>{client?.name || 'Client'}</strong><br />
-                {client?.company && <>{client.company}<br /></>}
-                {client?.email || ''}
-              </>
-            )}
-          </div>
+          <p>
+            <strong>{client?.name || 'Client'}</strong><br />
+            {client?.company && <>{client.company}<br /></>}
+            <span className="whitespace-pre-line">{doc.billTo || client?.email || ''}</span>
+          </p>
         </div>
 
         <div className="pro-section pro-details">
@@ -563,15 +554,13 @@ const SalesDetail: React.FC<{ state: AppState, setState: any }> = ({ state, setS
                 <div className="grid grid-cols-12 gap-8 mb-12 py-8 border-y border-slate-100">
                   <div className="col-span-12 md:col-span-5">
                     <h4 className="text-[10px] font-open-sans font-bold uppercase mb-4">Client / Bill To</h4>
-                    <div className="text-[13px] text-slate-500 leading-relaxed font-medium whitespace-pre-line">
-                      {doc.billTo || (
-                        <>
-                          <p className="text-lg font-black text-slate-900 leading-tight">
-                            {client?.name || 'Private Client'}
-                          </p>
-                          <p>{client?.email || ''}</p>
-                        </>
-                      )}
+                    <div className="space-y-1">
+                      <p className="text-lg font-black text-slate-900 leading-tight">
+                        {doc.billTo ? doc.billTo.split('\n')[0] : (client?.name || 'Private Client')}
+                      </p>
+                      <div className="text-[13px] text-slate-500 leading-relaxed font-medium whitespace-pre-line">
+                        {doc.billTo ? doc.billTo.split('\n').slice(1).join('\n') : (client?.email || '')}
+                      </div>
                     </div>
                   </div>
                   {(doc.shipTo || doc.poNumber) && (

@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { AppState, Project } from '../types';
 import { generateId, formatDate, formatDateTime, formatCurrency, getStatusColor, getTimeUrgency } from '../utils';
-import { Plus, Calendar, ChevronRight, X, Trash2, Edit3, Settings, Filter, CheckCircle, Zap, AlertCircle, Circle, RefreshCw, MoreHorizontal, Paperclip, MessageSquare, Flag, ArrowRight, Clock, Briefcase, TrendingUp, Search } from 'lucide-react';
+import { Plus, Calendar, ChevronRight, X, Trash2, Edit3, Settings, Filter, CheckCircle, Zap, AlertCircle, Circle, RefreshCw, MoreHorizontal, Paperclip, MessageSquare, Flag, ArrowRight, Clock, Briefcase, TrendingUp, Search, User, DollarSign, Tag, AlignLeft, Layers, Bookmark, Activity } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Status } from '../types';
 import ProjectDetail from './ProjectDetail';
@@ -390,113 +390,139 @@ const Projects: React.FC<{ state: AppState, setState: any }> = ({ state, setStat
 
         {/* Add Project Modal */}
         {showAdd && (
-          <div className="fixed inset-0 bg-black/40 dark:bg-slate-950/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-300">
-            <div className="bg-white dark:bg-slate-900 w-full max-w-4xl max-h-[90vh] overflow-y-auto p-8 sm:p-10 rounded-[3rem] border border-blue-100 dark:border-slate-800 shadow-2xl space-y-4 animate-in zoom-in-95 slide-in-from-top-10 duration-500 relative">
-              <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-blue-500 via-indigo-600 to-blue-500"></div>
+          <div className="fixed inset-0 bg-slate-950/20 dark:bg-slate-950/60 backdrop-blur-xl z-[100] flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-500">
+            <div className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-[0_40px_100px_-20px_rgba(0,0,0,0.1)] overflow-hidden animate-in zoom-in-95 slide-in-from-top-10 duration-500 flex flex-col relative">
 
-              <div className="flex justify-between items-center">
+              <div className="px-6 pt-8 pb-4 flex justify-between items-start">
                 <div>
-                  <h3 className="text-3xl font-bold text-slate-900 dark:text-white font-open-sans">{editingProject ? 'Edit Project' : 'Add Project'}</h3>
-                  <p className="text-sm font-regular text-slate-400 dark:text-slate-500 mt-2 font-open-sans">Fill in the details for this project below.</p>
+                  <h3 className="text-2xl font-bold text-black dark:text-white font-open-sans tracking-tight">
+                    {editingProject ? 'Edit Project' : 'Add Project'}
+                  </h3>
+                  <p className="text-slate-400 dark:text-slate-500 mt-1 font-open-sans font-bold text-xs">
+                    Fill in the core parameters for this project.
+                  </p>
                 </div>
                 <button
                   onClick={resetForm}
-                  className="p-3 bg-[#F6F6F6] dark:bg-slate-800 text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-700 rounded-2xl transition-all shadow-sm"
+                  className="p-2 bg-slate-50 dark:bg-slate-800 text-slate-400 hover:text-black dark:hover:text-white rounded-xl transition-all"
                 >
-                  <X size={24} />
+                  <X size={18} />
                 </button>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div className="space-y-2">
-                  <label className="text-[14px] font-medium text-slate-900 dark:text-slate-300  roboto-font  ml-1">Project Title</label>
-                  <input
-                    className="w-full px-6 py-4 bg-[#F6F6F6] dark:bg-slate-800 border-2 border-transparent text-slate-900 dark:text-white rounded-[15px] outline-none focus:border-blue-500/20 focus:bg-white dark:focus:bg-slate-800 focus:ring-[6px] focus:ring-blue-500/5 text-sm font-bold font-open-sans transition-all placeholder:text-slate-300"
-                    placeholder="e.g. Website Redesign"
-                    value={formData.title}
-                    onChange={e => setFormData({ ...formData, title: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-3">
-                  <label className="text-[14px] font-medium text-slate-900 dark:text-slate-300 roboto-font ml-1">Client</label>
-                  <select
-                    className="w-full px-6 py-4 bg-[#F6F6F6] dark:bg-slate-800 border-2 border-transparent text-slate-900 dark:text-white rounded-[15px]  outline-none focus:border-blue-500/20 focus:bg-white dark:focus:bg-slate-800 focus:ring-[6px] focus:ring-blue-500/5 text-sm font-bold font-open-sans transition-all appearance-none cursor-pointer"
-                    value={formData.clientId}
-                    onChange={e => setFormData({ ...formData, clientId: e.target.value })}
-                  >
-                    <option value="">Internal Project</option>
-                    {state.clients.map(c => <option key={c.id} value={c.id} className="dark:bg-slate-900">{c.name}</option>)}
-                  </select>
-                </div>
-                <div className="space-y-3">
-                  <label className="text-[14px] font-medium text-slate-900 dark:text-slate-300 roboto-font ml-1">Budget ({state.settings.currency.symbol})</label>
-                  <div className="relative">
-                    <span className="absolute left-6 top-1/2 -translate-y-1/2 font-bold text-slate-400 dark:text-slate-500">{state.settings.currency.symbol}</span>
-                    <input
-                      type="number"
-                      className="w-full pl-12 pr-6 py-4 bg-[#F6F6F6] dark:bg-slate-800 border-2 border-transparent text-slate-900 dark:text-white rounded-[15px]  outline-none focus:border-blue-500/20 focus:bg-white dark:focus:bg-slate-800 focus:ring-[6px] focus:ring-blue-500/5 text-sm font-bold font-open-sans transition-all placeholder:text-slate-300"
-                      placeholder="0.00"
-                      value={formData.totalBudget}
-                      onChange={e => setFormData({ ...formData, totalBudget: parseFloat(e.target.value) || 0 })}
-                    />
+              <div className="px-6 pb-6 space-y-5 max-h-[75vh] overflow-y-auto custom-scrollbar">
+
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-[13px] font-bold text-black dark:text-slate-300 font-open-sans ml-1">Title</label>
+                      <input
+                        className="w-full px-5 py-3.5 bg-[#F8F9FB] dark:bg-slate-800/50 border-2 border-transparent text-black dark:text-white rounded-xl outline-none focus:border-black dark:focus:border-blue-500 focus:bg-white dark:focus:bg-slate-800 transition-all font-bold font-open-sans text-sm placeholder:text-black/50 dark:placeholder:text-white/50"
+                        placeholder="Project Name"
+                        value={formData.title}
+                        onChange={e => setFormData({ ...formData, title: e.target.value })}
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-1.5">
+                        <label className="text-[13px] font-bold text-black dark:text-slate-300 font-open-sans ml-1">Client</label>
+                        <div className="relative">
+                          <select
+                            className="w-full pl-5 pr-10 py-3.5 bg-[#F8F9FB] dark:bg-slate-800/50 border-2 border-transparent text-black dark:text-white rounded-xl outline-none focus:border-black dark:focus:border-blue-500 focus:bg-white dark:focus:bg-slate-800 transition-all font-bold font-open-sans appearance-none cursor-pointer text-sm"
+                            value={formData.clientId}
+                            onChange={e => setFormData({ ...formData, clientId: e.target.value })}
+                          >
+                            <option value="">Internal</option>
+                            {state.clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                          </select>
+                          <ChevronRight size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 rotate-90 pointer-events-none" />
+                        </div>
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <label className="text-[13px] font-bold text-black dark:text-slate-300 font-open-sans ml-1">Budget</label>
+                        <div className="relative">
+                          <span className="absolute left-5 top-1/2 -translate-y-1/2 font-bold text-black/30 text-sm">{state.settings.currency.symbol}</span>
+                          <input
+                            type="number"
+                            className="w-full pl-10 pr-5 py-3.5 bg-[#F8F9FB] dark:bg-slate-800/50 border-2 border-transparent text-black dark:text-white rounded-xl outline-none focus:border-black dark:focus:border-blue-500 focus:bg-white dark:focus:bg-slate-800 transition-all font-bold font-open-sans text-sm placeholder:text-black/50 dark:placeholder:text-white/50"
+                            placeholder="0.00"
+                            value={formData.totalBudget}
+                            onChange={e => setFormData({ ...formData, totalBudget: parseFloat(e.target.value) || 0 })}
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-1.5">
+                        <label className="text-[13px] font-bold text-black dark:text-slate-300 font-open-sans ml-1">Deadline</label>
+                        <input
+                          type="datetime-local"
+                          className="w-full px-5 py-3.5 bg-[#F8F9FB] dark:bg-slate-800/50 border-2 border-transparent text-black dark:text-white rounded-xl outline-none focus:border-black dark:focus:border-blue-500 focus:bg-white dark:focus:bg-slate-800 transition-all font-bold font-open-sans text-sm"
+                          value={formData.deadline}
+                          onChange={e => setFormData({ ...formData, deadline: e.target.value })}
+                        />
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <label className="text-[13px] font-bold text-black dark:text-slate-300 font-open-sans ml-1">Status</label>
+                        <div className="relative">
+                          <select
+                            className="w-full pl-5 pr-10 py-3.5 bg-[#F8F9FB] dark:bg-slate-800/50 border-2 border-transparent text-black dark:text-white rounded-xl outline-none focus:border-black dark:focus:border-blue-500 focus:bg-white dark:focus:bg-slate-800 transition-all font-bold font-open-sans appearance-none cursor-pointer text-sm"
+                            value={formData.status}
+                            onChange={e => setFormData({ ...formData, status: e.target.value as any })}
+                          >
+                            <option value="active">Pending</option>
+                            <option value="on_hold">In Progress</option>
+                            <option value="in_review">In Review</option>
+                            <option value="completed">Completed</option>
+                          </select>
+                          <ChevronRight size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 rotate-90 pointer-events-none" />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-[13px] font-bold text-black dark:text-slate-300 font-open-sans ml-1">Category</label>
+                      <div className="relative">
+                        <select
+                          className="w-full pl-5 pr-10 py-3.5 bg-[#F8F9FB] dark:bg-slate-800/50 border-2 border-transparent text-black dark:text-white rounded-xl outline-none focus:border-black dark:focus:border-blue-500 focus:bg-white dark:focus:bg-slate-800 transition-all font-bold font-open-sans appearance-none cursor-pointer text-sm"
+                          value={formData.category}
+                          onChange={e => setFormData({ ...formData, category: e.target.value as any })}
+                        >
+                          {categories.map(cat => (
+                            <option key={cat.value} value={cat.value}>{cat.label}</option>
+                          ))}
+                        </select>
+                        <ChevronRight size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 rotate-90 pointer-events-none" />
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-[13px] font-bold text-black dark:text-slate-300 font-open-sans ml-1">Brief Description</label>
+                      <textarea
+                        className="w-full px-5 py-4 bg-[#F8F9FB] dark:bg-slate-800/50 border-2 border-transparent text-black dark:text-white rounded-[1.5rem] outline-none focus:border-black dark:focus:border-blue-500 focus:bg-white dark:focus:bg-slate-800 transition-all font-bold font-open-sans h-28 resize-none leading-relaxed placeholder:text-black/50 dark:placeholder:text-white/50 text-sm"
+                        placeholder="Description..."
+                        value={formData.description}
+                        onChange={e => setFormData({ ...formData, description: e.target.value })}
+                      />
+                    </div>
                   </div>
                 </div>
-                <div className="space-y-3">
-                  <label className="text-[14px] font-medium text-slate-900 dark:text-slate-300 roboto-font ml-1">Deadline</label>
-                  <input
-                    type="datetime-local"
-                    className="w-full px-6 py-4 bg-[#F6F6F6] dark:bg-slate-800 border-2 border-transparent text-slate-900 dark:text-white rounded-[15px]  outline-none focus:border-blue-500/20 focus:bg-white dark:focus:bg-slate-800 focus:ring-[6px] focus:ring-blue-500/5 text-sm font-bold font-open-sans transition-all"
-                    value={formData.deadline}
-                    onChange={e => setFormData({ ...formData, deadline: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-3">
-                  <label className="text-[14px] font-medium text-slate-900 dark:text-slate-300 roboto-font ml-1">Status</label>
-                  <select
-                    className="w-full px-6 py-4 bg-[#F6F6F6] dark:bg-slate-800 border-2 border-transparent text-slate-900 dark:text-white rounded-[15px]  outline-none focus:border-blue-500/20 focus:bg-white dark:focus:bg-slate-800 focus:ring-[6px] focus:ring-blue-500/5 text-sm font-bold font-open-sans transition-all appearance-none cursor-pointer"
-                    value={formData.status}
-                    onChange={e => setFormData({ ...formData, status: e.target.value as any })}
-                  >
-                    <option value="active" className="dark:bg-slate-900">Pending</option>
-                    <option value="on_hold" className="dark:bg-slate-900">In Progress</option>
-                    <option value="in_review" className="dark:bg-slate-900">In Review</option>
-                    <option value="completed" className="dark:bg-slate-900">Completed</option>
-                  </select>
-                </div>
-                <div className="space-y-3">
-                  <label className="text-[14px] font-medium text-slate-900 dark:text-slate-300 roboto-font ml-1">Category</label>
-                  <select
-                    className="w-full px-6 py-4 bg-[#F6F6F6] dark:bg-slate-800 border-2 border-transparent text-slate-900 dark:text-white rounded-[15px]  outline-none focus:border-blue-500/20 focus:bg-white dark:focus:bg-slate-800 focus:ring-[6px] focus:ring-blue-500/5 text-sm font-bold font-open-sans transition-all appearance-none cursor-pointer"
-                    value={formData.category}
-                    onChange={e => setFormData({ ...formData, category: e.target.value as any })}
-                  >
-                    {categories.map(cat => (
-                      <option key={cat.value} value={cat.value} className="dark:bg-slate-900">{cat.label}</option>
-                    ))}
-                  </select>
-                </div>
               </div>
 
-              <div className="space-y-3">
-                <label className="text-[14px] font-medium text-slate-900 dark:text-slate-300 roboto-font ml-1">Description</label>
-                <textarea
-                  className="w-full px-6 py-4 bg-[#F6F6F6] dark:bg-slate-800 border-2 border-transparent text-slate-900 dark:text-white rounded-[2rem] outline-none focus:border-blue-500/20 focus:bg-white dark:focus:bg-slate-800 focus:ring-[6px] focus:ring-blue-500/5 text-sm font-bold font-open-sans transition-all h-40 resize-none leading-relaxed placeholder:text-slate-300"
-                  placeholder="Describe your project here..."
-                  value={formData.description}
-                  onChange={e => setFormData({ ...formData, description: e.target.value })}
-                />
-              </div>
-
-              <div className="flex justify-end items-center gap-8 pt-6">
+              <div className="px-6 py-6 bg-white dark:bg-slate-900 border-t border-slate-50 dark:border-slate-800 flex items-center justify-end gap-3">
                 <button
                   onClick={resetForm}
-                  className="px-8 py-4 text-slate-500 dark:text-slate-400 font-bold font-open-sans text-[14px] uppercase tracking-widest hover:text-slate-900 dark:hover:text-white transition-colors"
+                  className="px-5 py-3 text-slate-400 font-bold font-open-sans text-xs hover:text-black dark:hover:text-white transition-colors"
                 >
-                  Cancel
+                  Discard
                 </button>
                 <button
                   onClick={handleSubmit}
-                  className="bg-slate-900 dark:bg-blue-600 text-white px-12 py-5 rounded-[15px]  font-bold font-open-sans text-[14px] uppercase tracking-widest shadow-2xl shadow-blue-500/20 dark:shadow-black/40 hover:bg-black dark:hover:bg-blue-700 hover:-translate-y-1 transition-all active:scale-95"
+                  className="bg-black dark:bg-blue-600 text-white px-8 py-3 rounded-xl font-bold font-open-sans text-sm shadow-md hover:bg-slate-800 dark:hover:bg-blue-700 transition-all active:scale-95"
                 >
                   {editingProject ? 'Save Changes' : 'Add Project'}
                 </button>

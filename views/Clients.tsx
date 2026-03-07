@@ -46,11 +46,9 @@ const Clients: React.FC<{ state: AppState, setState: any }> = ({ state, setState
   });
   const [search, setSearch] = useState('');
   const [filters, setFilters] = useState({
-    pendingInvoices: false,
-    highRevenue: false,
-    active: false,
-    atRisk: false
+    status: 'all'
   });
+  const [showStatusFilter, setShowStatusFilter] = useState(false);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [selectedClients, setSelectedClients] = useState<Set<string>>(new Set());
   const [currentPage, setCurrentPage] = useState(1);
@@ -240,17 +238,18 @@ const Clients: React.FC<{ state: AppState, setState: any }> = ({ state, setState
       }
     };
 
-    if (statusDropdown) {
+    if (statusDropdown || showStatusFilter) {
       document.addEventListener('mousedown', handleClickOutside);
       return () => document.removeEventListener('mousedown', handleClickOutside);
     }
-  }, [statusDropdown]);
+  }, [statusDropdown, showStatusFilter]);
 
   const getClientStats = useCallback((clientId: string) => {
     const clientProjects = state.projects.filter(p => p.clientId === clientId);
     const clientDocs = state.salesDocuments.filter(d => d.clientId === clientId);
 
-    const activeProjects = clientProjects.filter(p => p.status === 'active');
+    const activeProjects = clientProjects.filter(p => p.status !== 'completed');
+    const completedProjects = clientProjects.filter(p => p.status === 'completed');
     const totalProjects = clientProjects.length;
 
     const paidInvoices = clientDocs.filter(d => d.type === 'INVOICE' && d.status === 'paid');
@@ -260,13 +259,20 @@ const Clients: React.FC<{ state: AppState, setState: any }> = ({ state, setState
     const totalRevenue = paidInvoices.reduce((sum, d) => sum + d.total, 0);
     const pendingAmount = pendingInvoices.reduce((sum, d) => sum + d.total, 0);
 
+    // Calculate health score: 0-100
+    // Starts at 100, reduced by overdue invoices and low project completion rate
+    let healthScore = 100;
+    if (overdueInvoices.length > 0) healthScore -= 40;
+    if (pendingAmount > totalRevenue && totalRevenue > 0) healthScore -= 20;
+
     return {
       activeProjects: activeProjects.length,
       totalProjects,
       totalRevenue,
       pendingAmount,
       overdueCount: overdueInvoices.length,
-      hasOverdue: overdueInvoices.length > 0
+      hasOverdue: overdueInvoices.length > 0,
+      healthScore
     };
   }, [state.projects, state.salesDocuments]);
 
@@ -276,24 +282,12 @@ const Clients: React.FC<{ state: AppState, setState: any }> = ({ state, setState
       c.company.toLowerCase().includes(search.toLowerCase())
     );
 
-    if (filters.pendingInvoices) {
-      clients = clients.filter(client => getClientStats(client.id).pendingAmount > 0);
-    }
-
-    if (filters.highRevenue) {
-      clients = clients.filter(client => getClientStats(client.id).totalRevenue > 1000);
-    }
-
-    if (filters.active) {
-      clients = clients.filter(client => getClientStats(client.id).activeProjects > 0);
-    }
-
-    if (filters.atRisk) {
-      clients = clients.filter(client => getClientStats(client.id).healthScore < 50 || getClientStats(client.id).hasOverdue);
+    if (filters.status !== 'all') {
+      clients = clients.filter(client => (client.status || 'new') === filters.status);
     }
 
     return clients.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-  }, [state.clients, state.projects, state.salesDocuments, search, filters, getClientStats]);
+  }, [state.clients, search, filters]);
 
   const paginatedClients = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage;
@@ -349,7 +343,7 @@ const Clients: React.FC<{ state: AppState, setState: any }> = ({ state, setState
 
   const globalStats = useMemo(() => ({
     totalClients: state.clients.length,
-    activeProjects: state.projects.filter(p => p.status === 'active').length,
+    activeProjects: state.projects.filter(p => p.status !== 'completed').length,
     pendingInvoices: state.salesDocuments.filter(d => d.type === 'INVOICE' && (d.status === 'sent' || d.status === 'overdue')).length,
     monthlyRevenue: state.salesDocuments.filter(d => d.type === 'INVOICE' && d.status === 'paid').reduce((sum, d) => sum + d.total, 0)
   }), [state]);
@@ -473,17 +467,52 @@ const Clients: React.FC<{ state: AppState, setState: any }> = ({ state, setState
             <h1 className="text-2xl font-bold text-slate-900 dark:text-white whitespace-nowrap">Client Management</h1>
           </div>
 
-          <div className="flex flex-col sm:flex-row items-center gap-4 w-full lg:w-auto flex-1 lg:max-w-2xl">
-            <div className="relative w-full">
-              <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" aria-hidden="true"><Search size={18} /></div>
-              <input
-                type="text"
-                placeholder="Search clients..."
-                aria-label="Search clients"
-                className="w-full pl-11 pr-4 py-2.5 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20 shadow-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 transition-all font-open-sans"
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-              />
+          <div className="flex flex-col sm:flex-row items-center gap-4 w-full lg:w-auto flex-1 lg:max-w-3xl">
+            <div className="flex items-center gap-3 w-full">
+              <div className="relative status-filter-dropdown">
+                <button
+                  onClick={() => setShowStatusFilter(!showStatusFilter)}
+                  className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-[12px] font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all h-[40px] min-w-[110px] shadow-sm whitespace-nowrap"
+                >
+                  <Filter size={14} className="text-slate-400 shrink-0" />
+                  <span className="capitalize truncate">{filters.status === 'all' ? 'Status' : filters.status.replace('_', ' ')}</span>
+                  <ChevronDown size={14} className={`text-slate-400 ml-auto shrink-0 transition-transform duration-200 ${showStatusFilter ? 'rotate-180' : ''}`} />
+                </button>
+
+                {showStatusFilter && (
+                  <div className="absolute left-0 mt-2 w-40 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-800 p-1.5 z-[100] animate-in fade-in zoom-in-95 duration-100 origin-top-left">
+                    <button
+                      onClick={() => { setFilters({ ...filters, status: 'all' }); setShowStatusFilter(false); }}
+                      className={`w-full text-left px-3 py-2 text-[12px] font-bold rounded-xl transition-all whitespace-nowrap ${filters.status === 'all' ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/20' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
+                    >
+                      All Statuses
+                    </button>
+                    <div className="my-1 border-t border-slate-100 dark:border-slate-800"></div>
+                    {statusOptions.map(option => (
+                      <button
+                        key={option.value}
+                        onClick={() => { setFilters({ ...filters, status: option.value }); setShowStatusFilter(false); }}
+                        className={`w-full text-left px-3 py-2 text-[12px] font-bold rounded-xl transition-all flex items-center gap-2 whitespace-nowrap ${filters.status === option.value ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/20' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
+                      >
+                        <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: option.color }}></div>
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="relative w-full">
+                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" aria-hidden="true"><Search size={18} /></div>
+                <input
+                  type="text"
+                  placeholder="Search clients..."
+                  aria-label="Search clients"
+                  className="w-full pl-11 pr-4 py-2.5 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20 shadow-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 transition-all font-bold font-open-sans"
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                />
+              </div>
             </div>
 
             <div className="flex items-center gap-3 w-full sm:w-auto">
@@ -520,35 +549,35 @@ const Clients: React.FC<{ state: AppState, setState: any }> = ({ state, setState
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-5">
-          <div className="rounded-2xl p-5 text-white shadow-sm bg-white border border-slate-300 dark:bg-slate-800">
+          <div className="rounded-2xl p-5 text-white shadow-sm bg-white border border-slate-300 dark:bg-slate-800 dark:border-slate-800">
             <div className="flex items-center justify-between">
               <div>
-                <div className="text-sm font-bold text-slate-600 dark:text-slate-300 tracking-wide mb-1">Total Clients</div>
+                <div className="text-sm font-bold text-slate-600 dark:text-slate-300 mb-1">Total Clients</div>
                 <div className="text-3xl font-bold text-slate-900 dark:text-white font-open-sans">{globalStats.totalClients}</div>
               </div>
               <div className="bg-slate-900 dark:bg-white/10 p-3 rounded-xl"><Users size={24} className="text-white" /></div>
             </div>
-            <div className="mt-1 flex items-center gap-2"><div className="w-2 h-2 bg-slate-900 dark:bg-white rounded-full"></div><span className="text-sm text-slate-600 dark:text-slate-300 font-medium">All active clients</span></div>
+
           </div>
-          <div className="rounded-2xl p-5 text-white shadow-sm bg-white border border-slate-300 dark:bg-slate-800">
+          <div className="rounded-2xl p-5 text-white shadow-sm bg-white border border-slate-300 dark:bg-slate-800 dark:border-slate-800">
             <div className="flex items-center justify-between">
               <div>
-                <div className="text-sm font-bold text-slate-600 dark:text-slate-300 tracking-wide mb-2">Active Projects</div>
+                <div className="text-sm font-bold text-slate-600 dark:text-slate-300  mb-2">Active Projects</div>
                 <div className="text-3xl font-bold text-slate-900 dark:text-white font-open-sans">{globalStats.activeProjects}</div>
               </div>
               <div className="bg-slate-900 dark:bg-white/10 p-3 rounded-xl"><Briefcase size={24} className="text-white" /></div>
             </div>
-            <div className="mt-1 flex items-center gap-2"><div className="w-2 h-2 bg-slate-900 dark:bg-white rounded-full"></div><span className="text-sm text-slate-600 dark:text-slate-300 font-medium">Currently in progress</span></div>
+
           </div>
-          <div className="rounded-2xl p-5 text-white shadow-sm bg-white border border-slate-300 dark:bg-slate-800">
+          <div className="rounded-2xl p-5 text-white shadow-sm bg-white border border-slate-300 dark:bg-slate-800 dark:border-slate-800">
             <div className="flex items-center justify-between">
               <div>
-                <div className="text-sm font-bold text-slate-600 dark:text-slate-300 tracking-wide mb-2">Pending Invoices</div>
+                <div className="text-sm font-bold text-slate-600 dark:text-slate-300  mb-2">Pending Invoices</div>
                 <div className="text-3xl font-bold text-slate-900 dark:text-white font-open-sans">{globalStats.pendingInvoices}</div>
               </div>
               <div className="bg-slate-900 dark:bg-white/10 p-3 rounded-xl"><AlertCircle size={24} className="text-white" /></div>
             </div>
-            <div className="mt-1 flex items-center gap-2"><div className="w-2 h-2 bg-slate-900 dark:bg-white rounded-full"></div><span className="text-sm text-slate-600 dark:text-slate-300 font-medium">Awaiting payment</span></div>
+
           </div>
         </div>
 
@@ -635,44 +664,6 @@ const Clients: React.FC<{ state: AppState, setState: any }> = ({ state, setState
 
 
 
-          {/* Filters Bar */}
-          <div className="bg-white dark:bg-slate-900 p-4 border-b border-slate-100 dark:border-slate-800">
-            <div className="flex flex-wrap items-center gap-2">
-              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mr-2 font-open-sans">Quick Filters:</div>
-              {[
-                { k: 'pendingInvoices', l: 'Pending', i: Clock, c: 'amber', label: 'Filter by pending invoices' },
-                { k: 'active', l: 'Active', i: Target, c: 'green', label: 'Filter by active projects' },
-                { k: 'highRevenue', l: 'High Revenue', i: TrendingUp, c: 'blue', label: 'Filter by high revenue' },
-                { k: 'atRisk', l: 'At Risk', i: AlertCircle, c: 'rose', label: 'Filter by at-risk clients' }
-              ].map(f => (
-                <button
-                  key={f.k}
-                  onClick={() => setFilters(prev => {
-                    const isAlreadyActive = (prev as any)[f.k];
-                    return {
-                      pendingInvoices: false,
-                      highRevenue: false,
-                      active: false,
-                      atRisk: false,
-                      [f.k]: !isAlreadyActive
-                    };
-                  })}
-                  aria-pressed={filters[f.k as keyof typeof filters]}
-                  aria-label={f.label}
-                  className={`px-4 py-1.5 rounded-full font-bold text-[11px] transition-all duration-200 border ${filters[f.k as keyof typeof filters]
-                    ? `bg-${f.c}-500 text-white border-${f.c}-500 shadow-md`
-                    : 'bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'
-                    }`}
-                >
-                  <div className="flex items-center gap-2">
-                    <f.i size={12} />
-                    <span>{filters[f.k as keyof typeof filters] ? `✓ ${f.l}` : f.l}</span>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-
           <div className="overflow-x-auto flex-1">
             {filteredClients.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-20 animate-in fade-in zoom-in duration-700">
@@ -683,16 +674,16 @@ const Clients: React.FC<{ state: AppState, setState: any }> = ({ state, setState
 
                 <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-3 font-open-sans">No Client Connections</h3>
                 <p className="text-slate-500 dark:text-slate-400 text-center max-w-sm mb-10 leading-relaxed font-medium font-open-sans text-sm">
-                  {search || filters.pendingInvoices || filters.highRevenue || filters.active
+                  {search || filters.status !== 'all'
                     ? 'No clients matches your current filter criteria. Refine your search to explore other relations.'
                     : 'Your client directory is currently empty. Start building your network by onboarding your first entry.'}
                 </p>
 
-                {search || filters.pendingInvoices || filters.highRevenue || filters.active ? (
+                {search || filters.status !== 'all' ? (
                   <button
                     onClick={() => {
                       setSearch('');
-                      setFilters({ pendingInvoices: false, highRevenue: false, active: false });
+                      setFilters({ status: 'all' });
                     }}
                     className="px-8 py-3.5 bg-slate-900 text-white rounded-2xl font-bold text-[13px] shadow-lg hover:bg-black transition-all active:scale-95 font-open-sans"
                   >

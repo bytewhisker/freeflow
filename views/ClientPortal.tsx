@@ -110,13 +110,7 @@ const ClientPortal: React.FC<{ state: AppState }> = ({ state }) => {
                 <div>
                   <h4 className="text-xs font-black text-slate-400 uppercase mb-2">Bill To</h4>
                   <div className="text-sm space-y-1 whitespace-pre-line text-black dark:text-slate-300">
-                    {doc.billTo || (
-                      <>
-                        <p className="font-black">{client?.name || 'Private Client'}</p>
-                        {client?.company && <p>{client.company}</p>}
-                        <p>{client?.email}</p>
-                      </>
-                    )}
+                    {doc.billTo || 'No billing information provided'}
                   </div>
                   {doc.shipTo && (
                     <>

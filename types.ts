@@ -92,7 +92,6 @@ export interface Client {
 export interface Project {
   id: string;
   clientId?: string;
-  teamId?: string; // New: link to a team
   title?: string;
   description: string;
   status: Status;
@@ -100,67 +99,6 @@ export interface Project {
   deadline: string;
   createdAt: string;
   category?: string;
-  assignedMembers?: string[]; // User IDs
-}
-
-// ─── Team & Collaboration Types ───
-
-export interface TeamMember {
-  userId: string;
-  name: string;
-  email: string;
-  role: 'owner' | 'admin' | 'member';
-  avatarUrl?: string;
-  status: 'online' | 'offline' | 'away';
-}
-
-export interface Attachment {
-  id: string;
-  name: string;
-  url: string;
-  type: string;
-  size: number;
-}
-
-export interface Message {
-  id: string;
-  channelId: string;
-  senderId: string;
-  senderName: string;
-  senderAvatar?: string;
-  content: string;
-  timestamp: string;
-  attachments?: Attachment[];
-}
-
-export interface Channel {
-  id: string;
-  teamId: string;
-  name: string;
-  description?: string;
-  type: 'public' | 'private' | 'project';
-  projectId?: string; // If this is a project-specific channel
-  msgCount?: number;
-}
-
-export interface Task {
-  id: string;
-  projectId: string;
-  title: string;
-  description: string;
-  assignedTo: string; // User ID
-  dueDate: string;
-  status: 'todo' | 'in_progress' | 'review' | 'done';
-}
-
-export interface Team {
-  id: string;
-  name: string;
-  description?: string;
-  icon?: string;
-  createdAt: string;
-  members: TeamMember[];
-  channels: Channel[];
 }
 
 export interface SalesItem {
@@ -206,12 +144,6 @@ export interface AppState {
   notifications: Notification[];
   timeEntries: TimeEntry[];
   recurringInvoices: RecurringInvoice[];
-  teams: Team[]; // List of teams user belongs to
-  messages: Record<string, Message[]>; // channelId -> Message[]
-  tasks: Task[];
-  activeTeamId: string | null;
-  activeChannelId: string | null;
-  activeProjectTabId: string | null; // For within the collaboration workspace
   settings: {
     currency: {
       code: string;
