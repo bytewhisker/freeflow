@@ -135,6 +135,36 @@ export interface SalesDocument {
   companyInfo?: string;
   billTo?: string;
   useProTemplate?: boolean;
+  // Payment method information
+  paymentMethod?: PaymentMethod;
+  paymentDetails?: any;
+}
+
+export type PaymentMethod = 'mobile_wallet' | 'bank';
+
+export type MobileWalletType = 'bkash' | 'nagad';
+
+export type AccountType = 'personal' | 'agent';
+
+export interface MobileWalletPayment {
+  type: MobileWalletType;
+  number: string;
+  accountType: AccountType;
+}
+
+export interface BankPayment {
+  bankName: string;
+  bankBranch: string;
+  accountHolderName: string;
+  accountNumber: string;
+  routingNumber: string;
+  swiftCode: string;
+}
+
+export interface PaymentDetails {
+  method: PaymentMethod;
+  mobileWallet?: MobileWalletPayment;
+  bank?: BankPayment;
 }
 
 export interface AppState {
@@ -160,19 +190,14 @@ export interface AppState {
       email: string;
       phone: string;
     },
-    paymentDetails: {
-      bankName: string;
-      accountNumber: string;
-      routingNumber: string;
-      swiftCode: string;
-      payPal: string;
-    },
+    paymentDetails: PaymentDetails;
     profile: {
       name: string;
       title: string;
       bio: string;
       website: string;
       avatarUrl: string;
-    }
+      plan: 'free' | 'pro'; // Add plan type
+    };
   }
 }

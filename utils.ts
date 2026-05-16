@@ -9,7 +9,7 @@ export const formatCurrency = (amount: number, currencyCode: string = 'USD') => 
 
 export const formatDate = (date: string) => {
   if (!date) return 'N/A';
-  return new Date(date).toLocaleDateString('en-US', {
+  return new Date(date).toLocaleDateString(undefined, {
     month: 'short',
     day: 'numeric',
     year: 'numeric',
@@ -18,7 +18,7 @@ export const formatDate = (date: string) => {
 
 export const formatDateTime = (date: string) => {
   if (!date) return 'N/A';
-  return new Date(date).toLocaleString('en-US', {
+  return new Date(date).toLocaleString(undefined, {
     month: 'short',
     day: 'numeric',
     year: 'numeric',
@@ -75,16 +75,55 @@ export const getStatusColor = (status: string) => {
   }
 };
 
-export const getTimeUrgency = (deadline: string) => {
+export const getRemainingTime = (deadline: string) => {
+  if (!deadline) return { text: 'Open', urgency: 'relaxed' as const };
+  
   const now = new Date();
   const target = new Date(deadline);
+  
+  // Basic validation
+  if (isNaN(target.getTime())) return { text: 'Open', urgency: 'relaxed' as const };
+  
   const diff = target.getTime() - now.getTime();
-  const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
 
-  if (diff < 0) return { text: 'Overdue', color: 'text-red-600', urgency: 'overdue' };
-  if (days <= 2) return { text: 'Due Soon', color: 'text-orange-600', urgency: 'urgent' };
-  if (days <= 7) return { text: 'Next Week', color: 'text-blue-600', urgency: 'soon' };
-  return { text: 'Upcoming', color: 'text-slate-400', urgency: 'relaxed' };
+  // "Overdue" only when the current time is strictly past the deadline
+  if (diff < 0) return { text: 'Overdue', urgency: 'overdue' as const };
+
+  const minutes = Math.floor(diff / (1000 * 60));
+  const hours = Math.floor(minutes / 60);
+  const days = Math.floor(hours / 24);
+
+  if (days > 0) {
+    return { 
+      text: `${days} ${days === 1 ? 'day' : 'days'} left`, 
+      urgency: (days <= 2 ? 'urgent' : days <= 7 ? 'soon' : 'relaxed') as 'urgent' | 'soon' | 'relaxed'
+    };
+  }
+
+  if (hours > 0) {
+    return { 
+      text: `${hours} ${hours === 1 ? 'hour' : 'hours'} left`, 
+      urgency: 'urgent' as const
+    };
+  }
+
+  return { 
+    text: `${Math.max(1, minutes)} ${minutes === 1 ? 'min' : 'mins'} left`, 
+    urgency: 'urgent' as const
+  };
+};
+
+export const getTimeUrgency = (deadline: string) => {
+  const remaining = getRemainingTime(deadline);
+  return {
+    text: remaining.text === 'Overdue' ? 'Overdue' : 
+          remaining.urgency === 'urgent' ? 'Due Soon' : 
+          remaining.urgency === 'soon' ? 'Next Week' : 'Upcoming',
+    color: remaining.urgency === 'overdue' ? 'text-red-600' : 
+           remaining.urgency === 'urgent' ? 'text-orange-600' : 
+           remaining.urgency === 'soon' ? 'text-blue-600' : 'text-slate-400',
+    urgency: remaining.urgency
+  };
 };
 
 // Simplified ISO Currencies List
@@ -103,52 +142,3 @@ export const ISO_CURRENCIES = [
   { code: 'SGD', symbol: 'S$', name: 'Singapore Dollar', country: 'Singapore' },
   { code: 'CHF', symbol: 'Fr.', name: 'Swiss Franc', country: 'Switzerland' }
 ];
-
-export const COUNTRY_CODES = [
-  { code: '+93', country: 'Afghanistan', flag: '🇦🇫', iso: 'AF' },
-  { code: '+355', country: 'Albania', flag: '🇦🇱', iso: 'AL' },
-  { code: '+213', country: 'Algeria', flag: '🇩🇿', iso: 'DZ' },
-  { code: '+54', country: 'Argentina', flag: '🇦🇷', iso: 'AR' },
-  { code: '+61', country: 'Australia', flag: '🇦🇺', iso: 'AU' },
-  { code: '+43', country: 'Austria', flag: '🇦🇹', iso: 'AT' },
-  { code: '+880', country: 'Bangladesh', flag: '🇧🇩', iso: 'BD' },
-  { code: '+32', country: 'Belgium', flag: '🇧🇪', iso: 'BE' },
-  { code: '+55', country: 'Brazil', flag: '🇧🇷', iso: 'BR' },
-  { code: '+1', country: 'Canada', flag: '🇨🇦', iso: 'CA' },
-  { code: '+86', country: 'China', flag: '🇨🇳', iso: 'CN' },
-  { code: '+57', country: 'Colombia', flag: '🇨🇴', iso: 'CO' },
-  { code: '+20', country: 'Egypt', flag: '🇪🇬', iso: 'EG' },
-  { code: '+33', country: 'France', flag: '🇫🇷', iso: 'FR' },
-  { code: '+49', country: 'Germany', flag: '🇩🇪', iso: 'DE' },
-  { code: '+30', country: 'Greece', flag: '🇬🇷', iso: 'GR' },
-  { code: '+852', country: 'Hong Kong', flag: '🇭🇰', iso: 'HK' },
-  { code: '+91', country: 'India', flag: '🇮🇳', iso: 'IN' },
-  { code: '+62', country: 'Indonesia', flag: '🇮🇩', iso: 'ID' },
-  { code: '+39', country: 'Italy', flag: '🇮🇹', iso: 'IT' },
-  { code: '+81', country: 'Japan', flag: '🇯🇵', iso: 'JP' },
-  { code: '+254', country: 'Kenya', flag: '🇰🇪', iso: 'KE' },
-  { code: '+60', country: 'Malaysia', flag: '🇲🇾', iso: 'MY' },
-  { code: '+52', country: 'Mexico', flag: '🇲🇽', iso: 'MX' },
-  { code: '+31', country: 'Netherlands', flag: '🇳🇱', iso: 'NL' },
-  { code: '+64', country: 'New Zealand', flag: '🇳🇿', iso: 'NZ' },
-  { code: '+234', country: 'Nigeria', flag: '🇳🇬', iso: 'NG' },
-  { code: '+47', country: 'Norway', flag: '🇳🇴', iso: 'NO' },
-  { code: '+92', country: 'Pakistan', flag: '🇵🇰', iso: 'PK' },
-  { code: '+63', country: 'Philippines', flag: '🇵🇭', iso: 'PH' },
-  { code: '+48', country: 'Poland', flag: '🇵🇱', iso: 'PL' },
-  { code: '+351', country: 'Portugal', flag: '🇵🇹', iso: 'PT' },
-  { code: '+7', country: 'Russia', flag: '🇷🇺', iso: 'RU' },
-  { code: '+966', country: 'Saudi Arabia', flag: '🇸🇦', iso: 'SA' },
-  { code: '+65', country: 'Singapore', flag: '🇸🇬', iso: 'SG' },
-  { code: '+27', country: 'South Africa', flag: '🇿🇦', iso: 'ZA' },
-  { code: '+82', country: 'South Korea', flag: '🇰🇷', iso: 'KR' },
-  { code: '+34', country: 'Spain', flag: '🇪🇸', iso: 'ES' },
-  { code: '+46', country: 'Sweden', flag: '🇸🇪', iso: 'SE' },
-  { code: '+41', country: 'Switzerland', flag: '🇨🇭', iso: 'CH' },
-  { code: '+66', country: 'Thailand', flag: '🇹🇭', iso: 'TH' },
-  { code: '+90', country: 'Turkey', flag: '🇹🇷', iso: 'TR' },
-  { code: '+971', country: 'UAE', flag: '🇦🇪', iso: 'AE' },
-  { code: '+44', country: 'United Kingdom', flag: '🇬🇧', iso: 'GB' },
-  { code: '+1', country: 'USA', flag: '🇺🇸', iso: 'US' },
-  { code: '+84', country: 'Vietnam', flag: '🇻🇳', iso: 'VN' }
-].sort((a, b) => a.country.localeCompare(b.country));

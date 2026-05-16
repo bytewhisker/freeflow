@@ -19,6 +19,8 @@ import { db } from './db';
 import { AppState, Client, Project, SalesDocument } from './types';
 import { supabase, isSupabaseConfigured } from './lib/supabase';
 import Sidebar from './components/Sidebar'; // Import new Sidebar
+import NotificationsPanel from './components/NotificationsPanel';
+import ToastContainer from './components/ToastContainer';
 
 
 // Views
@@ -69,6 +71,7 @@ const App: React.FC = () => {
   const [state, setState] = useState<AppState | null>(null);
   const [syncing, setSyncing] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [notificationsPanelOpen, setNotificationsPanelOpen] = useState(false);
   const [preAuthScreen, setPreAuthScreen] = useState<PreAuthScreen>('landing');
   const [isDarkMode, setIsDarkMode] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -118,9 +121,69 @@ const App: React.FC = () => {
   const loadUserData = async () => {
     if (!session) return;
     const data = await db.getState(session.user.id);
+    
+    // The plan status is now managed natively within the profiles table by the Stripe Webhook.
+    // We no longer sync from session.user.user_metadata, which caused downgrades back to 'free'.
+
     setState(data);
     initialLoadDone.current = true;
+    
+    // Check for notifications on initial load
+    checkAndGenerateNotifications(data);
   };
+
+  const checkAndGenerateNotifications = async (currentState: AppState) => {
+    try {
+      const { checkOverdueInvoices, checkUpcomingDeadlines } = await import('./lib/notifications');
+      
+      const overdueNotifications = await checkOverdueInvoices(currentState.salesDocuments);
+      const deadlineNotifications = await checkUpcomingDeadlines(currentState.projects);
+      
+      const allNew = [...overdueNotifications, ...deadlineNotifications];
+      
+      if (allNew.length > 0) {
+        setState(prev => {
+          if (!prev) return prev;
+          
+          // 1. De-duplicate allNew by ID, keeping the latest content
+          const uniqueInNew = Array.from(
+            new Map(allNew.map(n => [n.id, n])).values()
+          );
+
+          // 2. Combine with existing, prioritizing 'new' ones for same ID
+          const existingMap = new Map(prev.notifications.map(n => [n.id, n]));
+          uniqueInNew.forEach(n => existingMap.set(n.id, n));
+          
+          const uniqueAll = Array.from(existingMap.values());
+          
+          // Check if anything actually changed (content-wise)
+          const isSame = uniqueAll.length === prev.notifications.length && 
+            uniqueAll.every((n, i) => (n as any).id === (prev.notifications[i] as any).id && (n as any).message === (prev.notifications[i] as any).message);
+
+          if (isSame) return prev;
+          
+          return {
+            ...prev,
+            notifications: uniqueAll
+          };
+        });
+      }
+    } catch (err) {
+      console.error('Failed to check notifications:', err);
+    }
+  };
+
+  // Periodic deadline and overdue check (every 5 minutes)
+  useEffect(() => {
+    if (!state) return;
+    if (!state.projects.length && !state.salesDocuments.length) return;
+    
+    const interval = setInterval(() => {
+      checkAndGenerateNotifications(state);
+    }, 5 * 60 * 1000); 
+    
+    return () => clearInterval(interval);
+  }, [state?.projects, state?.salesDocuments]);
 
   // Improved Syncing logic that handles background persistence
   useEffect(() => {
@@ -193,12 +256,23 @@ const App: React.FC = () => {
                   </div>
                   <span className="text-xl font-bold text-black dark:text-white">FreeFlow</span>
                 </div>
-                <button
-                  onClick={() => setMobileSidebarOpen(true)}
-                  className="p-2 text-black dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg"
-                >
-                  <Menu size={24} />
-                </button>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => setNotificationsPanelOpen(true)}
+                    className="p-2 text-black dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg relative"
+                  >
+                    <Bell size={24} />
+                    {state.notifications?.some(n => !n.read) && (
+                      <span className="absolute top-2 right-2 w-2.5 h-2.5 bg-rose-500 rounded-full border-2 border-slate-50 dark:border-slate-900" />
+                    )}
+                  </button>
+                  <button
+                    onClick={() => setMobileSidebarOpen(true)}
+                    className="p-2 text-black dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg"
+                  >
+                    <Menu size={24} />
+                  </button>
+                </div>
               </header>
 
               <Sidebar
@@ -208,6 +282,14 @@ const App: React.FC = () => {
                 setMobileOpen={setMobileSidebarOpen}
                 isDarkMode={isDarkMode}
                 toggleDarkMode={toggleDarkMode}
+                setNotificationsPanelOpen={setNotificationsPanelOpen}
+              />
+
+              <NotificationsPanel 
+                isOpen={notificationsPanelOpen} 
+                onClose={() => setNotificationsPanelOpen(false)} 
+                state={state} 
+                setState={updateStateAndSync} 
               />
 
               <main className="flex-1 flex flex-col min-w-0 min-h-screen min-h-[100dvh] overflow-x-hidden bg-slate-50 dark:bg-slate-950">
@@ -221,12 +303,16 @@ const App: React.FC = () => {
                     <Route path="/billing/new" element={<BillingForm state={state} setState={updateStateAndSync} />} />
                     <Route path="/billing/edit/:id" element={<BillingForm state={state} setState={updateStateAndSync} />} />
                     <Route path="/billing/view/:id" element={<BillingDetail state={state} setState={updateStateAndSync} />} />
-                    <Route path="/pricing" element={<Pricing />} />
+                    <Route path="/pricing" element={<Pricing state={state} />} />
                     <Route path="/settings" element={<Settings state={state} setState={updateStateAndSync} />} />
                     <Route path="*" element={<Navigate to="/" replace />} />
                   </Routes>
                 </div>
               </main>
+              <ToastContainer 
+            state={state} 
+            onToastClick={() => setNotificationsPanelOpen(true)} 
+          />
             </>
           } />
         </Routes>

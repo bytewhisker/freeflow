@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { AppState } from '../types';
-import { formatCurrency, formatDate, getStatusColor } from '../utils';
+import { formatCurrency, formatDate, getStatusColor, generateId } from '../utils';
 import {
   ChevronLeft,
   Printer,
@@ -20,7 +20,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 
-const EmailModal = ({ isOpen, onClose, recipient, docNumber, docType, businessName, setToast, doc, state, onDownloadPdf }: any) => {
+const EmailModal = ({ isOpen, onClose, recipient, docNumber, docType, businessName, setToast, doc, state, setState, onDownloadPdf }: any) => {
   const [email, setEmail] = useState(recipient || '');
   const [subject, setSubject] = useState(`${docType} ${docNumber}`);
   const [message, setMessage] = useState(`Dear Client,\n\nPlease find attached ${docType.toLowerCase()} ${docNumber}.\n\nBest regards,\n${businessName}`);
@@ -45,6 +45,25 @@ const EmailModal = ({ isOpen, onClose, recipient, docNumber, docType, businessNa
     setTimeout(() => {
       window.open(gmailUrl, '_blank');
       setToast({ message: 'PDF Downloaded. Please drag it into the email.', type: 'info' });
+      
+      // Add notification for sent invoice
+      if (setState && doc) {
+        setState((prev: AppState) => {
+          return {
+            ...prev,
+            notifications: [{
+              id: generateId(),
+              type: 'invoice_sent',
+              title: 'Invoice Sent',
+              message: `${docType} ${docNumber} has been prepared for sending via email.`,
+              read: false,
+              createdAt: new Date().toISOString(),
+              link: `/billing/view/${doc.id}`,
+              metadata: { docId: doc.id }
+            }, ...(prev.notifications || [])]
+          }
+        });
+      }
     }, 1000);
   };
 
@@ -321,8 +340,8 @@ const ProInvoiceTemplate = ({ doc, state }: { doc: any, state: AppState }) => {
         <div className="pro-footer">
           {doc.paymentTerms && <p><strong>Payment Terms:</strong> {doc.paymentTerms}</p>}
 
-          {(state.settings.paymentDetails?.bankName || state.settings.paymentDetails?.payPal) && (
-            <p><strong>Payment Method:</strong> {state.settings.paymentDetails?.payPal ? `${state.settings.paymentDetails?.payPal} / ` : ''} {state.settings.paymentDetails?.bankName}</p>
+          {(state.settings.paymentDetails?.bank?.bankName || state.settings.paymentDetails?.mobileWallet?.number) && (
+            <p><strong>Payment Method:</strong> {state.settings.paymentDetails?.mobileWallet?.number ? `Mobile Wallet (${state.settings.paymentDetails.mobileWallet.type})` : state.settings.paymentDetails?.bank?.bankName}</p>
           )}
 
           {doc.terms && <p><strong>Terms:</strong> {doc.terms}</p>}
@@ -360,10 +379,26 @@ const SalesDetail: React.FC<{ state: AppState, setState: any }> = ({ state, setS
   const handlePrint = () => window.print();
 
   const handleUpdateStatus = (newStatus: any) => {
-    setState((prev: AppState) => ({
-      ...prev,
-      salesDocuments: prev.salesDocuments.map(d => d.id === id ? { ...d, status: newStatus } : d)
-    }));
+    setState((prev: AppState) => {
+      let newNotifications = [...(prev.notifications || [])];
+      if (newStatus === 'paid' && doc?.status !== 'paid') {
+        newNotifications.unshift({
+          id: generateId(),
+          type: 'invoice_paid',
+          title: 'Payment Received',
+          message: `Invoice ${doc?.docNumber} has been marked as paid.`,
+          read: false,
+          createdAt: new Date().toISOString(),
+          link: `/billing/view/${id}`,
+          metadata: { docId: id }
+        });
+      }
+      return {
+        ...prev,
+        salesDocuments: prev.salesDocuments.map(d => d.id === id ? { ...d, status: newStatus } : d),
+        notifications: newNotifications
+      };
+    });
   };
 
   const updateWatermarkOpacity = (val: number) => {
@@ -435,46 +470,45 @@ const SalesDetail: React.FC<{ state: AppState, setState: any }> = ({ state, setS
     <div className="px-4 sm:px-6 lg:px-8 space-y-8 no-print pb-20 pt-4">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          <Link to="/billing" className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors">
-            <ChevronLeft size={28} className="text-slate-400" />
+          <Link to="/billing" className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors">
+            <ChevronLeft size={20} className="text-slate-400" />
           </Link>
           <div>
-            <div className="flex items-center gap-3">
-              <h1 className="text-3xl font-black text-slate-900 dark:text-white">{doc.docNumber}</h1>
-              <span className={`text-xs uppercase font-black px-4 py-1.5 rounded-full ${getStatusColor(doc.status)} dark:opacity-80`}>
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-black text-slate-900 dark:text-white">{doc.docNumber}</h1>
+              <span className={`text-xs uppercase font-black px-3 py-1 rounded-full ${getStatusColor(doc.status)} dark:opacity-80`}>
                 {doc.status}
               </span>
             </div>
-            <p className="text-slate-400 dark:text-slate-500 text-sm font-bold uppercase mt-1">Generated {formatDate(doc.createdAt)}</p>
+            <p className="text-slate-400 dark:text-slate-500 text-xs font-bold uppercase mt-1">Generated {formatDate(doc.createdAt)}</p>
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3">
-
+        <div className="flex flex-wrap items-center gap-2">
 
           <button
             onClick={handleDownloadPdf}
             disabled={isDownloading}
-            className="px-5 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-black dark:text-slate-400 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-2 font-black text-xs uppercase shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-black dark:text-slate-400 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-1.5 font-black text-xs uppercase shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isDownloading ? (
-              <div className="animate-spin rounded-full h-4 w-4 border-2 border-slate-400 border-t-transparent" />
+              <div className="animate-spin rounded-full h-3 w-3 border-2 border-slate-400 border-t-transparent" />
             ) : (
-              <Download size={18} />
+              <Download size={16} />
             )}
             {isDownloading ? 'Downloading...' : 'Download'}
           </button>
           <Link
             to={`/billing/edit/${doc.id}`}
-            className="px-5 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-black dark:text-slate-400 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-2 font-black text-xs uppercase shadow-sm transition-all"
+            className="px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-black dark:text-slate-400 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-1.5 font-black text-xs uppercase shadow-sm transition-all"
           >
-            <Edit3 size={18} /> Edit
+            <Edit3 size={16} /> Edit
           </Link>
           <button
             onClick={() => setIsEmailModalOpen(true)}
-            className="px-6 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 flex items-center gap-2 font-black text-xs uppercase shadow-xl shadow-blue-100 dark:shadow-black/20 transition-all"
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-1.5 font-black text-xs uppercase shadow-lg shadow-blue-100 dark:shadow-black/20 transition-all"
           >
-            <Mail size={18} /> Email
+            <Mail size={16} /> Email
           </button>
         </div>
       </div>
@@ -484,18 +518,8 @@ const SalesDetail: React.FC<{ state: AppState, setState: any }> = ({ state, setS
           {doc.useProTemplate ? (
             <ProInvoiceTemplate doc={doc} state={state} />
           ) : (
-            <div className="invoice-paper bg-white border border-slate-200 relative overflow-hidden shrink-0" style={{ width: '210mm', minHeight: '297mm', padding: '20mm', boxSizing: 'border-box', margin: '0 auto' }}>
-              {/* Watermark Logo */}
-              {branding.showWatermark && (
-                <div
-                  className="absolute inset-0 flex items-center justify-center pointer-events-none select-none z-0 overflow-hidden"
-                  style={{ opacity: branding.watermarkOpacity || 0.15 }}
-                >
-                  <p className="text-[200px] font-black text-slate-500 dark:text-slate-800 transform -rotate-45 whitespace-nowrap opacity-80">
-                    FREEFLOW
-                  </p>
-                </div>
-              )}
+            <div className="invoice-paper bg-white border border-slate-200 relative overflow-hidden shrink-0" style={{ width: '210mm', minHeight: '297mm', padding: '12mm', boxSizing: 'border-box', margin: '0 auto' }}>
+
 
               <div className="relative z-10">
                 {/* PAID Badge Overlay */}
@@ -514,51 +538,51 @@ const SalesDetail: React.FC<{ state: AppState, setState: any }> = ({ state, setS
                   </div>
                 )}
 
-                <div className="flex justify-between mb-12 items-start">
+                <div className="flex justify-between mb-8 items-start">
                   <div>
                     {doc.logo ? (
-                      <img src={doc.logo} alt="Company Logo" className="h-16 w-auto mb-6 object-contain" />
+                      <img src={doc.logo} alt="Company Logo" className="h-12 w-auto mb-4 object-contain" />
                     ) : (
-                      <div className="flex items-center gap-3 mb-6">
-                        <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center text-white font-black text-xl shadow-lg shadow-blue-100">
+                      <div className="flex items-center gap-2 mb-4">
+                        <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center text-white font-black text-lg shadow-lg shadow-blue-100">
                           {business.name.charAt(0).toUpperCase()}
                         </div>
-                        <h2 className="text-2xl font-black text-slate-900 tracking-tighter uppercase">{business.name}</h2>
+                        <h2 className="text-xl font-black text-slate-900 tracking-tighter uppercase">{business.name}</h2>
                       </div>
                     )}
-                    <div className="text-[13px] text-slate-500 leading-relaxed font-medium whitespace-pre-line max-w-xs">
+                    <div className="text-[11px] text-slate-500 leading-relaxed font-medium whitespace-pre-line max-w-xs">
                       {doc.companyInfo || `${business.address}\n${business.email}\n${business.phone}`}
                     </div>
                   </div>
                   <div className="text-right">
-                    <h1 className="text-5xl font-black text-slate-900 tracking-tighter mb-2 uppercase">{doc.type}</h1>
-                    <div className="space-y-4 pt-4">
+                    <h1 className="text-4xl font-black text-slate-900 tracking-tighter mb-2 uppercase">{doc.type}</h1>
+                    <div className="space-y-3 pt-3">
                       <div className="flex flex-col items-end">
-                        <p className="text-[10px] font-black font-open-sans  mb-1">Invoice Number</p>
-                        <p className="text-xl font-black text-slate-900 leading-none">{doc.docNumber}</p>
+                        <p className="text-[9px] font-black font-open-sans  mb-1">Invoice Number</p>
+                        <p className="text-lg font-black text-slate-900 leading-none">{doc.docNumber}</p>
                       </div>
                       <div className="flex flex-col items-end">
-                        <p className="text-[10px] font-black font-open-sans  mb-1">Issue Date</p>
-                        <p className="text-base font-black text-slate-900 leading-none">{formatDate(doc.createdAt)}</p>
+                        <p className="text-[9px] font-black font-open-sans  mb-1">Issue Date</p>
+                        <p className="text-sm font-black text-slate-900 leading-none">{formatDate(doc.createdAt)}</p>
                       </div>
                       {doc.dueDate && (
                         <div className="flex flex-col items-end">
-                          <p className="text-[10px] font-black font-open-sans  mb-1">Due Date</p>
-                          <p className="text-base font-black text-blue-600 leading-none">{formatDate(doc.dueDate)}</p>
+                          <p className="text-[9px] font-black font-open-sans  mb-1">Due Date</p>
+                          <p className="text-sm font-black text-blue-600 leading-none">{formatDate(doc.dueDate)}</p>
                         </div>
                       )}
                     </div>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-12 gap-8 mb-12 py-8 border-y border-slate-100">
+                <div className="grid grid-cols-12 gap-6 mb-8 py-6 border-y border-slate-100">
                   <div className="col-span-12 md:col-span-5">
-                    <h4 className="text-[10px] font-open-sans font-bold uppercase mb-4">Client / Bill To</h4>
+                    <h4 className="text-[9px] font-open-sans font-bold uppercase mb-3">Client / Bill To</h4>
                     <div className="space-y-1">
-                      <p className="text-lg font-black text-slate-900 leading-tight">
+                      <p className="text-base font-black text-slate-900 leading-tight">
                         {doc.billTo ? doc.billTo.split('\n')[0] : (client?.name || 'Private Client')}
                       </p>
-                      <div className="text-[13px] text-slate-500 leading-relaxed font-medium whitespace-pre-line">
+                      <div className="text-[11px] text-slate-500 leading-relaxed font-medium whitespace-pre-line">
                         {doc.billTo ? doc.billTo.split('\n').slice(1).join('\n') : (client?.email || '')}
                       </div>
                     </div>
@@ -567,56 +591,54 @@ const SalesDetail: React.FC<{ state: AppState, setState: any }> = ({ state, setS
                     <div className="col-span-12 md:col-span-4">
                       {doc.shipTo && (
                         <>
-                          <h4 className="text-[10px] font-black font-open-sans  mb-4">Shipping Info</h4>
-                          <div className="text-[13px] text-slate-500 leading-relaxed font-medium whitespace-pre-line">
+                          <h4 className="text-[9px] font-black font-open-sans  mb-3">Shipping Info</h4>
+                          <div className="text-[11px] text-slate-500 leading-relaxed font-medium whitespace-pre-line">
                             {doc.shipTo}
                           </div>
                         </>
                       )}
                       {doc.poNumber && (
-                        <div className={doc.shipTo ? 'mt-6' : ''}>
-                          <h4 className="text-[10px] font-black font-open-sans  mb-1">P.O. Number</h4>
-                          <p className="text-[14px] font-black text-slate-900">{doc.poNumber}</p>
+                        <div className={doc.shipTo ? 'mt-4' : ''}>
+                          <h4 className="text-[9px] font-black font-open-sans  mb-1">P.O. Number</h4>
+                          <p className="text-[12px] font-black text-slate-900">{doc.poNumber}</p>
                         </div>
                       )}
                     </div>
                   )}
                   <div className="col-span-12 md:col-span-3 text-right ml-auto">
-
-
                     {doc.paymentTerms && (
-                      <div className="mt-6">
-                        <h4 className="text-[10px] font-black font-open-sans  mb-1">Terms</h4>
-                        <p className="text-[13px] font-bold text-slate-500">{doc.paymentTerms}</p>
+                      <div className="mt-4">
+                        <h4 className="text-[9px] font-black font-open-sans  mb-1">Terms</h4>
+                        <p className="text-[11px] font-bold text-slate-500">{doc.paymentTerms}</p>
                       </div>
                     )}
                   </div>
                 </div>
 
-                <div className="mb-12">
+                <div className="mb-8">
                   <table className="w-full">
                     <thead>
-                      <tr className="border-b-2 border-slate-900 text-[10px] font-black uppercase   text-slate-900">
-                        <th className="pb-4 text-left">Description</th>
-                        <th className="pb-4 text-center px-4">Qty</th>
-                        <th className="pb-4 text-right px-4">Rate</th>
-                        <th className="pb-4 text-right">Amount</th>
+                      <tr className="border-b-2 border-slate-900 text-[9px] font-black uppercase text-slate-900">
+                        <th className="pb-3 text-left">Description</th>
+                        <th className="pb-3 text-center px-3">Qty</th>
+                        <th className="pb-3 text-right px-3">Rate</th>
+                        <th className="pb-3 text-right">Amount</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100 font-open-sans font-bold ">
+                    <tbody className="divide-y divide-slate-100 font-open-sans font-bold">
                       {doc.items.map((item, i) => (
                         <tr key={i}>
-                          <td className="py-5">
-                            <p className="text-[14px] ">{item.description}</p>
+                          <td className="py-3">
+                            <p className="text-[12px]">{item.description}</p>
                           </td>
-                          <td className="py-5 text-center px-4">
-                            <span className="text-[14px] ">{item.quantity}</span>
+                          <td className="py-3 text-center px-3">
+                            <span className="text-[12px]">{item.quantity}</span>
                           </td>
-                          <td className="py-5 text-right px-4 whitespace-nowrap">
-                            <span className="text-[14px] ">{formatCurrency(item.rate, currencyCode)}</span>
+                          <td className="py-3 text-right px-3 whitespace-nowrap">
+                            <span className="text-[12px]">{formatCurrency(item.rate, currencyCode)}</span>
                           </td>
-                          <td className="py-5 text-right whitespace-nowrap">
-                            <span className="text-[14px] ">{formatCurrency(item.quantity * item.rate, currencyCode)}</span>
+                          <td className="py-3 text-right whitespace-nowrap">
+                            <span className="text-[12px]">{formatCurrency(item.quantity * item.rate, currencyCode)}</span>
                           </td>
                         </tr>
                       ))}
@@ -628,31 +650,79 @@ const SalesDetail: React.FC<{ state: AppState, setState: any }> = ({ state, setS
                   <div className="flex-1 space-y-8">
                     {/* Payment Instructions */}
                     <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100 max-w-sm">
-                      <h4 className="text-[10px] font-black text-slate-900 uppercase   mb-4">How to Pay</h4>
+                      <h4 className="text-[10px] font-black text-slate-900 uppercase mb-4">How to Pay</h4>
                       <div className="space-y-4">
-                        {state.settings.paymentDetails?.bankName && (
+                        {/* Display payment method from invoice */}
+                        {doc.paymentMethod === 'mobile_wallet' && doc.paymentDetails && (
                           <div className="grid grid-cols-1 gap-1">
-                            <p className="text-[9px] font-black font-open-sans ">Bank Transfer</p>
+                            <p className="text-[9px] font-black font-open-sans">Mobile Wallet Payment</p>
                             <p className="text-[12px] font-black text-slate-900 leading-tight">
-                              {state.settings.paymentDetails?.bankName}
+                              Wallet Type: <span className="font-bold capitalize">{doc.paymentDetails.type}</span>
                               <br />
-                              A/C: <span className="font-bold">{state.settings.paymentDetails?.accountNumber}</span>
-                              {state.settings.paymentDetails?.swiftCode && (
+                              Wallet Number: <span className="font-bold">{doc.paymentDetails.number}</span>
+                              <br />
+                              Account Type: <span className="font-bold capitalize">{doc.paymentDetails.accountType}</span>
+                            </p>
+                          </div>
+                        )}
+                        {doc.paymentMethod === 'bank' && doc.paymentDetails && (
+                          <div className="grid grid-cols-1 gap-1">
+                            <p className="text-[9px] font-black font-open-sans">Bank Transfer</p>
+                            <p className="text-[12px] font-black text-slate-900 leading-tight">
+                              Bank Name: <span className="font-bold">{doc.paymentDetails.bankName}</span>
+                              <br />
+                              {doc.paymentDetails.bankBranch && (
+                                <>
+                                  Bank Branch: <span className="font-bold">{doc.paymentDetails.bankBranch}</span>
+                                  <br />
+                                </>
+                              )}
+                              Account Holder: <span className="font-bold">{doc.paymentDetails.accountHolderName}</span>
+                              <br />
+                              Account Number: <span className="font-bold">{doc.paymentDetails.accountNumber}</span>
+                              {doc.paymentDetails.routingNumber && (
                                 <>
                                   <br />
-                                  SWIFT/BIC: <span className="font-bold">{state.settings.paymentDetails?.swiftCode}</span>
+                                  Routing Number: <span className="font-bold">{doc.paymentDetails.routingNumber}</span>
+                                </>
+                              )}
+                              {doc.paymentDetails.swiftCode && (
+                                <>
+                                  <br />
+                                  SWIFT Code: <span className="font-bold">{doc.paymentDetails.swiftCode}</span>
                                 </>
                               )}
                             </p>
                           </div>
                         )}
-                        {state.settings.paymentDetails?.payPal && (
+                        {/* Fallback to settings if no invoice payment details */}
+                        {!doc.paymentDetails && state.settings.paymentDetails?.bank?.bankName && (
                           <div className="grid grid-cols-1 gap-1">
-                            <p className="text-[9px] font-black font-open-sans ">PayPal / Digital</p>
-                            <p className="text-[12px] font-black text-blue-600 truncate">{state.settings.paymentDetails?.payPal}</p>
+                            <p className="text-[9px] font-black font-open-sans">Bank Transfer</p>
+                            <p className="text-[12px] font-black text-slate-900 leading-tight">
+                              {state.settings.paymentDetails?.bankName}
+                              <br />
+                              A/C: <span className="font-bold">{state.settings.paymentDetails?.bank?.accountNumber}</span>
+                              {state.settings.paymentDetails?.bank?.swiftCode && (
+                                <>
+                                  <br />
+                                  SWIFT/BIC: <span className="font-bold">{state.settings.paymentDetails?.bank?.swiftCode}</span>
+                                </>
+                              )}
+                            </p>
                           </div>
                         )}
-                        {!state.settings.paymentDetails?.bankName && !state.settings.paymentDetails?.payPal && (
+                        {!doc.paymentDetails && state.settings.paymentDetails?.mobileWallet?.number && (
+                          <div className="grid grid-cols-1 gap-1">
+                            <p className="text-[9px] font-black font-open-sans">Mobile Wallet Payment</p>
+                            <p className="text-[12px] font-black text-slate-900 leading-tight">
+                              {state.settings.paymentDetails?.mobileWallet?.type}: <span className="font-bold">{state.settings.paymentDetails?.mobileWallet?.number}</span>
+                              <br />
+                              Account Type: <span className="font-bold capitalize">{state.settings.paymentDetails?.mobileWallet?.accountType}</span>
+                            </p>
+                          </div>
+                        )}
+                        {!doc.paymentDetails && !state.settings.paymentDetails?.bank?.bankName && !state.settings.paymentDetails?.mobileWallet?.number && (
                           <p className="text-[11px] text-slate-400 italic">Please contact us for payment instructions.</p>
                         )}
                       </div>
@@ -755,6 +825,7 @@ const SalesDetail: React.FC<{ state: AppState, setState: any }> = ({ state, setS
         setToast={setToast}
         doc={doc}
         state={state}
+        setState={setState}
         onDownloadPdf={handleDownloadPdf}
       />
 

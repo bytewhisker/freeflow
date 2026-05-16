@@ -10,7 +10,7 @@ const ClientPortal: React.FC<{ state: AppState }> = ({ state }) => {
   const isPreview = new URLSearchParams(location.search).get('preview') === 'true';
   const doc = state.salesDocuments.find(d => d.id === docId);
   const client = state.clients.find(c => c.id === doc?.clientId);
-  const watermarkOpacity = state.settings.branding.watermarkOpacity || 0.05;
+  const watermarkOpacity = state.settings.branding.watermarkOpacity || 0.1;
   const showWatermark = state.settings.branding.showWatermark;
   const business = state.settings.business;
   const currencyCode = state.settings.currency.code;
@@ -47,16 +47,7 @@ const ClientPortal: React.FC<{ state: AppState }> = ({ state }) => {
             className={`bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xl relative overflow-hidden shrink-0 ${isPreview ? '' : 'p-4 sm:p-8'}`}
             style={isPreview ? { width: '210mm', minHeight: '297mm', padding: '20mm', boxSizing: 'border-box', margin: '0 auto' } : { width: '210mm', minHHeiggt: '297mm', margin: '0 auto' }}
           >
-            {showWatermark && (
-              <div
-                className="absolute inset-0 flex items-center justify-center pointer-events-none select-none z-0 overflow-hidden"
-                style={{ opacity: watermarkOpacity }}
-              >
-                <p className="text-[200px] font-black text-slate-500 dark:text-slate-800 transform -rotate-45 whitespace-nowrap opacity-80">
-                  FREEFLOW
-                </p>
-              </div>
-            )}
+
 
             <div className="relative z-10">
               {/* Header Section */}

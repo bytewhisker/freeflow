@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { AppState, Project } from '../types';
-import { formatCurrency, formatDate, getStatusColor } from '../utils';
+import { formatCurrency, formatDate, getStatusColor, getRemainingTime } from '../utils';
 import EarningsChart from '../components/EarningsChart';
 import {
   TrendingUp,
@@ -66,34 +66,27 @@ const Dashboard: React.FC<{ state: AppState }> = ({ state }) => {
 
     const activeCount = state.projects.filter(p => p.status === 'active').length;
     const completedCount = state.projects.filter(p => p.status === 'completed').length;
-    const pendingCount = state.projects.filter(p => p.status === 'on_hold').length;
+    const pendingCount = state.projects.filter(p => p.status === 'in_review').length;
 
     return { totalRevenue, totalEarned, activeCount, completedCount, pendingCount };
   }, [state, dateRange]);
 
-  const [earningsFilter, setEarningsFilter] = useState('12months');
-
-  const getDateRangeForFilter = (filter: string): { start: Date; end: Date } => {
-    const end = new Date();
-    const start = new Date();
-    switch (filter) {
-      case '7days': start.setDate(start.getDate() - 7); break;
-      case '30days': start.setDate(start.getDate() - 30); break;
-      case '90days': start.setDate(start.getDate() - 90); break;
-      case '12months': start.setFullYear(start.getFullYear() - 1); break;
-      case '2025': start.setFullYear(2025, 0, 1); end.setFullYear(2025, 11, 31); break;
-      case '2024': start.setFullYear(2024, 0, 1); end.setFullYear(2024, 11, 31); break;
-      case 'all': start.setFullYear(2020, 0, 1); break;
-      default: start.setFullYear(start.getFullYear() - 1);
-    }
-    return { start, end };
-  };
-
   const earningsData = useMemo(() => {
-    const { start: filterStart, end: filterEnd } = getDateRangeForFilter(earningsFilter);
+    // Use dashboard date range instead of separate earnings filter
+    const filterStart = dateRange.start;
+    const filterEnd = dateRange.end;
+    
+    // If no date range selected, use last 12 months as default
+    const start = filterStart || (() => {
+      const date = new Date();
+      date.setFullYear(date.getFullYear() - 1);
+      return date;
+    })();
+    const end = filterEnd || new Date();
+    
     const months: { month: string; year: number; monthIndex: number }[] = [];
-    let current = new Date(filterStart.getFullYear(), filterStart.getMonth(), 1);
-    const rangeEnd = new Date(filterEnd.getFullYear(), filterEnd.getMonth() + 1, 0);
+    let current = new Date(start.getFullYear(), start.getMonth(), 1);
+    const rangeEnd = new Date(end.getFullYear(), end.getMonth() + 1, 0);
 
     while (current <= rangeEnd) {
       months.push({
@@ -110,12 +103,15 @@ const Dashboard: React.FC<{ state: AppState }> = ({ state }) => {
       .filter(doc => doc.type === 'INVOICE' && doc.status !== 'draft' && doc.status !== 'rejected')
       .forEach(doc => {
         const docDate = new Date(doc.createdAt);
-        const chartIndex = chartData.findIndex(data => data.monthIndex === docDate.getMonth() && data.year === docDate.getFullYear());
-        if (chartIndex !== -1) chartData[chartIndex].earnings += doc.total;
+        // Only include documents within the selected date range
+        if (docDate >= start && docDate <= end) {
+          const chartIndex = chartData.findIndex(data => data.monthIndex === docDate.getMonth() && data.year === docDate.getFullYear());
+          if (chartIndex !== -1) chartData[chartIndex].earnings += doc.total;
+        }
       });
 
     return chartData.map(({ month, earnings }) => ({ month, earnings }));
-  }, [state.salesDocuments, earningsFilter]);
+  }, [state.salesDocuments, dateRange]);
 
   const chartTotalRevenue = useMemo(() => {
     return earningsData.reduce((acc, curr) => acc + curr.earnings, 0);
@@ -139,6 +135,13 @@ const Dashboard: React.FC<{ state: AppState }> = ({ state }) => {
 
 
 
+
+  const [currentTime, setCurrentTime] = React.useState(new Date());
+
+  React.useEffect(() => {
+    const interval = setInterval(() => setCurrentTime(new Date()), 60000);
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <div className="min-h-screen m-0 p-4 sm:p-6 pt-4 bg-slate-50 dark:bg-slate-950">
@@ -173,13 +176,13 @@ const Dashboard: React.FC<{ state: AppState }> = ({ state }) => {
 
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-          <StatCard title="Total Revenue" value={formatCurrency(stats.totalRevenue, currencyCode)} icon={TrendingUp} color="bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400" sub={`In ${dateRange.label}`} trend={12} className="h-[160px]" />
+          <StatCard title="Total Revenue" value={formatCurrency(stats.totalRevenue, currencyCode)} icon={TrendingUp} color="bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400" sub="" trend={12} className="h-[160px]" />
           <StatCard title="Active Projects" value={stats.activeCount} icon={Clock} color="bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400" sub="" trend={5} className="h-[160px]" />
           <StatCard title="Completed Projects" value={stats.completedCount} icon={CheckCircle2} color="bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400" sub="" className="h-[160px]" />
-          <StatCard title="Pending Projects" value={stats.pendingCount} icon={AlertCircle} color="bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400" sub="" className="h-[160px]" />
+          <StatCard title="In Review" value={stats.pendingCount} icon={AlertCircle} color="bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400" sub="" className="h-[160px]" />
         </div>
 
-        <EarningsChart data={earningsData} onRangeChange={setEarningsFilter} totalRevenue={chartTotalRevenue} />
+        <EarningsChart data={earningsData} totalRevenue={chartTotalRevenue} />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2">
@@ -205,10 +208,12 @@ const Dashboard: React.FC<{ state: AppState }> = ({ state }) => {
                           <td className="px-6 py-4">
                             <p className="font-bold text-sm text-slate-900 dark:text-white font-open-sans leading-tight">{project.title || 'Untitled Project'}</p>
                             <p className="text-[10px] text-slate-400 dark:text-slate-500 font-semibold tracking-normal mt-0.5">
-                              {state.clients.find(c => c.id === project.clientId)?.company || 'Independent'}
+                              {state.clients.find(c => c.id === project.clientId)?.company || ''}
                             </p>
                           </td>
-                          <td className="py-4 text-sm text-black dark:text-slate-400 font-bold text-center font-open-sans">{formatDate(project.deadline)}</td>
+                          <td className="py-4 text-sm text-black dark:text-slate-400 font-bold text-center font-open-sans">
+                            {project.status === 'completed' ? formatDate(project.deadline) : getRemainingTime(project.deadline).text}
+                          </td>
                           <td className="py-4 text-right px-6">
                             <span className={`inline-flex px-2.5 py-1 rounded-full text-[10px] font-bold font-open-sans ${status.color}`}>
                               {status.label}

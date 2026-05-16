@@ -5,6 +5,7 @@ DROP TABLE IF EXISTS public.sales_documents CASCADE;
 DROP TABLE IF EXISTS public.projects CASCADE;
 DROP TABLE IF EXISTS public.clients CASCADE;
 DROP TABLE IF EXISTS public.profiles CASCADE;
+DROP TABLE IF EXISTS public.notifications CASCADE;
 
 -- 1. Profiles (Linked to Auth)
 CREATE TABLE public.profiles (
@@ -99,15 +100,29 @@ CREATE TABLE public.payments (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- 6. SECURITY: Enable RLS
+-- 6. Notifications
+CREATE TABLE IF NOT EXISTS public.notifications (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  type TEXT NOT NULL,
+  title TEXT NOT NULL,
+  message TEXT NOT NULL,
+  read BOOLEAN DEFAULT false,
+  link TEXT,
+  metadata JSONB DEFAULT '{}'::jsonb,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- 7. SECURITY: Enable RLS
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.clients ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.projects ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.sales_documents ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.invoice_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.payments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
 
--- 7. POLICIES
+-- 8. POLICIES
 -- Profiles
 CREATE POLICY "Users browse own profile" ON public.profiles FOR SELECT USING (auth.uid() = id);
 CREATE POLICY "Users update own profile" ON public.profiles FOR ALL USING (auth.uid() = id);
@@ -118,6 +133,7 @@ CREATE POLICY "Users manage own projects" ON public.projects FOR ALL USING (auth
 CREATE POLICY "Users manage own docs" ON public.sales_documents FOR ALL USING (auth.uid() = user_id);
 CREATE POLICY "Users manage own items" ON public.invoice_items FOR ALL 
   USING (EXISTS (SELECT 1 FROM sales_documents d WHERE d.id = invoice_id AND d.user_id = auth.uid()));
+CREATE POLICY "Users manage own notifications" ON public.notifications FOR ALL USING (auth.uid() = user_id);
 
 -- Public Data (Allow clients to view their portal)
 CREATE POLICY "Public view sales documents" ON public.sales_documents FOR SELECT USING (true);

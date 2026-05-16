@@ -1,5 +1,5 @@
 
-import { AppState, Client, Project, SalesDocument } from './types';
+import { AppState, Client, Project, SalesDocument, Notification } from './types';
 import { supabase } from './lib/supabase';
 
 const INITIAL_STATE: AppState = {
@@ -11,10 +11,25 @@ const INITIAL_STATE: AppState = {
   recurringInvoices: [],
   settings: {
     currency: { code: 'USD', symbol: '$', name: 'US Dollar' },
-    branding: { watermarkOpacity: 0.5, showWatermark: true },
+    branding: { watermarkOpacity: 0.1, showWatermark: false },
     business: { name: 'New Freelancer', address: 'Add your address', email: 'hello@yourbrand.com', phone: '+1 555-0123' },
-    paymentDetails: { bankName: '', accountNumber: '', routingNumber: '', swiftCode: '', payPal: '' },
-    profile: { name: '', title: 'Freelancer', bio: '', website: '', avatarUrl: '' }
+    paymentDetails: {
+      method: 'mobile_wallet',
+      mobileWallet: {
+        type: 'bkash',
+        number: '',
+        accountType: 'personal'
+      },
+      bank: {
+        bankName: '',
+        bankBranch: '',
+        accountHolderName: '',
+        accountNumber: '',
+        routingNumber: '',
+        swiftCode: ''
+      }
+    },
+    profile: { name: '', title: 'Freelancer', bio: '', website: '', avatarUrl: '', plan: 'free' }
   }
 };
 
@@ -54,6 +69,11 @@ const mapDoc = (d: any): SalesDocument => ({
   billTo: d.bill_to
 });
 
+const mapNotification = (n: any): Notification => ({
+  ...n,
+  createdAt: n.created_at
+});
+
 export const db = {
   getState: async (userId: string): Promise<AppState> => {
     if (!supabase) return INITIAL_STATE;
@@ -63,10 +83,11 @@ export const db = {
         supabase.from('profiles').select('settings').eq('id', userId).maybeSingle(),
         supabase.from('clients').select('*').eq('user_id', userId),
         supabase.from('projects').select('*').eq('user_id', userId),
-        supabase.from('sales_documents').select('*').eq('user_id', userId)
+        supabase.from('sales_documents').select('*').eq('user_id', userId),
+        supabase.from('notifications').select('*').eq('user_id', userId)
       ]);
 
-      const [pRes, cRes, prRes, dRes] = results;
+      const [pRes, cRes, prRes, dRes, nRes] = results;
 
       if (!pRes.data) {
         await supabase.from('profiles').insert({ id: userId, settings: INITIAL_STATE.settings });
@@ -74,11 +95,23 @@ export const db = {
 
       const remoteSettings = pRes.data?.settings || {};
 
+      // Backup to localStorage as safety net
+      const backupData = {
+        clients: (cRes.data || []).map(mapClient),
+        projects: (prRes.data || []).map(mapProject),
+        salesDocuments: (dRes.data || []).map(mapDoc),
+        timestamp: new Date().toISOString()
+      };
+      localStorage.setItem(`freeflow_backup_${userId}`, JSON.stringify(backupData));
+
       return {
         clients: (cRes.data || []).map(mapClient),
         projects: (prRes.data || []).map(mapProject),
         salesDocuments: (dRes.data || []).map(mapDoc),
-        notifications: [],
+        notifications: (nRes.data || []).map(mapNotification).filter((n, index, self) => {
+          // De-duplicate by ID
+          return self.findIndex(i => i.id === n.id) === index;
+        }),
         timeEntries: [],
         recurringInvoices: [],
         settings: {
@@ -98,12 +131,31 @@ export const db = {
           },
           profile: {
             ...INITIAL_STATE.settings.profile,
-            ...(remoteSettings.profile || {})
+            ...(remoteSettings.profile || {}),
+            plan: remoteSettings.profile?.plan || 'free'
           }
         }
       };
     } catch (err) {
       console.error('Error fetching state:', err);
+      
+      // Try to restore from localStorage backup
+      try {
+        const backup = localStorage.getItem(`freeflow_backup_${userId}`);
+        if (backup) {
+          const backupData = JSON.parse(backup);
+          console.log('Restored from backup:', backupData.timestamp);
+          return {
+            ...INITIAL_STATE,
+            clients: backupData.clients || [],
+            projects: backupData.projects || [],
+            salesDocuments: backupData.salesDocuments || []
+          };
+        }
+      } catch (backupErr) {
+        console.error('Backup restore failed:', backupErr);
+      }
+      
       return INITIAL_STATE;
     }
   },
@@ -115,6 +167,7 @@ export const db = {
       const clientIds = state.clients.map(c => c.id);
       const projectIds = state.projects.map(p => p.id);
       const docIds = state.salesDocuments.map(d => d.id);
+      const notificationIds = state.notifications.map(n => n.id);
 
       // 1. Sync Settings
       await db.saveSettings(state.settings, userId);
@@ -141,7 +194,7 @@ export const db = {
 
       const { error: cDelErr } = clientIds.length > 0
         ? await supabase.from('clients').delete().eq('user_id', userId).not('id', 'in', `(${clientIds.join(',')})`)
-        : await supabase.from('clients').delete().eq('user_id', userId);
+        : { error: null }; // Don't delete all clients if state is empty
       if (cDelErr) console.error('[Sync Error] Clients Deletion:', cDelErr.message);
 
       // 3. Sync Projects
@@ -164,7 +217,7 @@ export const db = {
 
       const { error: pDelErr } = projectIds.length > 0
         ? await supabase.from('projects').delete().eq('user_id', userId).not('id', 'in', `(${projectIds.join(',')})`)
-        : await supabase.from('projects').delete().eq('user_id', userId);
+        : { error: null }; // Don't delete all projects if state is empty
       if (pDelErr) console.error('[Sync Error] Projects Deletion:', pDelErr.message);
 
       // 4. Sync Documents
@@ -201,9 +254,33 @@ export const db = {
       }
 
       const { error: dDelErr } = docIds.length > 0
-        ? await supabase.from('sales_documents').delete().eq('user_id', userId).not('id', 'in', `(${docIds.join(',')})`)
-        : await supabase.from('sales_documents').delete().eq('user_id', userId);
+        ? await supabase.from('sales_documents').delete().eq('user_id', userId).not('id', 'in', docIds)
+        : { error: null }; // Don't delete all documents if state is empty
       if (dDelErr) console.error('[Sync Error] Documents Deletion:', dDelErr.message);
+
+      // 5. Sync Notifications
+      if (state.notifications.length > 0) {
+        const payload = state.notifications.map(n => ({
+          id: n.id,
+          user_id: userId,
+          type: n.type,
+          title: n.title,
+          message: n.message,
+          read: n.read,
+          link: n.link,
+          metadata: n.metadata || {},
+          created_at: n.createdAt
+        }));
+        const { error } = await supabase.from('notifications').upsert(payload);
+        if (error) console.error('[Sync Error] Notifications:', error.message);
+      }
+
+      const { error: nDelErr } = notificationIds.length > 0
+        ? await supabase.from('notifications').delete().eq('user_id', userId).not('id', 'in', notificationIds)
+        : notificationIds.length === 0 && state.notifications.length === 0 
+          ? await supabase.from('notifications').delete().eq('user_id', userId)
+          : { error: null };
+      if (nDelErr) console.error('[Sync Error] Notifications Deletion:', nDelErr.message);
 
     } catch (err: any) {
       console.error('Critical database synchronization failure:', err.message || err);

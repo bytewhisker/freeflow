@@ -12,7 +12,9 @@ import {
   Sun,
   Moon,
   ChevronUp,
-  UserCircle2
+  UserCircle2,
+  Star,
+  Bell
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
@@ -59,11 +61,12 @@ const ThemeToggle = ({ isDarkMode, toggleDarkMode }: { isDarkMode: boolean; togg
 const Separator = () => <div className="h-px w-full bg-slate-200 dark:bg-slate-800 my-2" />;
 
 // Main Sidebar Component
-const Sidebar = ({ session, state, mobileOpen, setMobileOpen, isDarkMode, toggleDarkMode }: { session: any; state: any; mobileOpen: boolean; setMobileOpen: (open: boolean) => void; isDarkMode: boolean; toggleDarkMode: () => void }) => {
+const Sidebar = ({ session, state, mobileOpen, setMobileOpen, isDarkMode, toggleDarkMode, setNotificationsPanelOpen }: { session: any; state: any; mobileOpen: boolean; setMobileOpen: (open: boolean) => void; isDarkMode: boolean; toggleDarkMode: () => void; setNotificationsPanelOpen: (open: boolean) => void }) => {
   const location = useLocation();
   const path = location.pathname;
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
+  const unreadCount = state?.notifications?.filter((n: any) => !n.read).length || 0;
 
   // Close profile menu on outside click
   useEffect(() => {
@@ -91,6 +94,7 @@ const Sidebar = ({ session, state, mobileOpen, setMobileOpen, isDarkMode, toggle
   const userInitial = state?.settings?.profile?.name?.[0] || session?.user?.email?.[0] || 'U';
   const userName = state?.settings?.profile?.name || session?.user?.email?.split('@')[0] || 'User';
   const avatarUrl = state?.settings?.profile?.avatarUrl;
+  const isPro = state?.settings?.profile?.plan === 'pro';
 
   return (
     <>
@@ -140,24 +144,51 @@ const Sidebar = ({ session, state, mobileOpen, setMobileOpen, isDarkMode, toggle
 
         {/* Bottom Section */}
         <div className="p-3 pb-6 md:pb-3">
-          {/* Upgrade Card */}
-          <Link to="/pricing" onClick={() => setMobileOpen(false)} className="block mb-4 p-4 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/30 ring-1 ring-white/10 group overflow-hidden relative">
-            <div className="absolute top-0 right-0 -mt-2 -mr-2 w-16 h-16 bg-white/10 rounded-full blur-xl group-hover:scale-150 transition-transform duration-500" />
-            <div className="relative z-10 flex flex-col gap-3">
-              <div className="flex items-center justify-between">
-                <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
-                  <Users size={18} className="text-white" />
+          {/* Upgrade Card — only show for free plan users */}
+          {!isPro && (
+            <Link to="/pricing" onClick={() => setMobileOpen(false)} className="block mb-4 p-4 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/30 ring-1 ring-white/10 group overflow-hidden relative">
+              <div className="absolute top-0 right-0 -mt-2 -mr-2 w-16 h-16 bg-white/10 rounded-full blur-xl group-hover:scale-150 transition-transform duration-500" />
+              <div className="relative z-10 flex flex-col gap-3">
+                <div className="flex items-center justify-between">
+                  <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
+                    <Users size={18} className="text-white" />
+                  </div>
+                  <span className="text-xs font-bold bg-white/20 px-2 py-0.5 rounded-full border border-white/10">PRO</span>
                 </div>
-                <span className="text-xs font-bold bg-white/20 px-2 py-0.5 rounded-full border border-white/10">PRO</span>
+                <div>
+                  <h4 className="font-bold text-sm tracking-tight">Upgrade to Pro</h4>
+                  <p className="text-xs text-blue-100/80 mt-0.5 leading-relaxed">
+                    Unlock unlimited projects & clients.
+                  </p>
+                </div>
               </div>
-              <div>
-                <h4 className="font-bold text-sm tracking-tight">Upgrade to Pro</h4>
-                <p className="text-xs text-blue-100/80 mt-0.5 leading-relaxed">
-                  Unlock unlimited projects & clients.
-                </p>
+            </Link>
+          )}
+
+          <button
+            onClick={() => { setNotificationsPanelOpen(true); setMobileOpen(false); }}
+            className="w-full group relative flex items-center justify-between px-3 py-2.5 rounded-lg outline-none text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors mb-1"
+          >
+            <div className="flex items-center gap-3">
+              <div className="relative">
+                <Bell size={20} strokeWidth={2} className="text-slate-400 dark:text-slate-500 group-hover:text-black dark:group-hover:text-slate-300" />
+                {unreadCount > 0 && (
+                  <span className="hidden md:block absolute top-0 right-0 w-2 h-2 bg-rose-500 rounded-full border border-slate-50 dark:border-slate-900" />
+                )}
               </div>
+              <span className="text-[15px]">Notifications</span>
             </div>
-          </Link>
+            {unreadCount > 0 && (
+              <span className="flex md:hidden items-center justify-center w-5 h-5 bg-rose-500 text-white text-[10px] font-bold rounded-full">
+                {unreadCount > 99 ? '99+' : unreadCount}
+              </span>
+            )}
+            {unreadCount > 0 && (
+              <span className="hidden md:flex items-center justify-center w-5 h-5 bg-rose-500 text-white text-[10px] font-bold rounded-full">
+                {unreadCount > 99 ? '99+' : unreadCount}
+              </span>
+            )}
+          </button>
 
           <SidebarItem
             to="/settings"
@@ -225,19 +256,38 @@ const Sidebar = ({ session, state, mobileOpen, setMobileOpen, isDarkMode, toggle
                 }`}
             >
               {/* Avatar */}
-              <div className="w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-800 border-2 border-white dark:border-slate-700 shadow-sm overflow-hidden flex items-center justify-center shrink-0">
-                {avatarUrl ? (
-                  <img src={avatarUrl} alt="User" className="w-full h-full object-cover" />
-                ) : (
-                  <span className="font-black text-slate-600 dark:text-slate-300 text-sm">{userInitial.toUpperCase()}</span>
+              <div className={`relative shrink-0 ${isPro ? 'p-[2px] rounded-full bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-500 shadow-lg shadow-blue-500/30' : ''}`}>
+                {isPro && (
+                  <div className="absolute inset-0 rounded-full bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-500 animate-pulse opacity-40 blur-sm" />
                 )}
+                <div className={`relative w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden flex items-center justify-center ${isPro ? 'border-2 border-white dark:border-slate-900' : 'border-2 border-white dark:border-slate-700 shadow-sm'}`}>
+                  {avatarUrl ? (
+                    <img src={avatarUrl} alt="User" className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="font-black text-slate-600 dark:text-slate-300 text-sm">{userInitial.toUpperCase()}</span>
+                  )}
+                </div>
               </div>
 
               {/* Name */}
               <div className="flex-1 min-w-0 text-left">
-                <p className="text-sm font-bold text-slate-900 dark:text-white truncate leading-tight">
-                  {userName}
-                </p>
+                <div className="flex items-center gap-2 leading-tight">
+                  <p className="text-sm font-bold text-slate-900 dark:text-white truncate">
+                    {userName}
+                  </p>
+                  {/* Plan Badge */}
+                  {isPro ? (
+                    <div className="flex items-center gap-1 px-2 py-0.5 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full border border-blue-300 dark:border-blue-700 shadow-sm shadow-blue-500/20">
+                      <Star size={8} className="text-white" fill="white" />
+                      <span className="text-[10px] font-bold text-white uppercase tracking-wider">PRO</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-1 px-2 py-0.5 bg-gradient-to-r from-amber-500 to-orange-500 rounded-full border border-amber-200 dark:border-amber-700 shadow-sm">
+                      <Star size={8} className="text-white" />
+                      <span className="text-[10px] font-bold text-white uppercase tracking-wider">Free</span>
+                    </div>
+                  )}
+                </div>
                 <p className="text-[11px] text-slate-400 dark:text-slate-500 truncate">
                   {session?.user?.email}
                 </p>

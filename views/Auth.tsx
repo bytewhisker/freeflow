@@ -34,6 +34,8 @@ const Auth: React.FC<{ isDarkMode: boolean; toggleDarkMode: () => void; onBack?:
   const [success, setSuccess] = useState<boolean>(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [emailError, setEmailError] = useState<string | null>(null);
+  const [isValidEmail, setIsValidEmail] = useState(false);
 
   useEffect(() => {
     if (!supabase) return;
@@ -46,6 +48,90 @@ const Auth: React.FC<{ isDarkMode: boolean; toggleDarkMode: () => void; onBack?:
     return () => subscription.unsubscribe();
   }, []);
 
+  // Email validation function
+  const validateEmail = (email: string): { isValid: boolean; error: string | null } => {
+    if (!email) return { isValid: false, error: null };
+    
+    const emailLower = email.toLowerCase().trim();
+    
+    // Allowed domains (legitimate email providers)
+    const allowedDomains = [
+      'gmail.com', 'googlemail.com',
+      'yahoo.com', 'ymail.com', 'rocketmail.com',
+      'outlook.com', 'hotmail.com', 'live.com', 'msn.com',
+      'icloud.com', 'me.com', 'mac.com',
+      'aol.com',
+      'protonmail.com', 'proton.me',
+      'tutanota.com', 'tutanota.de',
+      'zoho.com', 'yandex.com',
+      'mail.com', 'gmx.com', 'gmx.net',
+      'inbox.com', 'lycos.com',
+      'company.com', 'business.com', 'work.com', 'corp.com'
+    ];
+    
+    // Temporary email providers (TEMPORARILY ALLOWED FOR TESTING)
+    const tempEmailDomains = [
+      '10minutemail.com', 'tempmail.org', 'guerrillamail.com', 'mailinator.com',
+      'yopmail.com', 'throwaway.email', 'temp-mail.org', 'fakeemail.com',
+      'maildrop.cc', 'tempmail.plus', '20minutemail.com', 'getairmail.com',
+      'mail2tor.com', 'cryptmail.com', 'tempmail.de', 'tempmail.io',
+      'dispostable.com', 'mailnull.com', 'ephemail.com', 'tempmailaddress.com',
+      'mytemp.email', 'tempmail.cn', 'tempmailbox.net', 'tempmail.ninja',
+      'sharklasers.com', 'guerrillamail.de', 'guerrillamail.biz',
+      'spam4.me', 'tempmail.co', 'tempmail.app', 'tempmail.dev',
+      'tempmail.site', 'tempmail.space', 'tempmail.world', 'tempmail.life',
+      'tempmail.store', 'tempmail.cloud', 'tempmail.tech', 'tempmail.online',
+      'tempmail.email', 'tempmail.mail', 'tempmail.web', 'tempmail.link',
+      'tempmail.click', 'tempmail.download', 'tempmail.upload', 'tempmail.stream',
+      'tempmail.live', 'tempmail.today', 'tempmail.now', 'tempmail.instant',
+      'tempmail.quick', 'tempmail.fast', 'tempmail.easy', 'tempmail.simple',
+      'tempmail.secure', 'tempmail.safe', 'tempmail.private', 'tempmail.anonymous',
+      'tempmail.free', 'tempmail.premium', 'tempmail.pro', 'tempmail.plus',
+      'tempmail.max', 'tempmail.ultra', 'tempmail.super', 'tempmail.hyper',
+      'tempmail.mega', 'tempmail.giga', 'tempmail.tera', 'tempmail.peta',
+      'tempmail.exa', 'tempmail.zetta', 'tempmail.yotta', 'tempmail.bronto',
+      'tempmail.geop', 'tempmail.sagan', 'tempmail.peta', 'tempmail.exa',
+      'tempmail.zetta', 'tempmail.yotta'
+    ];
+    
+    // Basic email format validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(emailLower)) {
+      return { isValid: false, error: 'Please enter a valid email address' };
+    }
+    
+    // Extract domain
+    const domain = emailLower.split('@')[1];
+    
+    // TEMPORARILY ALLOW TEMPORARY EMAILS FOR TESTING
+    // Check if it's a temporary email - NOW ALLOWED
+    if (tempEmailDomains.some(tempDomain => domain.includes(tempDomain))) {
+      return { 
+        isValid: true, // TEMPORARILY ALLOW TEMP EMAILS
+        error: null 
+      };
+    }
+    
+    // Check if it's an allowed domain
+    if (!allowedDomains.some(allowedDomain => domain === allowedDomain || domain.endsWith('.' + allowedDomain))) {
+      return { 
+        isValid: true, // TEMPORARILY ALLOW ALL DOMAINS FOR TESTING
+        error: null 
+      };
+    }
+    
+    return { isValid: true, error: null };
+  };
+
+  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newEmail = e.target.value;
+    setEmail(newEmail);
+    
+    const validation = validateEmail(newEmail);
+    setEmailError(validation.error);
+    setIsValidEmail(validation.isValid);
+  };
+
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!supabase) return;
@@ -55,13 +141,29 @@ const Auth: React.FC<{ isDarkMode: boolean; toggleDarkMode: () => void; onBack?:
     setSuccess(false);
 
     try {
+      // Validate email before proceeding
+      const emailValidation = validateEmail(email);
+      if (!emailValidation.isValid) {
+        setEmailError(emailValidation.error || 'Invalid email address');
+        return;
+      }
+      
       if (mode === 'signup') {
         const { error } = await supabase.auth.signUp({
           email,
           password,
-          options: { emailRedirectTo: window.location.origin }
+          options: { 
+            emailRedirectTo: window.location.origin,
+            data: {
+              email_confirm: true, // Explicitly request email confirmation
+              plan: 'free' // Auto-assign free plan
+            }
+          }
         });
-        if (error) throw error;
+        if (error) {
+          console.error('Signup error:', error);
+          throw error;
+        }
         setSuccess(true);
       } else if (mode === 'signin') {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -173,9 +275,9 @@ const Auth: React.FC<{ isDarkMode: boolean; toggleDarkMode: () => void; onBack?:
                   <button
                     key={m}
                     onClick={() => switchMode(m)}
-                    className={`flex-1 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-200 ${mode === m
-                        ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm border border-slate-200/60 dark:border-slate-600'
-                        : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'
+                    className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all duration-200 ${mode === m
+                      ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm border border-slate-200/60 dark:border-slate-600'
+                      : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'
                       }`}
                   >
                     {m === 'signin' ? 'Sign In' : 'Sign Up'}
@@ -205,12 +307,12 @@ const Auth: React.FC<{ isDarkMode: boolean; toggleDarkMode: () => void; onBack?:
           <div className="px-8 pb-8">
             <form onSubmit={handleAuth} className="space-y-4">
 
-              {/* Email */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+              {/* Email with floating label */}
+              <div className="space-y-3 mb-8">
+                <label className="text-xs font-helvetica font-bold text-slate-500 dark:text-slate-400  tracking-wider">
                   Email Address
                 </label>
-                <div className="relative">
+                <div className="relative group">
                   <div className="absolute left-4 top-1/2 -translate-y-1/2">
                     <Mail size={15} className="text-slate-300 dark:text-slate-600" />
                   </div>
@@ -219,12 +321,37 @@ const Auth: React.FC<{ isDarkMode: boolean; toggleDarkMode: () => void; onBack?:
                     required
                     autoComplete="email"
                     disabled={mode === 'reset'}
-                    className="w-full pl-10 pr-4 py-3.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 rounded-2xl text-sm font-medium text-slate-900 dark:text-white placeholder:text-slate-300 dark:placeholder:text-slate-600 outline-none focus:border-blue-500 dark:focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-                    placeholder="name@company.com"
+                    className={`peer w-full pl-10 pr-12 py-3.5 bg-slate-50 dark:bg-slate-800/60 border rounded-2xl text-sm font-medium placeholder-transparent outline-none focus:ring-4 transition-all disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50 dark:hover:bg-slate-800/70 ${
+                      emailError 
+                        ? 'border-red-500 text-red-600 focus:border-red-500 focus:ring-red-500/10' 
+                        : isValidEmail 
+                        ? 'border-green-500 text-green-600 focus:border-green-500 focus:ring-green-500/10'
+                        : 'border-slate-200 dark:border-slate-700/60 text-slate-900 dark:text-white focus:border-blue-500 dark:focus:border-blue-500 focus:ring-blue-500/10'
+                    }`}
+                    placeholder="Email Address"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={handleEmailChange}
                   />
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                    {email && (
+                      <div className={`w-2.5 h-2.5 rounded-full animate-pulse shadow-lg ${
+                        emailError 
+                          ? 'bg-red-500 shadow-red-500/50' 
+                          : isValidEmail 
+                          ? 'bg-green-500 shadow-green-500/50' 
+                          : 'bg-yellow-500 shadow-yellow-500/50'
+                      }`} />
+                    )}
+                  </div>
                 </div>
+                
+                {/* Email validation error message */}
+                {emailError && (
+                  <div className="text-xs font-medium text-red-600 dark:text-red-400 flex items-center gap-1 mt-1">
+                    <AlertCircle size={12} />
+                    {emailError}
+                  </div>
+                )}
               </div>
 
               {/* OTP (reset mode) */}
@@ -248,18 +375,18 @@ const Auth: React.FC<{ isDarkMode: boolean; toggleDarkMode: () => void; onBack?:
                 </div>
               )}
 
-              {/* Password */}
+              {/* Password with floating label */}
               {mode !== 'forgot' && (
-                <div className="space-y-1.5">
+                <div className="space-y-1.5 mb-8">
                   <div className="flex items-center justify-between">
-                    <label className="text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                    <label className="text-xs font-helvetica font-bold text-slate-500 dark:text-slate-400 tracking-wider">
                       {mode === 'reset' ? 'New Password' : 'Password'}
                     </label>
                     {mode === 'signin' && (
                       <button
                         type="button"
                         onClick={() => switchMode('forgot')}
-                        className="text-[11px] font-black text-blue-600 dark:text-blue-400 hover:underline"
+                        className="text-[11px] font-helvetica font-bold text-blue-600 dark:text-blue-400 hover:underline"
                       >
                         Forgot password?
                       </button>
@@ -360,14 +487,7 @@ const Auth: React.FC<{ isDarkMode: boolean; toggleDarkMode: () => void; onBack?:
           </div>
 
           {/* Footer */}
-          <div className="bg-slate-50/70 dark:bg-slate-800/30 border-t border-slate-100 dark:border-slate-800 px-8 py-4 flex items-center justify-center gap-2">
-            <div className="w-4 h-4 bg-emerald-100 dark:bg-emerald-900/40 rounded-full flex items-center justify-center">
-              <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full" />
-            </div>
-            <p className="text-[11px] text-slate-400 dark:text-slate-500 font-semibold">
-              Secured by Supabase · End-to-end encrypted
-            </p>
-          </div>
+
         </div>
 
         {/* Terms */}

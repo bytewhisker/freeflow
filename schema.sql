@@ -9,7 +9,11 @@ CREATE TABLE IF NOT EXISTS public.profiles (
     "currency": {"code": "USD", "symbol": "$", "name": "US Dollar"},
     "branding": {"watermarkOpacity": 0.15, "showWatermark": true},
     "business": {"name": "New Freelancer", "address": "Add your address", "email": "hello@yourbrand.com", "phone": "+1 555-0123"},
-    "paymentDetails": {"bankName": "", "accountNumber": "", "routingNumber": "", "swiftCode": "", "payPal": ""}
+    "paymentDetails": {
+      "method": "mobile_wallet",
+      "mobileWallet": {"type": "bkash", "number": "", "accountType": "personal"},
+      "bank": {"bankName": "", "bankBranch": "", "accountHolderName": "", "accountNumber": "", "routingNumber": "", "swiftCode": ""}
+    }
   }'::jsonb,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );

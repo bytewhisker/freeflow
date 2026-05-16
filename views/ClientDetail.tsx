@@ -401,67 +401,7 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ state, setState, clientId: 
           <div className="animate-in fade-in duration-500">
             {activeTab === 'overview' && (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-10">
-                {/* Executive Reporting Summary */}
-                <div className="lg:col-span-2 bg-white dark:bg-slate-900 rounded-[32px] p-6 border border-slate-100 dark:border-slate-800 shadow-sm relative overflow-hidden group">
-                  <div className="absolute top-0 right-0 w-64 h-64 bg-slate-900/5 dark:bg-white/5 rounded-full blur-3xl -mr-32 -mt-32 transition-all duration-700 group-hover:bg-slate-900/10 dark:group-hover:bg-white/10"></div>
-                  <div className="relative z-10">
-                    <div className="flex items-center justify-between mb-2">
-                      <div>
-                        <h3 className="text-xl font-black text-slate-900 dark:text-white font-open-sans">Executive Summary</h3>
-                        <p className="text-[11px] font-bold text-slate-400 dark:text-slate-500 mt-1 font-open-sans">Strategic Multi-Metric Overview</p>
-                      </div>
-                      <div className="p-3 bg-slate-900 dark:bg-slate-800 text-white rounded-2xl shadow-lg">
-                        <PieChart size={24} />
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                      <div className="space-y-4">
-                        <div className="flex items-center gap-2 text-emerald-500">
-                          <ArrowUpRight size={18} />
-                          <span className="text-xs font-black font-open-sans">Revenue Strength</span>
-                        </div>
-                        <div className="space-y-1">
-                          <p className="text-2xl font-black text-slate-900 dark:text-white font-open-sans">{formatCurrency(stats.totalRevenue)}</p>
-                          <p className="text-[11px] font-bold text-slate-400 dark:text-slate-500 font-open-sans">Total Lifetime Value</p>
-                        </div>
-                        <div className="w-full h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                          <div className="h-full bg-emerald-500 transition-all duration-1000" style={{ width: `${Math.min(100, (stats.totalRevenue / 10000) * 100)}%` }}></div>
-                        </div>
-                      </div>
-
-                      <div className="space-y-4">
-                        <div className="flex items-center gap-2 text-blue-500">
-                          <Target size={18} />
-                          <span className="text-xs font-black font-open-sans">Project Pipeline</span>
-                        </div>
-                        <div className="space-y-1">
-                          <p className="text-2xl font-black text-slate-900 dark:text-white font-open-sans">{stats.activeProjects}</p>
-                          <p className="text-[11px] font-bold text-slate-400 dark:text-slate-500 font-open-sans">Current Activations</p>
-                        </div>
-                        <div className="w-full h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                          <div className="h-full bg-blue-500 transition-all duration-1000" style={{ width: `${Math.min(100, (stats.activeProjects / 5) * 100)}%` }}></div>
-                        </div>
-                      </div>
-
-                      <div className="space-y-4">
-                        <div className="flex items-center gap-2 text-indigo-500">
-                          <Zap size={18} />
-                          <span className="text-xs font-black font-open-sans">Engagement Score</span>
-                        </div>
-                        <div className="space-y-1">
-                          <p className="text-2xl font-black text-slate-900 dark:text-white font-open-sans">{stats.healthScore}%</p>
-                          <p className="text-[11px] font-bold text-slate-400 dark:text-slate-500 font-open-sans">Relationship Health</p>
-                        </div>
-                        <div className="w-full h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                          <div className="h-full bg-indigo-500 transition-all duration-1000" style={{ width: `${stats.healthScore}%` }}></div>
-                        </div>
-                      </div>
-                    </div>
-
-
-                  </div>
-                </div>
+                
                 {/* Contact Information Card */}
                 <div className="bg-slate-50 dark:bg-slate-900 rounded-[30px] border border-slate-200 dark:border-slate-800 overflow-hidden shadow-lg">
                   <div className="px-8 py-5 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 font-bold text-black dark:text-white text-sm flex items-center gap-3 font-open-sans">
@@ -688,9 +628,11 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ state, setState, clientId: 
             {activeTab === 'notes' && (
               <div className="bg-white dark:bg-slate-900 p-8 sm:p-12 rounded-lg border border-slate-200 dark:border-slate-800 shadow-sm animate-in slide-in-from-right-8 duration-500">
                 <h3 className="text-xl font-bold text-black dark:text-white mb-8 font-open-sans">Client Notes</h3>
-                <div className="p-10 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-lg italic text-black dark:text-slate-400 text-lg leading-relaxed font-open-sans">
-                  "{client.notes || 'No strategic observations logged for this client entity.'}"
-                </div>
+                {client.notes && (
+                  <div className="p-10 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-lg italic text-black dark:text-slate-400 text-lg leading-relaxed font-open-sans">
+                    "{client.notes}"
+                  </div>
+                )}
               </div>
             )}
 
@@ -754,7 +696,7 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ state, setState, clientId: 
                     onChange={e => setEditForm({ ...editForm, country: e.target.value })}
                     className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-lg outline-none focus:ring-1 focus:ring-black dark:focus:ring-blue-500 text-sm font-bold text-slate-900 dark:text-white font-open-sans appearance-none"
                   >
-                    <option value="">Select territory</option>
+                    <option value="">Select country</option>
                     {countries.map(c => <option key={c} value={c}>{c}</option>)}
                   </select>
                 </div>

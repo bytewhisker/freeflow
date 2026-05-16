@@ -30,6 +30,34 @@ export async function createNotification(notification: Omit<Notification, 'id' |
 }
 
 /**
+ * Fetch notifications from Supabase
+ */
+export async function fetchNotifications(): Promise<Notification[]> {
+  if (!supabase) return [];
+
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return [];
+
+    const { data, error } = await supabase
+      .from('notifications')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    return (data || []).map(n => ({
+      ...n,
+      createdAt: n.created_at
+    }));
+  } catch (error) {
+    console.error('Failed to fetch notifications:', error);
+    return [];
+  }
+}
+
+/**
  * Mark notification as read
  */
 export async function markAsRead(notificationId: string): Promise<void> {
@@ -141,12 +169,17 @@ export function getNotificationColor(type: NotificationType): string {
  * Check for overdue invoices and create notifications
  */
 export async function checkOverdueInvoices(salesDocuments: any[]): Promise<Notification[]> {
-  const overdueInvoices = salesDocuments.filter(
+  // Use a Map to de-duplicate by ID, keeping only the first occurrence
+  const uniqueDocs = Array.from(
+    new Map(salesDocuments.map(doc => [doc.id, doc])).values()
+  );
+
+  const overdueInvoices = uniqueDocs.filter(
     (doc: any) => doc.type === 'INVOICE' && doc.status === 'overdue'
   );
 
   return overdueInvoices.map((doc: any) => ({
-    id: generateId(),
+    id: `overdue-${doc.id}`, // Deterministic ID
     type: 'invoice_overdue',
     title: getNotificationTitle('invoice_overdue'),
     message: `Invoice ${doc.docNumber} is overdue`,
@@ -167,21 +200,56 @@ export async function checkUpcomingDeadlines(projects: any[]): Promise<Notificat
   const now = new Date();
   const threeDaysFromNow = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
 
-  const upcomingProjects = projects.filter((project: any) => {
+  // Use a Map to de-duplicate by ID, keeping only the first occurrence
+  const uniqueProjects = Array.from(
+    new Map(projects.map(p => [p.id, p])).values()
+  );
+
+  const upcomingProjects = uniqueProjects.filter((project: any) => {
     if (project.status === 'completed') return false;
     const deadline = new Date(project.deadline);
     return deadline <= threeDaysFromNow && deadline > now;
   });
 
+  // If more than 3 projects have deadlines, create a summary notification
+  if (upcomingProjects.length > 3) {
+    return [{
+      id: `deadline-summary-${Date.now()}`, // Timestamp to make it unique
+      type: 'project_deadline',
+      title: 'Project Deadlines',
+      message: `You have ${upcomingProjects.length} projects due`,
+      link: '/projects',
+      read: false,
+      createdAt: new Date().toISOString(),
+      metadata: {
+        projectIds: upcomingProjects.map(p => p.id),
+        count: upcomingProjects.length,
+      },
+    }];
+  }
+
+  // For 3 or fewer projects, create individual notifications
   return upcomingProjects.map((project: any) => {
     const deadline = new Date(project.deadline);
-    const daysRemaining = Math.ceil((deadline.getTime() - now.getTime()) / (24 * 60 * 60 * 1000));
+    const msRemaining = deadline.getTime() - now.getTime();
+    let timeText = '';
+    const minutesRemaining = Math.max(1, Math.floor(msRemaining / (60 * 1000)));
+    const hoursRemaining = Math.floor(minutesRemaining / 60);
+    const daysRemaining = Math.floor(hoursRemaining / 24);
+
+    if (daysRemaining > 0) {
+      timeText = `due in ${daysRemaining} day${daysRemaining !== 1 ? 's' : ''}`;
+    } else if (hoursRemaining > 0) {
+      timeText = `due in ${hoursRemaining} hour${hoursRemaining !== 1 ? 's' : ''}`;
+    } else {
+      timeText = `due in ${minutesRemaining} min${minutesRemaining !== 1 ? 's' : ''}`;
+    }
 
     return {
-      id: generateId(),
+      id: `deadline-${project.id}`, // Deterministic ID
       type: 'project_deadline',
       title: getNotificationTitle('project_deadline'),
-      message: `"${project.title}" is due in ${daysRemaining} day${daysRemaining !== 1 ? 's' : ''}`,
+      message: `"${project.title}" is ${timeText}`,
       link: `/projects/${project.id}`,
       read: false,
       createdAt: new Date().toISOString(),

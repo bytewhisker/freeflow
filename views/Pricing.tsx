@@ -1,8 +1,61 @@
-import React, { useState } from 'react';
-import { Check, Star, Zap, Shield, HelpCircle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Check, Star, Zap, Shield, HelpCircle, Loader2, X, AlertCircle } from 'lucide-react';
+import { supabase } from '../lib/supabase';
+import { AppState } from '../types';
 
-const Pricing = () => {
+const Pricing: React.FC<{ state: AppState }> = ({ state }) => {
     const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
+    const [loading, setLoading] = useState<string | null>(null);
+    const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+
+    // Handle return from Stripe
+    useEffect(() => {
+        const query = new URLSearchParams(window.location.search);
+        if (query.get('success')) {
+            setStatusMessage({ type: 'success', text: 'Payment successful! Your account is being upgraded.' });
+            // Clean up URL
+            window.history.replaceState({}, '', window.location.pathname);
+            // Refresh state after a short delay to let webhook finish
+            setTimeout(() => window.location.reload(), 3000);
+        }
+        if (query.get('canceled')) {
+            setStatusMessage({ type: 'error', text: 'Payment canceled. No worries, you can try again anytime.' });
+            window.history.replaceState({}, '', window.location.pathname);
+        }
+    }, []);
+
+    const handleUpgrade = async (planName: string, priceId: string) => {
+        if (!state.settings.profile.name) {
+          // Optional: Ensure user has a name/email before proceeding
+        }
+
+        try {
+            setLoading(planName);
+            
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) throw new Error('Please sign in to upgrade.');
+
+            // Call the Supabase Edge Function
+            const { data, error } = await supabase.functions.invoke('stripe-checkout', {
+                body: { 
+                    priceId, 
+                    userId: user.id,
+                    userEmail: user.email 
+                },
+            });
+
+            if (error) throw error;
+            if (data?.url) {
+                // Redirect to Stripe Checkout
+                window.location.href = data.url;
+            }
+        } catch (err: any) {
+            console.error('Checkout error:', err);
+            setStatusMessage({ type: 'error', text: err.message || 'Failed to start checkout. Please try again.' });
+        } finally {
+            setLoading(null);
+        }
+    };
 
     const plans = [
         {
@@ -11,8 +64,8 @@ const Pricing = () => {
             period: '/mo',
             description: 'Perfect for new freelancers just getting started.',
             features: [
-                'Up to 2 Active Projects',
-                '3 Clients',
+                'Up to 10 Active Projects',
+                '10 Clients',
                 'Basic Invoice Templates',
                 'Standard Support'
             ],
@@ -20,12 +73,14 @@ const Pricing = () => {
             popular: false,
             gradient: 'from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900',
             textColor: 'text-slate-900 dark:text-white',
-            buttonStyle: 'bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-white hover:bg-slate-300 dark:hover:bg-slate-700'
+            buttonStyle: 'bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-white',
+            disabled: true
         },
         {
             name: 'Pro',
-            price: billingCycle === 'monthly' ? '$19' : '$15',
-            period: '/mo',
+            price: billingCycle === 'monthly' ? '$9' : '$80',
+            priceId: billingCycle === 'monthly' ? 'price_1TEQetRhjWo3PmaRJdMKQ0DL' : 'price_1TEVeaRhjWo3PmaRPMz1CdVE',
+            period: billingCycle === 'monthly' ? '/mo' : '/yr',
             description: 'For full-time freelancers growing their business.',
             features: [
                 'Unlimited Projects',
@@ -34,11 +89,12 @@ const Pricing = () => {
                 'Expense Tracking',
                 'Priority Support'
             ],
-            buttonText: 'Upgrade to Pro',
+            buttonText: state.settings.profile.plan === 'pro' ? 'Current Plan' : 'Upgrade to Pro',
             popular: true,
             gradient: 'from-blue-600 to-blue-500',
             textColor: 'text-white',
-            buttonStyle: 'bg-white text-blue-600 hover:bg-blue-50 shadow-lg'
+            buttonStyle: 'bg-white text-blue-600 hover:bg-blue-50 shadow-lg',
+            disabled: state.settings.profile.plan === 'pro'
         },
         {
             name: 'Agency',
@@ -52,11 +108,12 @@ const Pricing = () => {
                 'Advanced Reporting',
                 'Dedicated Account Manager'
             ],
-            buttonText: 'Contact Sales',
+            buttonText: 'Coming Soon',
             popular: false,
-            gradient: 'from-slate-900 to-slate-800 dark:from-slate-950 dark:to-black',
-            textColor: 'text-white',
-            buttonStyle: 'bg-blue-600 text-white hover:bg-blue-700'
+            disabled: true,
+            gradient: 'from-slate-200 to-slate-300 dark:from-slate-800 dark:to-slate-900',
+            textColor: 'text-slate-400 dark:text-slate-500',
+            buttonStyle: 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed opacity-60'
         }
     ];
 
@@ -106,6 +163,21 @@ const Pricing = () => {
                     </div>
                 </div>
 
+                {/* Status Message */}
+                {statusMessage && (
+                    <div className={`p-4 rounded-2xl flex items-center gap-3 animate-in fade-in slide-in-from-top-4 duration-300 ${
+                        statusMessage.type === 'success' 
+                        ? 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 border border-emerald-100 dark:border-emerald-800' 
+                        : 'bg-rose-50 dark:bg-rose-950/30 text-rose-600 border border-rose-100 dark:border-rose-800'
+                    }`}>
+                        {statusMessage.type === 'success' ? <Zap size={20} /> : <AlertCircle size={20} />}
+                        <p className="font-bold text-sm tracking-tight">{statusMessage.text}</p>
+                        <button onClick={() => setStatusMessage(null)} className="ml-auto opacity-50 hover:opacity-100 transition-opacity">
+                            <X size={16} />
+                        </button>
+                    </div>
+                )}
+
                 {/* Pricing Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8 pt-8 px-2 md:px-0">
                     {plans.map((plan) => (
@@ -114,6 +186,7 @@ const Pricing = () => {
                             className={`relative rounded-[32px] p-8 flex flex-col h-full transition-all duration-300 hover:-translate-y-2
                 ${plan.popular ? 'shadow-2xl shadow-blue-500/20 ring-4 ring-blue-500/10 z-10' : 'border border-slate-200 dark:border-slate-800 shadow-xl bg-white dark:bg-slate-900/50'}
                 ${plan.popular ? `bg-gradient-to-b ${plan.gradient}` : ''}
+                ${plan.disabled && plan.name !== 'Starter' && plan.buttonText !== 'Current Plan' ? 'opacity-60 cursor-not-allowed' : ''}
               `}
                         >
                             {plan.popular && (
@@ -152,8 +225,16 @@ const Pricing = () => {
                                 ))}
                             </div>
 
-                            <button className={`w-full py-4 rounded-2xl font-bold text-sm transition-transform active:scale-95 ${plan.buttonStyle}`}>
-                                {plan.buttonText}
+                            <button
+                                onClick={() => plan.priceId && handleUpgrade(plan.name, plan.priceId)}
+                                className={`w-full py-4 rounded-2xl font-bold text-sm transition-all active:scale-95 flex items-center justify-center gap-2 ${plan.buttonStyle} ${loading === plan.name ? 'opacity-70 cursor-wait' : ''}`}
+                                disabled={plan.disabled || loading === plan.name}
+                            >
+                                {loading === plan.name ? (
+                                    <Loader2 size={18} className="animate-spin" />
+                                ) : (
+                                    plan.buttonText
+                                )}
                             </button>
                         </div>
                     ))}
